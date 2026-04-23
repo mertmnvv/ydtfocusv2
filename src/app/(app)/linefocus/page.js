@@ -21,6 +21,7 @@ export default function LinefocusPage() {
   const [charIdx, setCharIdx] = useState(0);
   const [totalKeys, setTotalKeys] = useState(0);
   const [wrongKeys, setWrongKeys] = useState(0);
+  const [typedChars, setTypedChars] = useState([]); // [{char, correct}]
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -44,9 +45,14 @@ export default function LinefocusPage() {
   async function startFlow(topic) {
     setLoading(true);
     const seed = Math.floor(Math.random() * 10000);
-    const prompt = `Task: Write a UNIQUE 4-sentence connected story about ${topic}. Seed: ${seed}. Level: A2-B1. 
-    CRITICAL TRANSLATION RULE: For the 'tr' field, provide a natural, fluent, and idiomatic Turkish translation. DO NOT translate word-for-word. Adapt English relative clauses (that/which) and idioms into natural Turkish syntax (Subject-Object-Verb). 
-    Return ONLY a JSON array in this exact format: [{"en": "english sentence", "tr": "doğal ve akıcı Türkçe çevirisi"}]`;
+    const prompt = `Task: Write a UNIQUE 4-sentence connected story about ${topic}. Seed: ${seed}. Level: A2-B1.
+CRITICAL TURKISH TRANSLATION RULES:
+1. Translate for MEANING, not word-for-word. Use natural Turkish SOV order.
+2. Never start Turkish with a conjunction like "Ve" or "Ama" — restructure the sentence.
+3. Relative clauses (who/which/that) should become Turkish participle forms (-en/-an/-dığı).
+4. Avoid devrik (inverted) sentences. Use standard spoken Turkish.
+5. Each Turkish sentence must be independently understandable.
+Return ONLY a JSON array: [{"en": "english sentence", "tr": "natural Turkish"}]`;
 
     try {
       const resp = await fetch("/api/groq", {
@@ -68,6 +74,7 @@ export default function LinefocusPage() {
         setCharIdx(0);
         setTotalKeys(0);
         setWrongKeys(0);
+        setTypedChars([]);
         sessionRef.current = Date.now();
         processingRef.current = false;
         setIsEndless(false);
@@ -88,10 +95,15 @@ export default function LinefocusPage() {
     const prompt = `### ROLE: Expert Linguistics Professor and Sci-Fi/Mystery Author for YDT preparation.
 ### TASK: Generate EXACTLY 4 connected sentences for Chapter ${chapter} of an ongoing A2+ level story.
 STORY HISTORY: "${bookHistory}"
-### LINGUISTIC CONSTRAINTS: CEFR A2-B1 transition. Include at least 2 Academic Keywords. Use clear Conjunctions.
-### STORY RULES: Maintain Sci-Fi Mystery atmosphere. Start where history ends.
-### OUTPUT: TR FIELD must use Dynamic Equivalent translation (SOV order). Return ONLY raw JSON array.
-[{"en": "Sentence 1", "tr": "Çeviri 1"},{"en": "Sentence 2", "tr": "Çeviri 2"},{"en": "Sentence 3", "tr": "Çeviri 3"},{"en": "Sentence 4", "tr": "Çeviri 4"}]`;
+### LINGUISTIC CONSTRAINTS: CEFR A2-B1 transition. Include at least 2 Academic Keywords.
+### STORY RULES: Maintain Sci-Fi Mystery atmosphere. Continue from where history left off.
+### TURKISH TRANSLATION RULES:
+1. Use natural, spoken Turkish with SOV order. No devrik (inverted) sentences.
+2. Relative clauses (who/which/that) → Turkish participle forms (-en/-an/-dığı).
+3. Never start Turkish with "Ve", "Ama", or "Fakat" — restructure instead.
+4. Each Turkish sentence must be clearly understandable on its own.
+### OUTPUT: Return ONLY raw JSON array.
+[{"en": "Sentence 1", "tr": "Doğal Türkçe 1"},{"en": "Sentence 2", "tr": "Doğal Türkçe 2"},{"en": "Sentence 3", "tr": "Doğal Türkçe 3"},{"en": "Sentence 4", "tr": "Doğal Türkçe 4"}]`;
 
     try {
       const resp = await fetch("/api/groq", {
@@ -113,6 +125,7 @@ STORY HISTORY: "${bookHistory}"
         setCharIdx(0);
         setTotalKeys(0);
         setWrongKeys(0);
+        setTypedChars([]);
         sessionRef.current = "endless_ai_book";
         processingRef.current = false;
         setIsEndless(true);
@@ -135,6 +148,7 @@ STORY HISTORY: "${bookHistory}"
 
     if (e.key === "Backspace" && charIdx > 0) {
       setCharIdx(prev => prev - 1);
+      setTypedChars(prev => prev.slice(0, -1));
       return;
     }
 
@@ -142,6 +156,9 @@ STORY HISTORY: "${bookHistory}"
       setTotalKeys(prev => prev + 1);
       const isCorrect = e.key.toLowerCase() === target[charIdx].toLowerCase();
       if (!isCorrect) setWrongKeys(prev => prev + 1);
+
+      // Track each character's correctness for visual feedback
+      setTypedChars(prev => [...prev, { char: e.key, correct: isCorrect }]);
 
       const newCharIdx = charIdx + 1;
       setCharIdx(newCharIdx);
@@ -200,6 +217,7 @@ STORY HISTORY: "${bookHistory}"
     setSentences([]);
     setSIdx(0);
     setCharIdx(0);
+    setTypedChars([]);
     processingRef.current = false;
   }
 
@@ -291,8 +309,8 @@ STORY HISTORY: "${bookHistory}"
                   const gi = startGlobal + ci;
                   let cls = "lf-letter";
                   if (gi < charIdx) {
-                    // Check if it was typed correctly (we can't track individually in state easily, so use visual only)
-                    cls += " lf-typed";
+                    const tc = typedChars[gi];
+                    cls += tc && tc.correct ? " lf-typed" : " lf-wrong";
                   }
                   if (gi === charIdx) cls += " lf-active";
                   letterSpans.push(<span key={gi} className={cls}>{word[ci]}</span>);
@@ -374,10 +392,10 @@ STORY HISTORY: "${bookHistory}"
           <a href="/dashboard" className="lf-exit-btn"><i className="fas fa-chevron-left"></i> back</a>
           <div className="lf-logo">linefocus</div>
         </div>
-        <div className="lf-main" style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center'}}>
-          <div style={{fontSize: '3rem', marginBottom: 16}}>💻</div>
+        <div className="lf-main" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' }}>
+          <div style={{ fontSize: '3rem', marginBottom: 16 }}>💻</div>
           <h2 className="lf-setup-title">Sadece Masaüstü</h2>
-          <p style={{color: 'var(--text-muted)', marginBottom: 24, maxWidth: 400, lineHeight: 1.6}}>
+          <p style={{ color: 'var(--text-muted)', marginBottom: 24, maxWidth: 400, lineHeight: 1.6 }}>
             Linefocus odaklanma modu, klavye yazımı ve geniş ekran deneyimi için tasarlanmıştır. Lütfen bu moda bilgisayarınızdan erişin.
           </p>
           <a href="/dashboard" className="lf-primary-btn">Panele Dön</a>
@@ -390,7 +408,7 @@ STORY HISTORY: "${bookHistory}"
   if (authLoading) {
     return (
       <div className="lf-standalone">
-        <div className="lf-main" style={{display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh'}}>
+        <div className="lf-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
           <div className="lf-loading"><i className="fas fa-circle-notch fa-spin"></i> Yükleniyor...</div>
         </div>
       </div>
@@ -405,10 +423,10 @@ STORY HISTORY: "${bookHistory}"
           <a href="/dashboard" className="lf-exit-btn"><i className="fas fa-chevron-left"></i> back</a>
           <div className="lf-logo">linefocus</div>
         </div>
-        <div className="lf-main" style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center'}}>
-          <div style={{fontSize: '3rem', marginBottom: 16}}>🔒</div>
+        <div className="lf-main" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' }}>
+          <div style={{ fontSize: '3rem', marginBottom: 16 }}>🔒</div>
           <h2 className="lf-setup-title">Kayıtlı Kullanıcı Alanı</h2>
-          <p style={{color: 'var(--text-muted)', marginBottom: 24, maxWidth: 400, lineHeight: 1.6}}>
+          <p style={{ color: 'var(--text-muted)', marginBottom: 24, maxWidth: 400, lineHeight: 1.6 }}>
             Linefocus odak moduna erişmek ve hikaye okuma geçmişinizi kaydetmek için ücretsiz kayıt olmalısınız.
           </p>
           <button className="lf-primary-btn" onClick={() => setAuthModalOpen(true)}>Kayıt Ol / Giriş Yap</button>

@@ -78,7 +78,19 @@ export function AuthProvider({ children }) {
 
   // Google ile giriş
   async function loginWithGoogle() {
-    return signInWithPopup(auth, googleProvider);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      return result;
+    } catch (err) {
+      // If popup is blocked, try redirect method
+      if (err.code === "auth/popup-blocked" || err.code === "auth/popup-closed-by-user") {
+        // Import dynamically to avoid SSR issues
+        const { signInWithRedirect } = await import("firebase/auth");
+        return signInWithRedirect(auth, googleProvider);
+      }
+      console.error("Google login error:", err.code, err.message);
+      throw err;
+    }
   }
 
   // Çıkış

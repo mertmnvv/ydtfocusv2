@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getUserWords, getUserMistakes, updateUserMistakes, updateUserWord } from "@/lib/firestore";
+import { getUserWords, getUserMistakes, updateUserMistakes, updateUserWord, incrementStudyMinutes } from "@/lib/firestore";
 
 export default function QuizPage() {
   const { user, requireAuth } = useAuth();
@@ -165,6 +165,11 @@ export default function QuizPage() {
       } else {
         setFinished(true);
         if (timerInterval) clearInterval(timerInterval);
+        // Save study time (increment, not overwrite)
+        if (user && timer > 0) {
+          const mins = Math.max(1, Math.round(timer / 60));
+          incrementStudyMinutes(user.uid, mins).catch(console.error);
+        }
       }
     }, 800);
   }
@@ -213,12 +218,13 @@ export default function QuizPage() {
   // FLASH CARDS
   if (mode === "flash") {
     if (words.length === 0) return <p className="hint-text" style={{ textAlign: "center", padding: 40 }}>Bankanız boş.</p>;
-    const card = words[flashIdx % words.length];
+    const safeIdx = Math.min(flashIdx, words.length - 1);
+    const card = words[safeIdx];
     return (
       <div style={{ maxWidth: 400, margin: "0 auto", textAlign: "center" }}>
         <div className="header-split" style={{ marginBottom: 20 }}>
           <button className="btn-ghost" onClick={() => setMode(null)}>Geri</button>
-          <span className="hint-text">{flashIdx + 1} / {words.length}</span>
+          <span className="hint-text">{safeIdx + 1} / {words.length}</span>
         </div>
         <div className="flash-scene" onClick={() => setFlashFlipped(!flashFlipped)}>
           <div className={`flash-card-inner ${flashFlipped ? "flipped" : ""}`}>
@@ -237,11 +243,13 @@ export default function QuizPage() {
         </div>
         <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
           <button className="btn-ghost" style={{ flex: 1 }}
-            onClick={() => { setFlashIdx(Math.max(0, flashIdx - 1)); setFlashFlipped(false); }}>
+            disabled={safeIdx <= 0}
+            onClick={() => { setFlashIdx(Math.max(0, safeIdx - 1)); setFlashFlipped(false); }}>
             Önceki
           </button>
           <button className="btn-primary" style={{ flex: 1 }}
-            onClick={() => { setFlashIdx(flashIdx + 1); setFlashFlipped(false); }}>
+            disabled={safeIdx >= words.length - 1}
+            onClick={() => { if (safeIdx < words.length - 1) { setFlashIdx(safeIdx + 1); setFlashFlipped(false); } }}>
             Sonraki
           </button>
         </div>

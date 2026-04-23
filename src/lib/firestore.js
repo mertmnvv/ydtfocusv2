@@ -58,6 +58,11 @@ export async function updateUserStats(uid, stats) {
   await setDoc(statsRef, stats, { merge: true });
 }
 
+export async function incrementStudyMinutes(uid, minutes) {
+  const statsRef = doc(db, "users", uid, "data", "stats");
+  await updateDoc(statsRef, { dailyMinutes: increment(minutes) });
+}
+
 // ===== KULLANICI HATALARI =====
 
 export async function getUserMistakes(uid) {
@@ -111,9 +116,22 @@ export async function getArchiveWords(pageSize = 50, lastDoc = null) {
   };
 }
 
-export async function searchArchiveWords(searchTerm) {
+export async function getArchiveWordsByLevel(level) {
   const archiveRef = collection(db, "archive");
-  const snapshot = await getDocs(archiveRef);
+  const q = query(archiveRef, where("level", "==", level), orderBy("word"));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+export async function searchArchiveWords(searchTerm, level = null) {
+  const archiveRef = collection(db, "archive");
+  let q;
+  if (level) {
+    q = query(archiveRef, where("level", "==", level));
+  } else {
+    q = query(archiveRef);
+  }
+  const snapshot = await getDocs(q);
   const term = searchTerm.toLowerCase();
   return snapshot.docs
     .map(doc => ({ id: doc.id, ...doc.data() }))

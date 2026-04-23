@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getArchiveWords, searchArchiveWords, addUserWord, getUserWords } from "@/lib/firestore";
+import { getArchiveWords, getArchiveWordsByLevel, searchArchiveWords, addUserWord, getUserWords } from "@/lib/firestore";
+
+const CEFR_LEVELS = ["Tümü", "A1", "A2", "B1", "B2", "C1", "C2"];
+const CEFR_COLORS = { A1: "#30d158", A2: "#e2b714", B1: "#ff9f0a", B2: "#bf5af2", C1: "#ff375f", C2: "#ff2d55" };
 
 export default function ArchivePage() {
   const { user, requireAuth } = useAuth();
@@ -12,44 +15,70 @@ export default function ArchivePage() {
   const [search, setSearch] = useState("");
   const [lastDoc, setLastDoc] = useState(null);
   const [hasMore, setHasMore] = useState(true);
+  const [activeLevel, setActiveLevel] = useState("Tümü");
 
+  // Initial load
   useEffect(() => {
-    if (!user) {
-      loadInitial();
-      return;
+    if (user) {
+      getUserWords(user.uid).then(uw => setMyWords(uw || [])).catch(console.error);
     }
-    Promise.all([loadInitial(), getUserWords(user.uid)])
-      .then(([_, uw]) => setMyWords(uw || []))
-      .catch(console.error);
+    loadWords("Tümü");
   }, [user]);
 
-  async function loadInitial() {
+  // When level tab changes
+  async function loadWords(level) {
     setLoading(true);
+    setActiveLevel(level);
+    setSearch("");
     try {
-      const r = await getArchiveWords(50);
-      setWords(r.words); setLastDoc(r.lastDoc); setHasMore(r.words.length === 50);
+      if (level === "Tümü") {
+        const r = await getArchiveWords(50);
+        setWords(r.words);
+        setLastDoc(r.lastDoc);
+        setHasMore(r.words.length === 50);
+      } else {
+        // Fetch ALL words for this level (no pagination needed per-level)
+        const levelWords = await getArchiveWordsByLevel(level);
+        setWords(levelWords);
+        setLastDoc(null);
+        setHasMore(false);
+      }
     } catch (e) { console.error(e); }
     setLoading(false);
   }
 
   async function loadMore() {
-    if (!lastDoc) return;
+    if (!lastDoc || activeLevel !== "Tümü") return;
     setLoading(true);
     try {
       const r = await getArchiveWords(50, lastDoc);
-      setWords(p => [...p, ...r.words]); setLastDoc(r.lastDoc); setHasMore(r.words.length === 50);
+      setWords(p => [...p, ...r.words]);
+      setLastDoc(r.lastDoc);
+      setHasMore(r.words.length === 50);
     } catch (e) { console.error(e); }
     setLoading(false);
   }
 
   async function doSearch() {
-    if (!search.trim()) { loadInitial(); return; }
+    const term = search.trim();
+    if (!term) {
+      loadWords(activeLevel);
+      return;
+    }
     setLoading(true);
     try {
-      const r = await searchArchiveWords(search);
-      setWords(r); setHasMore(false);
+      const level = activeLevel === "Tümü" ? null : activeLevel;
+      const results = await searchArchiveWords(term, level);
+      setWords(results);
+      setHasMore(false);
+      setLastDoc(null);
     } catch (e) { console.error(e); }
     setLoading(false);
+  }
+
+  function clearSearch() {
+    setSearch("");
+    loadWords(activeLevel);
   }
 
   function addToBank(w) {
@@ -67,26 +96,57 @@ export default function ArchivePage() {
 
   function playAudio(text) {
     if ("speechSynthesis" in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "en-US";
-      window.speechSynthesis.speak(utterance);
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "en-US";
+      window.speechSynthesis.speak(u);
     }
   }
 
   return (
     <div>
       <h2 className="section-title">Akademik Sözlük</h2>
+
+      {/* Search */}
       <div className="glass-card">
         <div style={{ display: "flex", gap: 10 }}>
-          <input className="word-input" style={{ flex: 1 }} placeholder="Kelime veya anlam ara..."
-            value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === "Enter" && doSearch()} />
+          <input
+            className="word-input"
+            style={{ flex: 1 }}
+            placeholder={activeLevel === "Tümü" ? "Kelime veya anlam ara..." : `${activeLevel} seviyesinde ara...`}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && doSearch()}
+          />
           <button className="btn-primary" onClick={doSearch}>Ara</button>
-          {search && <button className="btn-ghost" onClick={() => { setSearch(""); loadInitial(); }}>✕</button>}
+          {search && <button className="btn-ghost" onClick={clearSearch}>✕</button>}
         </div>
       </div>
+
+      {/* CEFR Level Tabs */}
+      <div className="archive-level-tabs">
+        {CEFR_LEVELS.map(l => (
+          <button
+            key={l}
+            className={`archive-tab ${activeLevel === l ? "active" : ""}`}
+            style={activeLevel === l ? { background: CEFR_COLORS[l] || "var(--accent)", color: "#000" } : {}}
+            onClick={() => loadWords(l)}
+          >
+            {l}
+          </button>
+        ))}
+      </div>
+
+      {/* Word Count */}
+      <div style={{ marginBottom: 12, fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 700 }}>
+        {words.length} kelime {activeLevel !== "Tümü" && `(${activeLevel})`}
+      </div>
+
+      {/* Word List */}
       <div className="glass-card">
         {words.length === 0 && !loading && (
-          <p className="hint-text" style={{ textAlign: "center", padding: 30 }}>Arşivde kelime yok. Admin panelinden seed yapın.</p>
+          <p className="hint-text" style={{ textAlign: "center", padding: 30 }}>
+            {search ? "Arama sonucu bulunamadı." : activeLevel === "Tümü" ? "Arşivde kelime yok." : `${activeLevel} seviyesinde kelime bulunamadı.`}
+          </p>
         )}
         <div className="archive-list">
           {words.map((w, i) => (
@@ -98,7 +158,14 @@ export default function ArchivePage() {
                 {w.syn && w.syn !== "-" && <span className="syn-text" style={{ marginLeft: 8 }}>({w.syn})</span>}
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                {w.level && <span className="archive-level-badge">{w.level}</span>}
+                {w.level && (
+                  <span className="archive-level-badge" style={{
+                    background: `${CEFR_COLORS[w.level?.toUpperCase()] || "var(--text-muted)"}20`,
+                    color: CEFR_COLORS[w.level?.toUpperCase()] || "var(--text-muted)",
+                  }}>
+                    {w.level}
+                  </span>
+                )}
                 <button className={saved(w) ? "archive-add-btn saved" : "archive-add-btn"}
                   onClick={() => !saved(w) && addToBank(w)} disabled={saved(w)}>
                   {saved(w) ? "✓" : "+"}
@@ -108,7 +175,7 @@ export default function ArchivePage() {
           ))}
         </div>
         {loading && <div className="page-loading" style={{ minHeight: "15vh" }}><div className="spinner-ring"></div></div>}
-        {hasMore && !loading && words.length > 0 && (
+        {hasMore && !loading && words.length > 0 && activeLevel === "Tümü" && (
           <button className="btn-ghost w-100" style={{ marginTop: 16 }} onClick={loadMore}>Daha Fazla Yükle</button>
         )}
       </div>

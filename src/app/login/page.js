@@ -36,7 +36,18 @@ export default function LoginPage() {
       await loginWithGoogle();
       router.push("/dashboard");
     } catch (err) {
-      setError("Google ile giriş yapılamadı.");
+      console.error("Google Login Error:", err.code, err.message);
+      if (err.code === "auth/popup-closed-by-user") {
+        setError("Google giriş penceresi kapatıldı.");
+      } else if (err.code === "auth/popup-blocked") {
+        setError("Popup engellendi. Tarayıcı ayarlarından popup'ları izin verin.");
+      } else if (err.code === "auth/unauthorized-domain") {
+        setError("Bu domain Firebase'de yetkilendirilmemiş. Firebase Console > Authentication > Settings > Authorized domains'e localhost ekleyin.");
+      } else if (err.code === "auth/network-request-failed") {
+        setError("Ağ hatası. İnternet bağlantınızı kontrol edin.");
+      } else {
+        setError(`Google ile giriş yapılamadı. (${err.code || "bilinmeyen hata"})`);
+      }
     }
     setLoading(false);
   }
