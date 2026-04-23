@@ -1,83 +1,83 @@
-# YDT Focus: Academic Language Learning Platform
+# YDT Focus: Akademik Dil Öğrenme Platformu
 
-YDT Focus is an advanced, AI-integrated educational platform specifically engineered for students preparing for the YDT (Foreign Language Test) and other higher-level academic English examinations. The system leverages state-of-the-art language models and gamification frameworks to provide an optimized learning environment.
-
----
-
-## Core Functional Modules
-
-### Artificial Intelligence Integrated Reading & Analysis
-*   **Contextual Text Generation:** Dynamic generation of academic passages based on CEFR levels (A2 through C1), tailored to exam-specific themes.
-*   **Floating Analytical Interface:** An on-demand bottom sheet providing real-time semantic analysis, including translations and synonymous associations for selected tokens.
-*   **Academic Vocabulary Highlighting:** Automated detection and visualization of high-frequency academic terminology (500+ prioritized tokens).
-*   **Adaptive Assessment:** Automated generation of comprehension quizzes based on active reading context to ensure retention and understanding.
-
-### Zero to Hero: Progressive Learning Path
-*   **Hierarchical Syllabus:** A structured, level-based progression system designed to transition learners from foundational to advanced proficiency.
-*   **Interactive Gamification:** Utilization of interactive matching and drag-and-drop mechanisms to enhance cognitive engagement.
-*   **Performance Metrics:** Real-time tracking of student progress with integrated milestone verification.
-
-### Intelligent Vocabulary Management
-*   **Spaced Repetition System (SRS):** An optimized review algorithm designed to combat the forgetting curve and ensure long-term retention.
-*   **Mistake Analytics:** Automated categorization of incorrect responses to facilitate focused remedial study.
-
-### Specialized Focus Modules
-*   **LineFocus Mode:** A minimalist reading environment designed to maximize concentration by isolating sentence-level context.
+YDT Focus; YDT (Yabancı Dil Testi), YÖKDİL ve YDS gibi üst düzey akademik İngilizce sınavlarına hazırlanan öğrenciler için geliştirilmiş, yapay zeka entegrasyonuna sahip ileri düzey bir eğitim platformudur. Sistem, optimize edilmiş bir öğrenme ortamı sunmak amacıyla modern dil modellerini ve oyunlaştırılmış öğrenme çerçevelerini kullanır.
 
 ---
 
-## Technical Architecture
+## Temel Fonksiyonel Modüller
 
-*   **Frontend Framework:** Next.js 14 utilizing the App Router architecture.
-*   **Backend Infrastructure:** Firebase Firestore for scalable data persistence and Firebase Authentication for secure identity management.
-*   **AI Integration:** Groq Cloud API leveraging the Llama-3.1-8b-instant model for high-performance natural language processing.
-*   **Styling & UI:** Modern design system implemented via Vanilla CSS, focusing on glassmorphism and premium dark mode aesthetics.
-*   **State Management:** Robust data flow managed through React Context API and functional hooks.
+### Yapay Zeka Destekli Okuma ve Analiz
+*   **Bağlamsal Metin Üretimi:** Sınav temalarına uygun, CEFR seviyelerine (A2-C1) göre dinamik olarak oluşturulan akademik pasajlar.
+*   **Kayan Analitik Arayüz:** Seçilen kelimeler için gerçek zamanlı semantik analiz, çeviri ve eş anlamlı ilişkileri sunan, isteğe bağlı açılan alt panel (bottom sheet).
+*   **Akademik Kelime Vurgulama:** En sık karşılaşılan 500+ akademik terimin metin içerisinde otomatik tespiti ve görselleştirilmesi.
+*   **Adaptif Değerlendirme:** Öğrenilen bilgilerin kalıcılığını sağlamak amacıyla, aktif okuma bağlamına göre yapay zeka tarafından oluşturulan okuduğunu anlama testleri.
+
+### Zero to Hero: Kademeli Öğrenme Yolu
+*   **Hiyerarşik Müfredat:** Öğrencileri temel seviyeden ileri düzeye taşımak için tasarlanmış, seviye bazlı yapılandırılmış bir ilerleme sistemi.
+*   **Etkileşimli Oyunlaştırma:** Bilişsel katılımı artırmak amacıyla sürükle-bırak ve interaktif eşleştirme mekanizmalarının kullanımı.
+*   **Performans Metrikleri:** Doğrulanmış kilometre taşları ile entegre, gerçek zamanlı öğrenci gelişim takibi.
+
+### Akıllı Kelime Yönetimi
+*   **Aralıklı Tekrar Sistemi (SRS):** Unutma eğrisine karşı koymak ve uzun süreli hafızayı desteklemek için optimize edilmiş tekrar algoritması.
+*   **Hata Analitiği:** Odaklanmış telafi çalışmaları için yanlış yanıtların otomatik kategorize edilmesi.
+
+### Özel Odaklanma Modülleri
+*   **LineFocus Modu:** Cümle düzeyindeki bağlamı izole ederek konsantrasyonu maksimize eden minimalist okuma ortamı.
 
 ---
 
-## Installation and Deployment
+## Teknik Mimari
 
-To initialize the development environment:
+*   **Frontend Framework:** App Router mimarisini kullanan Next.js 14.
+*   **Backend Altyapısı:** Ölçeklenebilir veri depolama için Firebase Firestore ve güvenli kimlik yönetimi için Firebase Authentication.
+*   **Yapay Zeka Entegrasyonu:** Yüksek performanslı doğal dil işleme için Llama-3.1-8b-instant modelini kullanan Groq Cloud API.
+*   **Tasarım ve Arayüz:** Glassmorphism ve premium karanlık mod estetiğine odaklanan, Vanilla CSS ile uygulanmış modern tasarım sistemi.
+*   **Durum Yönetimi:** React Context API ve fonksiyonel hooklar aracılığıyla yönetilen sağlam veri akışı.
 
-1.  **Repository Acquisition:**
+---
+
+## Kurulum ve Dağıtım
+
+Geliştirme ortamını başlatmak için:
+
+1.  **Deponun Klonlanması:**
     ```bash
     git clone https://github.com/mertmnvv/ydtfocusv2.git
     ```
 
-2.  **Dependency Resolution:**
+2.  **Bağımlılıkların Çözümlenmesi:**
     ```bash
     npm install
     ```
 
-3.  **Environment Configuration:**
-    Create a `.env.local` file in the root directory and populate it with the following parameters:
+3.  **Ortam Yapılandırması:**
+    Kök dizinde bir `.env.local` dosyası oluşturun ve aşağıdaki parametreleri tanımlayın:
     ```env
-    NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
-    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
-    NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-    NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-    GROQ_API_KEY=your_groq_api_key
+    NEXT_PUBLIC_FIREBASE_API_KEY=api_anahtariniz
+    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=auth_domaininiz
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID=proje_idiniz
+    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=storage_bucketiniz
+    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=sender_idiniz
+    NEXT_PUBLIC_FIREBASE_APP_ID=app_idiniz
+    GROQ_API_KEY=groq_api_anahtariniz
     ```
 
-4.  **Local Execution:**
+4.  **Yerel Çalıştırma:**
     ```bash
     npm run dev
     ```
 
 ---
 
-## Design Philosophy
+## Tasarım Felsefesi
 
-The platform adheres to a "Premium Dark" aesthetic, utilizing glassmorphism to create depth and focus. User interface interactions are enhanced with high-performance CSS transitions and animations (bottom-sheet sliding, state transitions) to provide a seamless and professional user experience.
-
----
-
-## Project Status
-
-Developed and maintained by Mert with a focus on delivering high-fidelity academic tools for language learners.
+Platform, derinlik ve odaklanma hissi yaratmak için glassmorphism öğelerini kullanan "Premium Karanlık" estetiğine bağlı kalır. Kullanıcı arayüzü etkileşimleri, kesintisiz ve profesyonel bir deneyim sunmak için yüksek performanslı CSS geçişleri ve animasyonları (alt panel kayma efektleri, durum geçişleri) ile güçlendirilmiştir.
 
 ---
-*Disclaimer: YDT Focus is an educational support tool. Academic success remains dependent on individual study discipline and consistency.*
+
+## Proje Durumu
+
+Dil öğrenenler için yüksek kaliteli akademik araçlar sunma odağıyla Mert tarafından geliştirilmiştir ve sürdürülmektedir.
+
+---
+*Yasal Uyarı: YDT Focus bir eğitim destek aracıdır. Akademik başarı, bireysel çalışma disiplini ve sürekliliğe bağlıdır.*
