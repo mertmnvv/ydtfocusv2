@@ -10,9 +10,13 @@ export default function DashboardPage() {
   const [words, setWords] = useState([]);
   const [stats, setStats] = useState({ correct: 0, wrong: 0, streak: 0, studyTime: 0 });
   const [loading, setLoading] = useState(true);
+  const [expandedLevel, setExpandedLevel] = useState(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     Promise.all([
       getUserWords(user.uid),
       getUserStats(user.uid),
@@ -31,7 +35,6 @@ export default function DashboardPage() {
     ? Math.round((stats.correct / (stats.correct + stats.wrong)) * 100)
     : 0;
 
-  // Spaced repetition seviyeleri
   const levels = [
     { name: "Tanışma", key: "new", color: "#ff453a" },
     { name: "Tekrar", key: "day1", color: "#ff9f0a" },
@@ -40,15 +43,15 @@ export default function DashboardPage() {
     { name: "Hazine", key: "master", color: "#0a84ff" },
   ];
 
-  const levelCounts = {
-    new: words.filter(w => !w.nextReview).length,
-    day1: words.filter(w => w.level === 1).length,
-    learning: words.filter(w => w.level === 2).length,
-    familiar: words.filter(w => w.level === 3).length,
-    master: words.filter(w => w.level >= 4).length,
+  const levelWords = {
+    new: words.filter(w => !w.level || w.level === 0),
+    day1: words.filter(w => w.level === 1),
+    learning: words.filter(w => w.level === 2),
+    familiar: words.filter(w => w.level === 3),
+    master: words.filter(w => w.level >= 4),
   };
 
-  const maxLevel = Math.max(...Object.values(levelCounts), 1);
+  const maxLevel = Math.max(...Object.values(levelWords).map(arr => arr.length), 1);
 
   return (
     <div className="dashboard-page">
@@ -70,50 +73,64 @@ export default function DashboardPage() {
         <span className="dash-goal-pct">%{pct}</span>
       </div>
 
-      {/* Stat Kartları */}
-      <div className="dash-stats-grid">
-        <div className="dash-stat-card">
-          <div className="dash-stat-value">{total}</div>
-          <div className="dash-stat-label">Banka</div>
+      {/* Stat Kartları (Bento Grid) */}
+      <div className="dash-bento-stats">
+        <div className="dash-bento-card" style={{ background: "linear-gradient(135deg, rgba(48,209,88,0.1), transparent)", borderColor: "rgba(48,209,88,0.2)" }}>
+          <div className="dash-bento-value" style={{ color: "var(--primary)" }}>{total}</div>
+          <div className="dash-bento-label">Bankadaki Kelimeler</div>
         </div>
-        <div className="dash-stat-card">
-          <div className="dash-stat-value">{stats.correct}</div>
-          <div className="dash-stat-label">Doğru</div>
+        <div className="dash-bento-card" style={{ background: "linear-gradient(135deg, rgba(255,159,10,0.1), transparent)", borderColor: "rgba(255,159,10,0.2)" }}>
+          <div className="dash-bento-value" style={{ color: "#ff9f0a" }}>{stats.streak || 0}</div>
+          <div className="dash-bento-label">Çalışma Serisi (Gün)</div>
         </div>
-        <div className="dash-stat-card">
-          <div className="dash-stat-value">{stats.wrong}</div>
-          <div className="dash-stat-label">Yanlış</div>
-        </div>
-        <div className="dash-stat-card">
-          <div className="dash-stat-value" style={{ color: "var(--accent)" }}>%{successRate}</div>
-          <div className="dash-stat-label">Başarı</div>
-        </div>
-        <div className="dash-stat-card">
-          <div className="dash-stat-value" style={{ color: "#ff9f0a" }}>{stats.streak || 0}</div>
-          <div className="dash-stat-label">Seri</div>
-        </div>
-        <div className="dash-stat-card">
-          <div className="dash-stat-value" style={{ color: "#bf5af2" }}>{stats.dailyMinutes || stats.studyTime || 0} dk</div>
-          <div className="dash-stat-label">Çalışma</div>
+        <div className="dash-bento-card" style={{ gridColumn: "span 2", background: "linear-gradient(135deg, rgba(191,90,242,0.1), transparent)", borderColor: "rgba(191,90,242,0.2)" }}>
+          <div className="dash-bento-value" style={{ color: "#bf5af2" }}>{stats.dailyMinutes || stats.studyTime || 0} dk</div>
+          <div className="dash-bento-label">Aktif Çalışma Süresi</div>
         </div>
       </div>
 
-      {/* Seviye Barları */}
+      {/* Seviye Barları (Akordeon) */}
       <div className="glass-card">
         <h3 className="dash-section-title">Kelime Seviyeleri</h3>
+        <p className="hint-text" style={{ marginBottom: 16 }}>İçeriğini görmek için bir seviyeye tıklayın.</p>
         <div className="dash-levels">
-          {levels.map(lv => (
-            <div key={lv.key} className="dash-level-row">
-              <span className="dash-level-badge" style={{ background: `${lv.color}22`, color: lv.color }}>{lv.name}</span>
-              <div className="dash-level-bar-bg">
-                <div className="dash-level-bar-fill" style={{
-                  width: `${(levelCounts[lv.key] / maxLevel) * 100}%`,
-                  background: lv.color,
-                }}></div>
+          {levels.map(lv => {
+            const count = levelWords[lv.key].length;
+            const isExpanded = expandedLevel === lv.key;
+            return (
+              <div key={lv.key} className="dash-level-container">
+                <div 
+                  className="dash-level-row" 
+                  onClick={() => setExpandedLevel(isExpanded ? null : lv.key)}
+                  style={{ cursor: "pointer" }}
+                >
+                  <span className="dash-level-badge" style={{ background: `${lv.color}22`, color: lv.color }}>{lv.name}</span>
+                  <div className="dash-level-bar-bg">
+                    <div className="dash-level-bar-fill" style={{
+                      width: `${(count / maxLevel) * 100}%`,
+                      background: lv.color,
+                    }}></div>
+                  </div>
+                  <span className="dash-level-count">{count}</span>
+                  <span style={{ marginLeft: 8, fontSize: "0.8rem", color: "var(--text-muted)", transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
+                </div>
+                
+                {isExpanded && (
+                  <div className="dash-level-words">
+                    {count === 0 ? (
+                      <div className="dash-level-word-empty">Bu seviyede kelime yok.</div>
+                    ) : (
+                      levelWords[lv.key].map((w, i) => (
+                        <div key={i} className="dash-level-word-item">
+                          <b>{w.word}</b> <span style={{ color: "var(--text-muted)" }}>{w.meaning}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
-              <span className="dash-level-count">{levelCounts[lv.key]}</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -125,10 +142,8 @@ export default function DashboardPage() {
         <Link href="/reading" className="dash-action-btn">
           Metin Oku
         </Link>
-        <Link href="/linefocus" className="dash-action-btn">
-          Linefocus
-        </Link>
       </div>
+
     </div>
   );
 }

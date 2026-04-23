@@ -11,14 +11,17 @@ export default function MistakesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     Promise.all([getUserWords(user.uid), getUserMistakes(user.uid)])
       .then(([w, m]) => { setMyWords(w); setWrongIds(m || []); setLoading(false); })
       .catch(() => setLoading(false));
   }, [user]);
 
   async function clearAll() {
-    if (!confirm("Tüm hataları sıfırlamak istediğinize emin misiniz?")) return;
+    if (!window.confirm("Tüm hataları sıfırlamak istediğinize emin misiniz?")) return;
     try {
       await updateUserMistakes(user.uid, []);
       setWrongIds([]);

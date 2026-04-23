@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getUserWords, getUserMistakes, updateUserMistakes } from "@/lib/firestore";
+import { getUserWords, getUserMistakes, updateUserMistakes, updateUserWord } from "@/lib/firestore";
 
 export default function QuizPage() {
-  const { user } = useAuth();
+  const { user, requireAuth } = useAuth();
   const [words, setWords] = useState([]);
+  const [mistakes, setMistakes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [mode, setMode] = useState(null); // null=seçim, "smart", "bank", "flash"
+  const [mode, setMode] = useState(null); // null=seçim, "smart", "bank", "flash", "mistakes"
   const [questions, setQuestions] = useState([]);
   const [qIdx, setQIdx] = useState(0);
   const [score, setScore] = useState({ correct: 0, wrong: 0 });
@@ -23,15 +24,32 @@ export default function QuizPage() {
   const [flashFlipped, setFlashFlipped] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
-    getUserWords(user.uid).then(w => { setWords(w || []); setLoading(false); }).catch(console.error);
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    Promise.all([getUserWords(user.uid), getUserMistakes(user.uid)])
+      .then(([w, m]) => { setWords(w || []); setMistakes(m || []); setLoading(false); })
+      .catch(console.error);
   }, [user]);
 
   async function addMistakeToUser(word) {
     try {
-      const mistakes = await getUserMistakes(user.uid);
-      if (!mistakes.includes(word)) {
-        await updateUserMistakes(user.uid, [...mistakes, word]);
+      const ms = await getUserMistakes(user.uid);
+      if (!ms.includes(word)) {
+        await updateUserMistakes(user.uid, [...ms, word]);
+        setMistakes([...ms, word]);
+      }
+    } catch (err) { console.error(err); }
+  }
+
+  async function removeMistakeFromUser(word) {
+    try {
+      const ms = await getUserMistakes(user.uid);
+      if (ms.includes(word)) {
+        const newMs = ms.filter(m => m !== word);
+        await updateUserMistakes(user.uid, newMs);
+        setMistakes(newMs);
       }
     } catch (err) { console.error(err); }
   }
@@ -53,35 +71,53 @@ export default function QuizPage() {
 
   // Quiz üret
   function startQuiz(selectedMode) {
-    if (words.length < 4) return alert("En az 4 kelime gerekli!");
-    setMode(selectedMode);
-    setQIdx(0);
-    setScore({ correct: 0, wrong: 0 });
-    setAnswered(null);
-    setResults([]);
-    setFinished(false);
-    setTimer(0);
+    requireAuth(() => {
+      if (words.length < 4) return alert("En az 4 kelime gerekli!");
+      setMode(selectedMode);
+      setQIdx(0);
+      setScore({ correct: 0, wrong: 0 });
+      setAnswered(null);
+      setResults([]);
+      setFinished(false);
+      setTimer(0);
 
-    if (selectedMode === "flash") {
-      setFlashIdx(0);
-      setFlashFlipped(false);
-      return;
+      if (selectedMode === "flash") {
+        setFlashIdx(0);
+        setFlashFlipped(false);
+        return;
+      }
+
+    const count = Math.min(words.length, 20);
+    let pool = [];
+
+    if (selectedMode === "mistakes") {
+      pool = words.filter(w => mistakes.includes(w.word) || mistakes.includes(w.word?.toLowerCase()));
+      if (pool.length < 4) return alert("Hatalar testini çözmek için en az 4 hata kaydınız olmalı!");
+      pool = pool.sort(() => Math.random() - 0.5);
+    } else if (selectedMode === "smart") {
+      const now = Date.now();
+      const dueWords = words.filter(w => !w.nextReview || w.nextReview <= now);
+      if (dueWords.length >= count) {
+        pool = dueWords.sort(() => Math.random() - 0.5).slice(0, count);
+      } else {
+        const others = words.filter(w => w.nextReview > now).sort((a, b) => (a.level || 0) - (b.level || 0));
+        pool = [...dueWords, ...others].slice(0, count).sort(() => Math.random() - 0.5);
+      }
+    } else {
+      pool = [...words].sort(() => Math.random() - 0.5);
     }
 
-    // Soru üret
-    const pool = [...words].sort(() => Math.random() - 0.5);
-    const count = Math.min(pool.length, 20);
-    const qs = [];
+      const qs = [];
+      for (let i = 0; i < Math.min(count, pool.length); i++) {
+        const correct = pool[i];
+        const others = words.filter(w => w.id !== correct.id).sort(() => Math.random() - 0.5).slice(0, 3);
+        const options = [...others.map(o => ({ text: o.meaning, correct: false })), { text: correct.meaning, correct: true }]
+          .sort(() => Math.random() - 0.5);
+        qs.push({ word: correct.word, correctMeaning: correct.meaning, options, wordId: correct.id });
+      }
 
-    for (let i = 0; i < count; i++) {
-      const correct = pool[i];
-      const others = words.filter(w => w.id !== correct.id).sort(() => Math.random() - 0.5).slice(0, 3);
-      const options = [...others.map(o => ({ text: o.meaning, correct: false })), { text: correct.meaning, correct: true }]
-        .sort(() => Math.random() - 0.5);
-      qs.push({ word: correct.word, correctMeaning: correct.meaning, options, wordId: correct.id });
-    }
-
-    setQuestions(qs);
+      setQuestions(qs);
+    });
   }
 
   // Cevap ver
@@ -102,9 +138,23 @@ export default function QuizPage() {
 
     if (isCorrect) {
       setScore(prev => ({ ...prev, correct: prev.correct + 1 }));
+      if (mode === "mistakes") {
+        removeMistakeFromUser(q.word);
+      } else if (mode === "smart") {
+        const wordData = words.find(w => w.id === q.wordId);
+        const currentLevel = wordData?.level || 0;
+        const newLevel = Math.min(currentLevel + 1, 4);
+        const intervals = [1, 3, 7, 14, 30]; 
+        const addMs = intervals[newLevel] * 24 * 60 * 60 * 1000;
+        updateUserWord(user.uid, q.wordId, { level: newLevel, nextReview: Date.now() + addMs, correctCount: (wordData?.correctCount||0) + 1 });
+      }
     } else {
       setScore(prev => ({ ...prev, wrong: prev.wrong + 1 }));
       addMistakeToUser(q.word);
+      if (mode === "smart") {
+        const wordData = words.find(w => w.id === q.wordId);
+        updateUserWord(user.uid, q.wordId, { level: 0, nextReview: Date.now() + 5 * 60 * 1000, wrongCount: (wordData?.wrongCount||0) + 1 });
+      }
     }
 
     // Sonraki soruya geç
@@ -135,6 +185,10 @@ export default function QuizPage() {
             <div className="quiz-mode-title">Banka Testi</div>
             <p className="quiz-mode-desc">Tüm kelime bankandan rastgele sorular</p>
           </button>
+          <button className="glass-card quiz-mode-btn" onClick={() => startQuiz("mistakes")}>
+            <div className="quiz-mode-title">Hatalar Testi</div>
+            <p className="quiz-mode-desc">Yanlış bildiklerinizi tekrar edin (Doğru bilirseniz silinir)</p>
+          </button>
           <button className="glass-card quiz-mode-btn" onClick={() => startQuiz("flash")}>
             <div className="quiz-mode-title">Flash Cards</div>
             <p className="quiz-mode-desc">Kartları çevirerek hızlı tekrar</p>
@@ -145,6 +199,15 @@ export default function QuizPage() {
         </p>
       </div>
     );
+  }
+
+  function playAudio(text, e) {
+    if (e) e.stopPropagation();
+    if ("speechSynthesis" in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "en-US";
+      window.speechSynthesis.speak(utterance);
+    }
   }
 
   // FLASH CARDS
@@ -160,7 +223,10 @@ export default function QuizPage() {
         <div className="flash-scene" onClick={() => setFlashFlipped(!flashFlipped)}>
           <div className={`flash-card-inner ${flashFlipped ? "flipped" : ""}`}>
             <div className="flash-front">
-              <h2>{card.word}</h2>
+              <h2 style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                {card.word}
+                <button className="audio-btn" onClick={(e) => playAudio(card.word, e)} title="Dinle">🔊</button>
+              </h2>
               <span className="flash-hint">tap to flip</span>
             </div>
             <div className="flash-back">
@@ -243,8 +309,11 @@ export default function QuizPage() {
     <div className="quiz-sim">
       {/* Üst Bar */}
       <div className="quiz-sim-bar">
-        <button className="btn-ghost quiz-sim-exit" onClick={() => { if (timerInterval) clearInterval(timerInterval); setMode(null); }}>
-          Çık
+        <button className="quiz-exit-icon" onClick={() => { if (timerInterval) clearInterval(timerInterval); setMode(null); }} title="Çıkış">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
         </button>
         <div className="quiz-sim-progress">
           <div className="quiz-sim-progress-fill" style={{ width: `${((qIdx + 1) / questions.length) * 100}%` }}></div>
@@ -261,8 +330,8 @@ export default function QuizPage() {
           {q.options.map((opt, oi) => {
             let cls = "quiz-sim-opt";
             if (answered !== null) {
-              if (opt.correct) cls += " correct-ans";
-              else if (oi === answered && !opt.correct) cls += " wrong-ans";
+              if (opt.correct) cls += " correct-ans flash-success";
+              else if (oi === answered && !opt.correct) cls += " wrong-ans shake-error";
             }
             return (
               <button key={oi} className={cls} onClick={() => handleAnswer(oi)} disabled={answered !== null}>

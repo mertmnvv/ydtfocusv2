@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getUserWords, deleteUserWord } from "@/lib/firestore";
 
 export default function FloatingBank() {
-  const { user } = useAuth();
+  const { user, requireAuth } = useAuth();
   const [open, setOpen] = useState(false);
   const [words, setWords] = useState([]);
   const [search, setSearch] = useState("");
@@ -27,6 +27,14 @@ export default function FloatingBank() {
     } catch { /* silently fail */ }
   }
 
+  function playAudio(text) {
+    if ("speechSynthesis" in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "en-US";
+      window.speechSynthesis.speak(utterance);
+    }
+  }
+
   const filtered = search.trim()
     ? words.filter(w =>
         w.word?.toLowerCase().includes(search.toLowerCase()) ||
@@ -34,12 +42,10 @@ export default function FloatingBank() {
       )
     : words;
 
-  if (!user) return null;
-
   return (
     <>
       {/* FAB Button */}
-      <button className="bank-fab" onClick={() => setOpen(!open)} title="Kelime Bankası">
+      <button className="bank-fab" onClick={() => requireAuth(() => setOpen(!open))} title="Kelime Bankası">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
         </svg>
@@ -74,8 +80,14 @@ export default function FloatingBank() {
               {filtered.slice().reverse().map(w => (
                 <div key={w.id} className="bank-drawer-item">
                   <div className="bank-drawer-item-info">
-                    <span className="bank-drawer-word">{w.word}</span>
-                    <span className="bank-drawer-meaning">{w.meaning}</span>
+                    <span className="bank-drawer-word">
+                      {w.word}
+                      <button className="audio-btn" onClick={() => playAudio(w.word)} title="Dinle">🔊</button>
+                    </span>
+                    <span className="bank-drawer-meaning">
+                      {w.meaning}
+                      {w.syn && w.syn !== "-" && <span style={{ marginLeft: 8, color: "var(--archive)" }}>(Eş: {w.syn})</span>}
+                    </span>
                   </div>
                   <button className="bank-drawer-del" onClick={() => handleDelete(w.id)}>✕</button>
                 </div>

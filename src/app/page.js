@@ -10,13 +10,9 @@ export default function Home() {
 
   useEffect(() => {
     if (!loading) {
-      if (user) {
-        router.push("/dashboard");
-      } else {
-        router.push("/login");
-      }
+      router.push("/dashboard");
     }
-  }, [user, loading, router]);
+  }, [loading, router]);
 
   return (
     <div className="auth-loading-screen">

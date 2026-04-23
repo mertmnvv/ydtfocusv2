@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import FloatingBank from "@/components/FloatingBank";
+import AuthModal from "@/components/AuthModal";
 
 const navItems = [
   { id: "dashboard", label: "Level Up", href: "/dashboard" },
@@ -13,7 +14,6 @@ const navItems = [
   { id: "hero", label: "Zero to Hero", href: "/hero" },
   { id: "grammar", label: "Gramer", href: "/grammar" },
   { id: "archive", label: "Sözlük", href: "/archive" },
-  { id: "linefocus", label: "Linefocus", href: "/linefocus" },
   { id: "mistakes", label: "Hatalar", href: "/mistakes" },
 ];
 
@@ -22,11 +22,10 @@ export default function AppLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login");
-    }
+    // Auth guard is removed so guests can view pages
   }, [user, loading, router]);
 
   if (loading) {
@@ -40,7 +39,7 @@ export default function AppLayout({ children }) {
     );
   }
 
-  if (!user) return null;
+  // if (!user) return null; -> Removed to allow guest access
 
   const activeTab = navItems.find(item => pathname.startsWith(item.href))?.id || "dashboard";
 
@@ -54,9 +53,41 @@ export default function AppLayout({ children }) {
       {/* Desktop Navbar */}
       <nav className="mini-nav">
         <div className="nav-container">
-          <Link href="/dashboard" className="logo">
-            ydt<span>focus</span>
-          </Link>
+          <div className="platform-switcher-container">
+            <button
+              className={`logo-switcher-btn ${switcherOpen ? "active" : ""}`}
+              onClick={() => setSwitcherOpen(!switcherOpen)}
+            >
+              <div className="logo">
+                ydt<span>focus</span>
+              </div>
+              <span className="switcher-arrow">▾</span>
+            </button>
+
+            {switcherOpen && (
+              <>
+                <div className="switcher-overlay" onClick={() => setSwitcherOpen(false)} />
+                <div className="switcher-dropdown">
+                  <div className="switcher-label">Platform Değiştir</div>
+                  <Link href="/dashboard" className={`switcher-item ${pathname !== "/linefocus" ? "current" : ""}`} onClick={() => setSwitcherOpen(false)}>
+                    <div className="switcher-item-dot" />
+                    <div className="switcher-item-info">
+                      <div className="switcher-item-name">ydtfocus</div>
+                      <div className="switcher-item-desc">Ana Çalışma Paneli</div>
+                    </div>
+                  </Link>
+                  <Link href="/linefocus" className={`switcher-item ${pathname === "/linefocus" ? "current" : ""}`} onClick={() => setSwitcherOpen(false)}>
+                    <div className="switcher-item-dot" />
+                    <div className="switcher-item-info">
+                      <div className="switcher-item-name">linefocus</div>
+                      <div className="switcher-item-desc">Odaklanmış Okuma & Yazma</div>
+                    </div>
+                  </Link>
+                </div>
+              </>
+            )}
+          </div>
+
           <div className="nav-links">
             {navItems.map(item => (
               <Link
@@ -74,25 +105,32 @@ export default function AppLayout({ children }) {
             )}
           </div>
           <div className="nav-user">
-            <span className="nav-user-name">
-              {userProfile?.displayName || user.email}
-            </span>
-            <button onClick={logout} className="nav-btn nav-btn-logout">
-              Çıkış
-            </button>
+            {user ? (
+              <>
+                <span className="nav-user-name">
+                  {userProfile?.displayName || user.email}
+                </span>
+                <button onClick={logout} className="nav-btn nav-btn-logout">
+                  Çıkış
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="nav-btn">Giriş</Link>
+                <Link href="/register" className="nav-btn nav-btn-primary" style={{ background: "rgba(255,255,255,0.1)", color: "#fff" }}>Kayıt Ol</Link>
+              </>
+            )}
           </div>
+          {/* Mobile Hamburger Button */}
+          <button className="mobile-hamburger" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
         </div>
       </nav>
-
-      {/* Mobile FAB Menu */}
-      <button className="mobile-fab" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-        <svg width="23" height="24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="3" width="7" height="7" rx="1"></rect>
-          <rect x="14" y="3" width="7" height="7" rx="1"></rect>
-          <rect x="14" y="14" width="7" height="7" rx="1"></rect>
-          <rect x="3" y="14" width="7" height="7" rx="1"></rect>
-        </svg>
-      </button>
 
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
@@ -117,12 +155,23 @@ export default function AppLayout({ children }) {
                 <span className="mobile-menu-label">Admin</span>
               </Link>
             )}
-            <button
-              className="mobile-menu-item logout"
-              onClick={() => { logout(); setMobileMenuOpen(false); }}
-            >
-              <span className="mobile-menu-label">Çıkış</span>
-            </button>
+            {user ? (
+              <button
+                className="mobile-menu-item logout"
+                onClick={() => { logout(); setMobileMenuOpen(false); }}
+              >
+                <span className="mobile-menu-label">Çıkış</span>
+              </button>
+            ) : (
+              <>
+                <Link href="/login" className="mobile-menu-item" onClick={() => setMobileMenuOpen(false)}>
+                  <span className="mobile-menu-label">Giriş Yap</span>
+                </Link>
+                <Link href="/register" className="mobile-menu-item" style={{ borderColor: "var(--accent)" }} onClick={() => setMobileMenuOpen(false)}>
+                  <span className="mobile-menu-label" style={{ color: "var(--accent)" }}>Kayıt Ol</span>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -141,6 +190,8 @@ export default function AppLayout({ children }) {
       </footer>
       {/* Floating Bank */}
       <FloatingBank />
+      {/* Global Auth Modal */}
+      <AuthModal />
     </div>
   );
 }

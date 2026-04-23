@@ -7,7 +7,7 @@ import { getUserHeroStats, updateUserHeroStats, addUserWord, getUserWords } from
 const LEVEL_COLORS = { A1: "#30d158", A2: "#32ade6", B1: "#ff9f0a", B2: "#ff375f", C1: "#bf5af2" };
 
 export default function HeroPage() {
-  const { user } = useAuth();
+  const { user, requireAuth } = useAuth();
   const [heroStats, setHeroStats] = useState(null);
   const [heroWords, setHeroWords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +24,18 @@ export default function HeroPage() {
   const [showBank, setShowBank] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setHeroStats({
+        A1: { completed: 0, required: 5, unlocked: true, next: "A2" },
+        A2: { completed: 0, required: 5, unlocked: false, next: "B1" },
+        B1: { completed: 0, required: 5, unlocked: false, next: "B2" },
+        B2: { completed: 0, required: 5, unlocked: false, next: "C1" },
+        C1: { completed: 0, required: 5, unlocked: false, next: null },
+      });
+      setHeroWords([]);
+      setLoading(false);
+      return;
+    }
     loadHero();
   }, [user]);
 
@@ -40,28 +51,29 @@ export default function HeroPage() {
   }
 
   // Seviye dersi başlat
-  async function startLevel(level) {
-    if (!heroStats[level].unlocked) return alert("Bu seviye kilitli!");
-    setCurrentLevel(level);
-    const stats = heroStats[level];
+  function startLevel(level) {
+    requireAuth(async () => {
+      if (!heroStats[level].unlocked) return alert("Bu seviye kilitli!");
+      setCurrentLevel(level);
+      const stats = heroStats[level];
 
-    // Boss fight gerekli mi?
-    if (stats.completed >= stats.required && stats.next && !heroStats[stats.next]?.unlocked) {
-      startBossFight(level);
-      return;
-    }
-    if (stats.completed >= stats.required && (!stats.next || heroStats[stats.next]?.unlocked)) {
-      return alert("Bu seviyeyi zaten tamamladın!");
-    }
+      // Boss fight gerekli mi?
+      if (stats.completed >= stats.required && stats.next && !heroStats[stats.next]?.unlocked) {
+        startBossFight(level);
+        return;
+      }
+      if (stats.completed >= stats.required && (!stats.next || heroStats[stats.next]?.unlocked)) {
+        return alert("Bu seviyeyi zaten tamamladın!");
+      }
 
-    setGenerating(true);
-    setPhase("lesson");
-    setLessonContent("");
-    setLessonWords([]);
-    setQuizScore(0);
-    setQuizAnswers({});
+      setGenerating(true);
+      setPhase("lesson");
+      setLessonContent("");
+      setLessonWords([]);
+      setQuizScore(0);
+      setQuizAnswers({});
 
-    // AI'dan ders üret
+      // AI'dan ders üret
     const sampleWords = ["achieve", "approach", "benefit", "challenge", "contribute", "determine", "establish", "maintain", "significant", "strategy"];
     const levelWords = sampleWords.sort(() => 0.5 - Math.random()).slice(0, 5).map(w => ({
       word: w, meaning: "—"
@@ -104,8 +116,9 @@ No markdown. No asterisks. Level-appropriate grammar only.`;
       setLessonWords(translated);
     } catch {
       setLessonContent("Bağlantı hatası oluştu. Lütfen tekrar deneyin.");
-    }
-    setGenerating(false);
+      }
+      setGenerating(false);
+    });
   }
 
   // Mini quiz cevaplama

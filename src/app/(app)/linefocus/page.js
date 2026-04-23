@@ -1,10 +1,22 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LinefocusPage() {
+  const { user, loading: authLoading, setAuthModalOpen } = useAuth();
   const [phase, setPhase] = useState("setup"); // setup | typing | result
+  const [isMobile, setIsMobile] = useState(false);
   const [sentences, setSentences] = useState([]);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // Tablet ve altını engelle
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
   const [sIdx, setSIdx] = useState(0);
   const [charIdx, setCharIdx] = useState(0);
   const [totalKeys, setTotalKeys] = useState(0);
@@ -349,6 +361,57 @@ STORY HISTORY: "${bookHistory}"
               </button>
             )}
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // MOBILE RESTRICTION
+  if (isMobile) {
+    return (
+      <div className="lf-standalone">
+        <div className="lf-top-bar">
+          <a href="/dashboard" className="lf-exit-btn"><i className="fas fa-chevron-left"></i> back</a>
+          <div className="lf-logo">linefocus</div>
+        </div>
+        <div className="lf-main" style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center'}}>
+          <div style={{fontSize: '3rem', marginBottom: 16}}>💻</div>
+          <h2 className="lf-setup-title">Sadece Masaüstü</h2>
+          <p style={{color: 'var(--text-muted)', marginBottom: 24, maxWidth: 400, lineHeight: 1.6}}>
+            Linefocus odaklanma modu, klavye yazımı ve geniş ekran deneyimi için tasarlanmıştır. Lütfen bu moda bilgisayarınızdan erişin.
+          </p>
+          <a href="/dashboard" className="lf-primary-btn">Panele Dön</a>
+        </div>
+      </div>
+    );
+  }
+
+  // LOADING SCREEN
+  if (authLoading) {
+    return (
+      <div className="lf-standalone">
+        <div className="lf-main" style={{display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh'}}>
+          <div className="lf-loading"><i className="fas fa-circle-notch fa-spin"></i> Yükleniyor...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // GUEST SCREEN
+  if (!user) {
+    return (
+      <div className="lf-standalone">
+        <div className="lf-top-bar">
+          <a href="/dashboard" className="lf-exit-btn"><i className="fas fa-chevron-left"></i> back</a>
+          <div className="lf-logo">linefocus</div>
+        </div>
+        <div className="lf-main" style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center'}}>
+          <div style={{fontSize: '3rem', marginBottom: 16}}>🔒</div>
+          <h2 className="lf-setup-title">Kayıtlı Kullanıcı Alanı</h2>
+          <p style={{color: 'var(--text-muted)', marginBottom: 24, maxWidth: 400, lineHeight: 1.6}}>
+            Linefocus odak moduna erişmek ve hikaye okuma geçmişinizi kaydetmek için ücretsiz kayıt olmalısınız.
+          </p>
+          <button className="lf-primary-btn" onClick={() => setAuthModalOpen(true)}>Kayıt Ol / Giriş Yap</button>
         </div>
       </div>
     );

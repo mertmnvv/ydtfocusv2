@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getArchiveWords, searchArchiveWords, addUserWord, getUserWords } from "@/lib/firestore";
 
 export default function ArchivePage() {
-  const { user } = useAuth();
+  const { user, requireAuth } = useAuth();
   const [words, setWords] = useState([]);
   const [myWords, setMyWords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,9 +14,12 @@ export default function ArchivePage() {
   const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      loadInitial();
+      return;
+    }
     Promise.all([loadInitial(), getUserWords(user.uid)])
-      .then(([_, uw]) => setMyWords(uw))
+      .then(([_, uw]) => setMyWords(uw || []))
       .catch(console.error);
   }, [user]);
 
@@ -49,16 +52,26 @@ export default function ArchivePage() {
     setLoading(false);
   }
 
-  async function addToBank(w) {
-    if (myWords.some(m => m.word?.toLowerCase() === w.word?.toLowerCase())) return alert("Zaten bankanda!");
-    try {
-      await addUserWord(user.uid, { word: w.word, meaning: w.meaning, syn: w.syn || "-" });
-      setMyWords(p => [...p, { word: w.word }]);
-      alert(`"${w.word}" eklendi!`);
-    } catch { alert("Hata."); }
+  function addToBank(w) {
+    requireAuth(async () => {
+      if (myWords.some(m => m.word?.toLowerCase() === w.word?.toLowerCase())) return alert("Zaten bankanda!");
+      try {
+        await addUserWord(user.uid, { word: w.word, meaning: w.meaning, syn: w.syn || "-" });
+        setMyWords(p => [...p, { word: w.word }]);
+        alert(`"${w.word}" eklendi!`);
+      } catch { alert("Hata."); }
+    });
   }
 
   const saved = (w) => myWords.some(m => m.word?.toLowerCase() === w.word?.toLowerCase());
+
+  function playAudio(text) {
+    if ("speechSynthesis" in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "en-US";
+      window.speechSynthesis.speak(utterance);
+    }
+  }
 
   return (
     <div>
@@ -78,8 +91,9 @@ export default function ArchivePage() {
         <div className="archive-list">
           {words.map((w, i) => (
             <div key={w.id || i} className="archive-item">
-              <div style={{ flex: 1 }}>
-                <b style={{ marginRight: 10 }}>{w.word || w.phrase}</b>
+              <div style={{ flex: 1, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                <b style={{ marginRight: 2 }}>{w.word || w.phrase}</b>
+                <button className="audio-btn" style={{ marginRight: 8 }} onClick={() => playAudio(w.word || w.phrase)} title="Dinle">🔊</button>
                 <span className="meaning-text">{w.meaning}</span>
                 {w.syn && w.syn !== "-" && <span className="syn-text" style={{ marginLeft: 8 }}>({w.syn})</span>}
               </div>

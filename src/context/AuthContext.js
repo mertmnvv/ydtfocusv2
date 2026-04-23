@@ -20,6 +20,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // Firestore'da kullanıcı profili oluştur/güncelle
   async function ensureUserProfile(firebaseUser) {
@@ -96,6 +97,15 @@ export function AuthProvider({ children }) {
     loginWithGoogle,
     logout,
     isAdmin: userProfile?.role === "admin",
+    authModalOpen,
+    setAuthModalOpen,
+    requireAuth: (action) => {
+      if (user) {
+        return action();
+      } else {
+        setAuthModalOpen(true);
+      }
+    }
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
