@@ -1,84 +1,83 @@
-# 🚀 YDT Focus — Modern Dil Öğrenme Platformu
+# YDT Focus: Academic Language Learning Platform
 
-YDT Focus, Yabancı Dil Testi (YDT) ve diğer akademik İngilizce sınavlarına (YÖKDİL, YDS) hazırlanan öğrenciler için tasarlanmış, **AI destekli** ve **gamified (oyunlaştırılmış)** bir öğrenme platformudur.
-
-![YDT Focus Banner](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)
-![Firebase](https://img.shields.io/badge/Firebase-v10-orange?style=for-the-badge&logo=firebase)
-![AI](https://img.shields.io/badge/Groq_AI-Llama_3.1-blue?style=for-the-badge&logo=ai)
+YDT Focus is an advanced, AI-integrated educational platform specifically engineered for students preparing for the YDT (Foreign Language Test) and other higher-level academic English examinations. The system leverages state-of-the-art language models and gamification frameworks to provide an optimized learning environment.
 
 ---
 
-## ✨ Öne Çıkan Özellikler
+## Core Functional Modules
 
-### 📖 AI Destekli Okuma & Analiz
-- **Otomatik Metin Üretimi:** CEFR seviyelerine göre (A2-C1) akademik metinler üretin.
-- **Floating Word Sheet:** Metin içinde tıkladığınız her kelimenin anlamını ve eş anlamlılarını anında görün.
-- **Akademik Kelime Takibi:** YDT'de en çok çıkan 500+ akademik kelime metin içinde otomatik vurgulanır.
-- **Anlık Quiz:** Okuduğunuz metne özel, yapay zeka tarafından hazırlanan 3 soruluk anlama testlerini çözün.
+### Artificial Intelligence Integrated Reading & Analysis
+*   **Contextual Text Generation:** Dynamic generation of academic passages based on CEFR levels (A2 through C1), tailored to exam-specific themes.
+*   **Floating Analytical Interface:** An on-demand bottom sheet providing real-time semantic analysis, including translations and synonymous associations for selected tokens.
+*   **Academic Vocabulary Highlighting:** Automated detection and visualization of high-frequency academic terminology (500+ prioritized tokens).
+*   **Adaptive Assessment:** Automated generation of comprehension quizzes based on active reading context to ensure retention and understanding.
 
-### 🎮 Zero to Hero (Oyunlaştırılmış Yol Haritası)
-- Sıfırdan zirveye giden, seviye bazlı interaktif öğrenme yolu.
-- Sürükle-bırak (drag-and-drop) kelime eşleştirme oyunları.
-- Gelişim takibi ve başarı rozetleri.
+### Zero to Hero: Progressive Learning Path
+*   **Hierarchical Syllabus:** A structured, level-based progression system designed to transition learners from foundational to advanced proficiency.
+*   **Interactive Gamification:** Utilization of interactive matching and drag-and-drop mechanisms to enhance cognitive engagement.
+*   **Performance Metrics:** Real-time tracking of student progress with integrated milestone verification.
 
-### 🧠 Akıllı Kelime Bankası
-- **Spaced Repetition (Aralıklı Tekrar):** Öğrendiğiniz kelimeleri unutmamak için optimize edilmiş quiz sistemi.
-- **Hatalarım Paneli:** Yanlış yaptığınız kelimeleri otomatik olarak filtreleyin ve onlara odaklanın.
+### Intelligent Vocabulary Management
+*   **Spaced Repetition System (SRS):** An optimized review algorithm designed to combat the forgetting curve and ensure long-term retention.
+*   **Mistake Analytics:** Automated categorization of incorrect responses to facilitate focused remedial study.
 
-### 🔍 LineFocus Modu
-- Cümle cümle odaklanarak okuma yapmanızı sağlayan, dikkat dağıtıcı unsurlardan arındırılmış özel okuma modülü.
-
----
-
-## 🛠️ Teknoloji Yığını
-
-- **Framework:** [Next.js 14 (App Router)](https://nextjs.org/)
-- **Database & Auth:** [Firebase Firestore & Authentication](https://firebase.google.com/)
-- **AI Engine:** [Groq Cloud (Llama-3.1-8b-instant)](https://groq.com/)
-- **Styling:** Vanilla CSS (Modern Glassmorphism Design)
-- **State Management:** React Context API & Hooks
+### Specialized Focus Modules
+*   **LineFocus Mode:** A minimalist reading environment designed to maximize concentration by isolating sentence-level context.
 
 ---
 
-## 🚀 Kurulum
+## Technical Architecture
 
-Projeyi yerel ortamınızda çalıştırmak için:
+*   **Frontend Framework:** Next.js 14 utilizing the App Router architecture.
+*   **Backend Infrastructure:** Firebase Firestore for scalable data persistence and Firebase Authentication for secure identity management.
+*   **AI Integration:** Groq Cloud API leveraging the Llama-3.1-8b-instant model for high-performance natural language processing.
+*   **Styling & UI:** Modern design system implemented via Vanilla CSS, focusing on glassmorphism and premium dark mode aesthetics.
+*   **State Management:** Robust data flow managed through React Context API and functional hooks.
 
-1.  **Depoyu klonlayın:**
+---
+
+## Installation and Deployment
+
+To initialize the development environment:
+
+1.  **Repository Acquisition:**
     ```bash
     git clone https://github.com/mertmnvv/ydtfocusv2.git
     ```
-2.  **Bağımlılıkları yükleyin:**
+
+2.  **Dependency Resolution:**
     ```bash
     npm install
     ```
-3.  **Çevresel değişkenleri ayarlayın:**
-    `.env.local` dosyasını oluşturun ve aşağıdaki anahtarları ekleyin:
+
+3.  **Environment Configuration:**
+    Create a `.env.local` file in the root directory and populate it with the following parameters:
     ```env
-    NEXT_PUBLIC_FIREBASE_API_KEY=...
-    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
-    NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
-    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
-    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
-    NEXT_PUBLIC_FIREBASE_APP_ID=...
-    GROQ_API_KEY=...
+    NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+    NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+    GROQ_API_KEY=your_groq_api_key
     ```
-4.  **Uygulamayı başlatın:**
+
+4.  **Local Execution:**
     ```bash
     npm run dev
     ```
 
 ---
 
-## 🎨 Tasarım Prensipleri
+## Design Philosophy
 
-Platform, **Premium Dark Mode** ve **Glassmorphism** estetiğiyle geliştirilmiştir. Kullanıcı deneyimini en üstte tutmak için mikro-animasyonlar ve yumuşak geçiş efektleri (Sheet slide up, fade-in) kullanılmıştır.
-
----
-
-## 👨‍💻 Geliştirici
-
-**Mert** tarafından YDT öğrencilerinin başarısını artırmak amacıyla tutkuyla geliştirildi.
+The platform adheres to a "Premium Dark" aesthetic, utilizing glassmorphism to create depth and focus. User interface interactions are enhanced with high-performance CSS transitions and animations (bottom-sheet sliding, state transitions) to provide a seamless and professional user experience.
 
 ---
-*YDT Focus bir öğrenme asistanıdır, başarınız sizin azminizle şekillenir!* 🌟
+
+## Project Status
+
+Developed and maintained by Mert with a focus on delivering high-fidelity academic tools for language learners.
+
+---
+*Disclaimer: YDT Focus is an educational support tool. Academic success remains dependent on individual study discipline and consistency.*
