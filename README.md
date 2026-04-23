@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚀 YDT Focus — Modern Dil Öğrenme Platformu
 
-## Getting Started
+YDT Focus, Yabancı Dil Testi (YDT) ve diğer akademik İngilizce sınavlarına (YÖKDİL, YDS) hazırlanan öğrenciler için tasarlanmış, **AI destekli** ve **gamified (oyunlaştırılmış)** bir öğrenme platformudur.
 
-First, run the development server:
+![YDT Focus Banner](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)
+![Firebase](https://img.shields.io/badge/Firebase-v10-orange?style=for-the-badge&logo=firebase)
+![AI](https://img.shields.io/badge/Groq_AI-Llama_3.1-blue?style=for-the-badge&logo=ai)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ✨ Öne Çıkan Özellikler
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### 📖 AI Destekli Okuma & Analiz
+- **Otomatik Metin Üretimi:** CEFR seviyelerine göre (A2-C1) akademik metinler üretin.
+- **Floating Word Sheet:** Metin içinde tıkladığınız her kelimenin anlamını ve eş anlamlılarını anında görün.
+- **Akademik Kelime Takibi:** YDT'de en çok çıkan 500+ akademik kelime metin içinde otomatik vurgulanır.
+- **Anlık Quiz:** Okuduğunuz metne özel, yapay zeka tarafından hazırlanan 3 soruluk anlama testlerini çözün.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 🎮 Zero to Hero (Oyunlaştırılmış Yol Haritası)
+- Sıfırdan zirveye giden, seviye bazlı interaktif öğrenme yolu.
+- Sürükle-bırak (drag-and-drop) kelime eşleştirme oyunları.
+- Gelişim takibi ve başarı rozetleri.
 
-## Learn More
+### 🧠 Akıllı Kelime Bankası
+- **Spaced Repetition (Aralıklı Tekrar):** Öğrendiğiniz kelimeleri unutmamak için optimize edilmiş quiz sistemi.
+- **Hatalarım Paneli:** Yanlış yaptığınız kelimeleri otomatik olarak filtreleyin ve onlara odaklanın.
 
-To learn more about Next.js, take a look at the following resources:
+### 🔍 LineFocus Modu
+- Cümle cümle odaklanarak okuma yapmanızı sağlayan, dikkat dağıtıcı unsurlardan arındırılmış özel okuma modülü.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🛠️ Teknoloji Yığını
 
-## Deploy on Vercel
+- **Framework:** [Next.js 14 (App Router)](https://nextjs.org/)
+- **Database & Auth:** [Firebase Firestore & Authentication](https://firebase.google.com/)
+- **AI Engine:** [Groq Cloud (Llama-3.1-8b-instant)](https://groq.com/)
+- **Styling:** Vanilla CSS (Modern Glassmorphism Design)
+- **State Management:** React Context API & Hooks
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🚀 Kurulum
+
+Projeyi yerel ortamınızda çalıştırmak için:
+
+1.  **Depoyu klonlayın:**
+    ```bash
+    git clone https://github.com/mertmnvv/ydtfocusv2.git
+    ```
+2.  **Bağımlılıkları yükleyin:**
+    ```bash
+    npm install
+    ```
+3.  **Çevresel değişkenleri ayarlayın:**
+    `.env.local` dosyasını oluşturun ve aşağıdaki anahtarları ekleyin:
+    ```env
+    NEXT_PUBLIC_FIREBASE_API_KEY=...
+    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
+    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
+    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+    NEXT_PUBLIC_FIREBASE_APP_ID=...
+    GROQ_API_KEY=...
+    ```
+4.  **Uygulamayı başlatın:**
+    ```bash
+    npm run dev
+    ```
+
+---
+
+## 🎨 Tasarım Prensipleri
+
+Platform, **Premium Dark Mode** ve **Glassmorphism** estetiğiyle geliştirilmiştir. Kullanıcı deneyimini en üstte tutmak için mikro-animasyonlar ve yumuşak geçiş efektleri (Sheet slide up, fade-in) kullanılmıştır.
+
+---
+
+## 👨‍💻 Geliştirici
+
+**Mert** tarafından YDT öğrencilerinin başarısını artırmak amacıyla tutkuyla geliştirildi.
+
+---
+*YDT Focus bir öğrenme asistanıdır, başarınız sizin azminizle şekillenir!* 🌟
