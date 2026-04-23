@@ -1,0 +1,171 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { addArchiveWord, deleteArchiveWord, searchArchiveWords, getArchiveWords } from "@/lib/firestore";
+
+export default function AdminWordsPage() {
+  const [words, setWords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ word: "", meaning: "", syn: "", level: "B1" });
+
+  useEffect(() => {
+    loadWords();
+  }, []);
+
+  async function loadWords() {
+    setLoading(true);
+    try {
+      const result = await getArchiveWords(100);
+      setWords(result.words);
+    } catch (err) {
+      console.error("Kelime yükleme hatası:", err);
+    }
+    setLoading(false);
+  }
+
+  async function handleSearch() {
+    if (!search.trim()) { loadWords(); return; }
+    setLoading(true);
+    try {
+      const results = await searchArchiveWords(search);
+      setWords(results.slice(0, 100));
+    } catch (err) {
+      console.error("Arama hatası:", err);
+    }
+    setLoading(false);
+  }
+
+  async function handleAdd(e) {
+    e.preventDefault();
+    if (!form.word || !form.meaning) return alert("Kelime ve anlam gerekli!");
+    try {
+      await addArchiveWord(form);
+      setForm({ word: "", meaning: "", syn: "", level: "B1" });
+      setShowForm(false);
+      loadWords();
+      alert("Kelime eklendi!");
+    } catch (err) {
+      alert("Kelime eklenirken hata oluştu.");
+    }
+  }
+
+  async function handleDelete(wordId) {
+    if (!confirm("Bu kelimeyi silmek istediğinize emin misiniz?")) return;
+    try {
+      await deleteArchiveWord(wordId);
+      setWords(prev => prev.filter(w => w.id !== wordId));
+    } catch (err) {
+      alert("Silme hatası.");
+    }
+  }
+
+  return (
+    <div>
+      <div className="glass-card">
+        <div className="header-split">
+          <h3 className="section-title" style={{ marginBottom: 0 }}>📚 Kelime Yönetimi</h3>
+          <button className="admin-btn" onClick={() => setShowForm(!showForm)}>
+            {showForm ? "✕ İptal" : "+ Kelime Ekle"}
+          </button>
+        </div>
+
+        {/* Kelime Ekleme Formu */}
+        {showForm && (
+          <form onSubmit={handleAdd} className="admin-form" style={{ marginTop: 20 }}>
+            <input
+              placeholder="Kelime (İngilizce)"
+              value={form.word}
+              onChange={(e) => setForm({ ...form, word: e.target.value })}
+              required
+            />
+            <input
+              placeholder="Anlam (Türkçe)"
+              value={form.meaning}
+              onChange={(e) => setForm({ ...form, meaning: e.target.value })}
+              required
+            />
+            <input
+              placeholder="Eş Anlamlar (virgülle ayırın)"
+              value={form.syn}
+              onChange={(e) => setForm({ ...form, syn: e.target.value })}
+            />
+            <select value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value })}>
+              <option value="A1">A1</option>
+              <option value="A2">A2</option>
+              <option value="B1">B1</option>
+              <option value="B2">B2</option>
+              <option value="C1">C1</option>
+              <option value="C2">C2</option>
+            </select>
+            <button type="submit" className="admin-btn">✓ Kaydet</button>
+          </form>
+        )}
+
+        {/* Arama */}
+        <div style={{ display: "flex", gap: 10, marginTop: 20, marginBottom: 16 }}>
+          <input
+            placeholder="Kelime veya anlam ile ara..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            style={{
+              flex: 1, background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)",
+              borderRadius: 12, padding: "12px 16px", color: "var(--text)",
+              fontSize: "0.95rem", fontFamily: "var(--font)", outline: "none",
+            }}
+          />
+          <button className="admin-btn" onClick={handleSearch}>Ara</button>
+        </div>
+
+        {/* Kelime Listesi */}
+        {loading ? (
+          <div className="page-loading"><div className="spinner-ring"></div></div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Kelime</th>
+                  <th>Anlam</th>
+                  <th>Eş Anlam</th>
+                  <th>Seviye</th>
+                  <th>İşlem</th>
+                </tr>
+              </thead>
+              <tbody>
+                {words.map(w => (
+                  <tr key={w.id}>
+                    <td style={{ fontWeight: 700 }}>{w.word || w.phrase}</td>
+                    <td style={{ color: "var(--text-muted)" }}>{w.meaning}</td>
+                    <td style={{ color: "var(--archive)", fontSize: "0.85rem" }}>{w.syn || "-"}</td>
+                    <td>
+                      <span className="admin-badge admin-badge-user">{w.level || "-"}</span>
+                    </td>
+                    <td>
+                      <button
+                        className="admin-btn admin-btn-danger"
+                        style={{ padding: "4px 10px", fontSize: "0.8rem" }}
+                        onClick={() => handleDelete(w.id)}
+                      >
+                        Sil
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {words.length === 0 && (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: "center", color: "var(--text-muted)", padding: 30 }}>
+                      Kelime bulunamadı. Arşive veri yüklemek için seed scripti çalıştırın.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
