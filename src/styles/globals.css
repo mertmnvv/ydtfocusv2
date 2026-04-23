@@ -4550,3 +4550,261 @@ a {
   align-items: center;
   justify-content: center;
 }
+/* ============================================= */
+/* READING MODULE GRID LAYOUT                    */
+/* ============================================= */
+
+.reading-grid {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 24px;
+  align-items: flex-start;
+  margin-top: 24px;
+}
+
+.reading-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.reading-main {
+  min-width: 0;
+}
+
+.card-header-minimal {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.compact-search-row {
+  display: flex;
+  gap: 8px;
+}
+
+.compact-search-row input {
+  flex: 1;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  border-radius: 12px;
+  color: var(--text);
+  outline: none;
+}
+
+.lookup-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lookup-field label {
+  font-size: 0.65rem;
+  font-weight: 900;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  display: block;
+}
+
+.lookup-field input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  border-radius: 10px;
+  color: var(--text);
+  font-weight: 600;
+  outline: none;
+}
+
+.empty-analysis-state {
+  height: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.02);
+  border: 2px dashed var(--border);
+  border-radius: 32px;
+  text-align: center;
+  padding: 40px;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  opacity: 0.3;
+}
+
+@media (max-width: 1000px) {
+  .reading-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hover-word.academic-word {
+  color: var(--accent);
+  border-bottom: 2px solid rgba(226, 183, 20, 0.4);
+}
+
+/* ============================================= */
+/* HYBRID READING UI & TOPIC CHIPS               */
+/* ============================================= */
+
+.topic-chips {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap; /* Masaüstünde alt alta dizilsin */
+  padding: 10px 0 20px;
+}
+
+@media (max-width: 768px) {
+  .topic-chips {
+    flex-wrap: nowrap; /* Mobilde yan yana kalsın */
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .topic-chips::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.topic-chip {
+  display: flex;
+  align-items: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 10px 24px; /* Increased side padding */
+  border-radius: 20px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 600;
+  font-size: 0.85rem; /* Slightly smaller font */
+}
+
+.topic-chip:hover {
+  border-color: var(--accent);
+  background: rgba(226, 183, 20, 0.05);
+  transform: translateY(-2px);
+}
+
+.topic-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #000;
+  box-shadow: 0 10px 20px rgba(226, 183, 20, 0.2);
+}
+
+.chip-emoji {
+  font-size: 1.1rem;
+}
+
+/* Responsive Lookup Card (Mobile Bottom Sheet, Desktop Focused Overlay) */
+.responsive-lookup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  z-index: 2100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.responsive-lookup-card {
+  width: 400px;
+  max-width: 100%;
+  background: #1a1a1c;
+  border: 1px solid var(--border);
+  border-radius: 32px;
+  padding: 24px;
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.6);
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .responsive-lookup-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .responsive-lookup-card {
+    width: 100%;
+    border-radius: 32px 32px 0 0;
+    padding: 24px 20px 40px;
+  }
+
+  .sheet-handle {
+    width: 40px;
+    height: 5px;
+    background: var(--border);
+    border-radius: 10px;
+    margin: -10px auto 20px;
+  }
+}
+
+.btn-close-minimal {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 4px;
+}
+
+/* ============================================= */
+/* MINIMALIST SEARCH BOX                         */
+/* ============================================= */
+
+.minimal-search-box {
+  display: flex;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.minimal-search-box:focus-within {
+  border-color: var(--accent);
+}
+
+.minimal-search-box input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 12px 16px;
+  color: var(--text);
+  outline: none;
+  font-size: 0.95rem;
+}
+
+.minimal-search-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: none;
+  border-left: 1px solid var(--border);
+  padding: 0 20px;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.minimal-search-btn:hover {
+  background: var(--accent);
+  color: #000;
+}

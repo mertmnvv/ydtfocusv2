@@ -4,6 +4,23 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getUserWords, addUserWord } from "@/lib/firestore";
 
+const TOPICS = [
+  { id: "random", label: "Karışık" },
+  { id: "exam", label: "YDT/YDS Format" },
+  { id: "history", label: "Tarih" },
+  { id: "science", label: "Bilim" },
+  { id: "psychology", label: "Psikoloji" },
+  { id: "technology", label: "Teknoloji" },
+  { id: "health", label: "Sağlık" },
+  { id: "environment", label: "Çevre" },
+  { id: "sociology", label: "Sosyoloji" },
+  { id: "philosophy", label: "Felsefe" },
+  { id: "economy", label: "Ekonomi" },
+  { id: "art", label: "Sanat" },
+  { id: "sports", label: "Spor" },
+  { id: "space", label: "Uzay" },
+];
+
 const YDT_ACADEMIC_WORDS = [
   "abandon", "abundant", "accelerate", "accumulate", "accuracy", "achieve", "acquire", "adapt",
   "adequate", "advocate", "allocate", "alter", "ambiguous", "amend", "analyze", "anticipate",
@@ -67,13 +84,12 @@ export default function ReadingPage() {
   const [generating, setGenerating] = useState(false);
   const [myWords, setMyWords] = useState([]);
   
-  const [showSheet, setShowSheet] = useState(false);
   const [lookupInput, setLookupInput] = useState("");
   const [wordInput, setWordInput] = useState("");
   const [meaningInput, setMeaningInput] = useState("");
   const [synInput, setSynInput] = useState("");
-  const [detectedLang, setDetectedLang] = useState(null); 
   const [fetchingDetails, setFetchingDetails] = useState(false);
+  const [showResultCard, setShowResultCard] = useState(false);
   
   const [quizQuestions, setQuizQuestions] = useState([]);
   const [quizLoading, setQuizLoading] = useState(false);
@@ -83,9 +99,11 @@ export default function ReadingPage() {
     getUserWords(user.uid).then(setMyWords).catch(console.error);
   }, [user]);
 
-  async function generateAIText() {
+  async function generateAIText(selectedTopic) {
+    const t = selectedTopic || topic;
+    setTopic(t);
     setGenerating(true);
-    let prompt = `Write an English reading passage about ${topic}. Level: ${level} CEFR. Length: 150-200 words. Focus on YDT exam style academic vocabulary. ONLY return the pure text paragraph.`;
+    let prompt = `Write an English reading passage about ${t}. Level: ${level} CEFR. Length: 150-200 words. Focus on YDT exam style academic vocabulary. ONLY return the pure text paragraph.`;
     try {
       const response = await fetch("/api/groq", {
         method: "POST",
@@ -112,8 +130,8 @@ export default function ReadingPage() {
     if (!clean) return;
     
     setFetchingDetails(true);
-    setShowSheet(true);
-    setWordInput("");
+    setShowResultCard(true);
+    setWordInput(clean);
     setMeaningInput("Aranıyor...");
     setSynInput("-");
 
@@ -124,19 +142,10 @@ export default function ReadingPage() {
         body: JSON.stringify({ word: clean }),
       });
       const data = await resp.json();
-      const inputWasTurkish = data.tr?.toLowerCase() === clean.toLowerCase();
+      setWordInput(data.en || clean);
+      setMeaningInput(data.tr || "Bulunamadı");
       
-      if (inputWasTurkish) {
-        setDetectedLang("tr");
-        setWordInput(data.en);
-        setMeaningInput(data.tr || clean);
-      } else {
-        setDetectedLang("en");
-        setWordInput(data.en || clean);
-        setMeaningInput(data.tr);
-      }
-      
-      const enWord = inputWasTurkish ? data.en : (data.en || clean);
+      const enWord = data.en || clean;
       try {
         const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${enWord}`);
         if (dictRes.ok) {
@@ -149,18 +158,9 @@ export default function ReadingPage() {
         }
       } catch {}
     } catch {
-      setWordInput(clean);
       setMeaningInput("Hata.");
     }
     setFetchingDetails(false);
-  }
-
-  function swapFields() {
-    const tmpWord = wordInput;
-    const tmpMeaning = meaningInput;
-    setWordInput(tmpMeaning);
-    setMeaningInput(tmpWord);
-    setDetectedLang(prev => prev === "en" ? "tr" : "en");
   }
 
   function saveWord() {
@@ -172,7 +172,7 @@ export default function ReadingPage() {
       try {
         await addUserWord(user.uid, { word: wordInput, meaning: meaningInput, syn: synInput || "-" });
         setMyWords(prev => [...prev, { word: wordInput }]);
-        setShowSheet(false);
+        alert("Kelime bankasına eklendi!");
       } catch { alert("Hata."); }
     });
   }
@@ -247,107 +247,124 @@ export default function ReadingPage() {
             <option value="A2">A2</option><option value="B1">B1</option>
             <option value="B2">B2</option><option value="C1">C1</option>
           </select>
-          <button onClick={generateAIText} className="btn-primary" disabled={generating}>
-            {generating ? "..." : "AI Metin Üret"}
-          </button>
         </div>
       </div>
 
-      <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
-        <textarea
-          className="reading-textarea"
-          placeholder="İngilizce bir metin yapıştırın veya yukarıdan AI ile üretin..."
-          value={text}
-          onChange={e => setText(e.target.value)}
-          rows={5}
-          style={{ padding: 20 }}
-        />
-      </div>
-
-      <div className="search-bar-compact">
-        <input 
-          placeholder="Kelime ara..." 
-          value={lookupInput} 
-          onChange={e => setLookupInput(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && lookupWord()}
-        />
-        <button onClick={() => lookupWord()}>🔍</button>
-      </div>
-
-      {text.trim() && (
-        <div className="glass-card reading-result-card">
-          <div className="reading-display">{renderAnalysis()}</div>
-          <button onClick={generateQuiz} className="btn-ghost w-100" style={{ marginTop: 24 }} disabled={quizLoading}>
-            {quizLoading ? "Sorular Hazırlanıyor..." : "Okuduğunu Anlama Testi Üret"}
+      <div className="topic-chips">
+        {TOPICS.map(t => (
+          <button 
+            key={t.id} 
+            className={`topic-chip ${topic === t.id ? "active" : ""}`}
+            onClick={() => generateAIText(t.id)}
+            disabled={generating}
+          >
+            <span className="chip-label">{t.label}</span>
           </button>
-        </div>
-      )}
+        ))}
+      </div>
 
-      {quizQuestions.length > 0 && (
-        <div className="quiz-section">
-          {quizQuestions.map((q, i) => (
-            <div key={i} className="glass-card quiz-card">
-              <p className="quiz-q-text"><b>{i+1}.</b> {q.q}</p>
-              <div className="quiz-options-col">
-                {['a','b','c','d'].map(opt => {
-                  let cls = "quiz-opt";
-                  if (q.userAnswer) {
-                    if (opt === q.correct) cls += " correct";
-                    else if (opt === q.userAnswer) cls += " wrong";
-                  }
-                  return (
-                    <button key={opt} className={cls} disabled={!!q.userAnswer} onClick={() => checkAnswer(i, opt)}>
-                      <span className="opt-letter">{opt.toUpperCase()}</span>
-                      {q[opt]}
-                    </button>
-                  );
-                })}
-              </div>
+      <div className="reading-grid">
+        <div className="reading-sidebar">
+          <div className="glass-card">
+            <div className="card-header-minimal">Kelime Ara</div>
+            <div className="minimal-search-box">
+              <input 
+                placeholder="Kelimeyi girin..." 
+                value={lookupInput} 
+                onChange={e => setLookupInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && lookupWord()}
+              />
+              <button onClick={() => lookupWord()} className="minimal-search-btn">
+                Ara
+              </button>
             </div>
-          ))}
+          </div>
+
+          <div className="glass-card">
+            <div className="card-header-minimal">Metin Girişi</div>
+            <textarea
+              className="reading-textarea"
+              placeholder="Metninizi buraya ekleyin..."
+              value={text}
+              onChange={e => setText(e.target.value)}
+              rows={8}
+            />
+          </div>
         </div>
-      )}
 
-      {/* FLOATING WORD SHEET */}
-      {showSheet && (
-        <div className="word-sheet-overlay" onClick={() => setShowSheet(false)}>
-          <div className="word-sheet" onClick={e => e.stopPropagation()}>
-            <div className="word-sheet-handle"></div>
-            
-            {fetchingDetails ? (
-              <div className="sheet-loading"><div className="spinner-ring"></div></div>
-            ) : (
-              <div className="sheet-content">
-                <div className="sheet-header">
-                  <div className="sheet-direction">
-                    <span className={detectedLang === "en" ? "active" : ""}>EN</span>
-                    <button className="sheet-swap-btn" onClick={swapFields}>⇄</button>
-                    <span className={detectedLang === "tr" ? "active" : ""}>TR</span>
-                  </div>
-                  <button className="sheet-close" onClick={() => setShowSheet(false)}>✕</button>
-                </div>
-
-                <div className="sheet-inputs">
-                  <div className="sheet-input-group">
-                    <label>KELİME (ENGLISH)</label>
-                    <input value={wordInput} onChange={e => setWordInput(e.target.value)} />
-                  </div>
-                  <div className="sheet-input-group">
-                    <label>ANLAM (TURKISH)</label>
-                    <input value={meaningInput} onChange={e => setMeaningInput(e.target.value)} />
-                  </div>
-                  {synInput !== "-" && (
-                    <div className="sheet-input-group">
-                      <label>EŞ ANLAM (SYNONYMS)</label>
-                      <input value={synInput} onChange={e => setSynInput(e.target.value)} />
-                    </div>
-                  )}
-                </div>
-
-                <button className="btn-primary w-100 sheet-save-btn" onClick={saveWord}>
-                  Kelime Bankasına Kaydet
+        <div className="reading-main">
+          {text.trim() ? (
+            <>
+              <div className="glass-card reading-display-card">
+                <div className="card-header-minimal">Analiz</div>
+                <div className="reading-display">{renderAnalysis()}</div>
+                <button onClick={generateQuiz} className="btn-ghost w-100 mt-2" disabled={quizLoading}>
+                  {quizLoading ? "Hazırlanıyor..." : "Okuduğunu Anlama Testi"}
                 </button>
               </div>
+
+              {quizQuestions.length > 0 && (
+                <div className="quiz-section">
+                  {quizQuestions.map((q, i) => (
+                    <div key={i} className="glass-card quiz-card">
+                      <p className="quiz-q-text"><b>{i+1}.</b> {q.q}</p>
+                      <div className="quiz-options-col">
+                        {['a','b','c','d'].map(opt => {
+                          let cls = "quiz-opt";
+                          if (q.userAnswer) {
+                            if (opt === q.correct) cls += " correct";
+                            else if (opt === q.userAnswer) cls += " wrong";
+                          }
+                          return (
+                            <button key={opt} className={cls} disabled={!!q.userAnswer} onClick={() => checkAnswer(i, opt)}>
+                              <span className="opt-letter">{opt.toUpperCase()}</span>
+                              {q[opt]}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="empty-analysis-state">
+              <p>Analiz için metin ekleyin veya yukarıdan bir konu seçin.</p>
+              {generating && <p style={{ color: "var(--accent)", marginTop: 12 }}>İçerik hazırlanıyor...</p>}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {showResultCard && (
+        <div className="responsive-lookup-overlay" onClick={() => setShowResultCard(false)}>
+          <div className="responsive-lookup-card animate-slideUp" onClick={e => e.stopPropagation()}>
+            <div className="sheet-handle"></div>
+            <div className="card-header-minimal">
+              <span>Sonuç</span>
+              <button onClick={() => setShowResultCard(false)} className="btn-close-minimal">Kapat</button>
+            </div>
+            {fetchingDetails ? (
+              <div className="sheet-loading-small"><div className="spinner-ring"></div></div>
+            ) : (
+              <>
+                <div className="lookup-fields">
+                  <div className="lookup-field">
+                    <label>KELİME</label>
+                    <input value={wordInput} onChange={e => setWordInput(e.target.value)} />
+                  </div>
+                  <div className="lookup-field">
+                    <label>ANLAM</label>
+                    <input value={meaningInput} onChange={e => setMeaningInput(e.target.value)} />
+                  </div>
+                  <div className="lookup-field">
+                    <label>EŞ ANLAM</label>
+                    <input value={synInput} onChange={e => setSynInput(e.target.value)} />
+                  </div>
+                </div>
+                <button onClick={saveWord} className="btn-primary w-100 mt-2">Kaydet</button>
+              </>
             )}
           </div>
         </div>

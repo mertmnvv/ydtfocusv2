@@ -4,6 +4,25 @@ import "@/styles/globals.css";
 export const metadata = {
   title: "YDT Focus — AI Destekli Dil Öğrenme Platformu",
   description: "YDT/YDS sınavlarına hazırlık için yapay zeka destekli modern çalışma platformu.",
+  openGraph: {
+    siteName: "YDT Focus",
+    locale: "tr_TR",
+    type: "website",
+    images: [
+      {
+        url: "/opengraph-image.png",
+        width: 1200,
+        height: 630,
+        alt: "YDT Focus — AI Destekli Dil Öğrenme Platformu",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "YDT Focus — AI Destekli Dil Öğrenme Platformu",
+    description: "Yapay zeka ile akademik İngilizce artık daha kolay.",
+    images: ["/opengraph-image.png"],
+  },
   icons: { icon: "/favicon.png" },
 };
 
