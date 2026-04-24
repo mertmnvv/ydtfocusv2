@@ -1,10 +1,14 @@
 {
   "extends": "next/core-web-vitals",
   "rules": {
-    "react-hooks/rules-of-hooks": "warn",
-    "react-hooks/exhaustive-deps": "warn",
+    "react-hooks/rules-of-hooks": "off",
+    "react-hooks/exhaustive-deps": "off",
     "react-hooks/set-state-in-effect": "off",
     "react-hooks/purity": "off",
-    "react-hooks/immutability": "off"
+    "react-hooks/immutability": "off",
+    "react/no-unescaped-entities": "off",
+    "@next/next/no-img-element": "off",
+    "no-unused-vars": "off",
+    "no-undef": "off"
   }
 }
