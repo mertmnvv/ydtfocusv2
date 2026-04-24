@@ -1,83 +1,113 @@
-# YDT Focus: Akademik Dil Öğrenme Platformu
+# YDT Focus v2: Akademik Dil Ogrenme ve Sinav Hazirlik Platformu
 
-YDT Focus; YDT (Yabancı Dil Testi), YÖKDİL ve YDS gibi üst düzey akademik İngilizce sınavlarına hazırlanan öğrenciler için geliştirilmiş, yapay zeka entegrasyonuna sahip ileri düzey bir eğitim platformudur. Sistem, optimize edilmiş bir öğrenme ortamı sunmak amacıyla modern dil modellerini ve oyunlaştırılmış öğrenme çerçevelerini kullanır.
-
----
-
-## Temel Fonksiyonel Modüller
-
-### Yapay Zeka Destekli Okuma ve Analiz
-*   **Bağlamsal Metin Üretimi:** Sınav temalarına uygun, CEFR seviyelerine (A2-C1) göre dinamik olarak oluşturulan akademik pasajlar.
-*   **Kayan Analitik Arayüz:** Seçilen kelimeler için gerçek zamanlı semantik analiz, çeviri ve eş anlamlı ilişkileri sunan, isteğe bağlı açılan alt panel (bottom sheet).
-*   **Akademik Kelime Vurgulama:** En sık karşılaşılan 500+ akademik terimin metin içerisinde otomatik tespiti ve görselleştirilmesi.
-*   **Adaptif Değerlendirme:** Öğrenilen bilgilerin kalıcılığını sağlamak amacıyla, aktif okuma bağlamına göre yapay zeka tarafından oluşturulan okuduğunu anlama testleri.
-
-### Zero to Hero: Kademeli Öğrenme Yolu
-*   **Hiyerarşik Müfredat:** Öğrencileri temel seviyeden ileri düzeye taşımak için tasarlanmış, seviye bazlı yapılandırılmış bir ilerleme sistemi.
-*   **Etkileşimli Oyunlaştırma:** Bilişsel katılımı artırmak amacıyla sürükle-bırak ve interaktif eşleştirme mekanizmalarının kullanımı.
-*   **Performans Metrikleri:** Doğrulanmış kilometre taşları ile entegre, gerçek zamanlı öğrenci gelişim takibi.
-
-### Akıllı Kelime Yönetimi
-*   **Aralıklı Tekrar Sistemi (SRS):** Unutma eğrisine karşı koymak ve uzun süreli hafızayı desteklemek için optimize edilmiş tekrar algoritması.
-*   **Hata Analitiği:** Odaklanmış telafi çalışmaları için yanlış yanıtların otomatik kategorize edilmesi.
-
-### Özel Odaklanma Modülleri
-*   **LineFocus Modu:** Cümle düzeyindeki bağlamı izole ederek konsantrasyonu maksimize eden minimalist okuma ortamı.
+YDT Focus v2, YDT (Yabanci Dil Testi), YOKDIL ve YDS gibi ileri duzey akademik Ingilizce sinavlarina hazirlanan ogrenciler icin tasarlanmis, yapay zeka destekli ve oyunlastirilmis bir egitim platformudur. Modern web teknolojileri ve bilissel ogrenme prensipleri uzerine insa edilen sistem, kullanicilara yuksek performansli ve odaklanmis bir calisma ortami sunar.
 
 ---
 
-## Teknik Mimari
+## Proje Vizyonu ve Temel Hedefler
 
-*   **Frontend Framework:** App Router mimarisini kullanan Next.js 14.
-*   **Backend Altyapısı:** Ölçeklenebilir veri depolama için Firebase Firestore ve güvenli kimlik yönetimi için Firebase Authentication.
-*   **Yapay Zeka Entegrasyonu:** Yüksek performanslı doğal dil işleme için Llama-3.1-8b-instant modelini kullanan Groq Cloud API.
-*   **Tasarım ve Arayüz:** Glassmorphism ve premium karanlık mod estetiğine odaklanan, Vanilla CSS ile uygulanmış modern tasarım sistemi.
-*   **Durum Yönetimi:** React Context API ve fonksiyonel hooklar aracılığıyla yönetilen sağlam veri akışı.
+Platformun ana amaci, akademik kelime dagarcigini gelistirmek, okudugunu anlama becerilerini artirmak ve sinav stratejilerini interaktif bir deneyimle pekistirmektir. Bu dogrultuda asagidaki temel hedefler gozetilmistir:
+
+*   Akademik kelimelerin uzun sureli hafizada tutulmasi icin bilimsel tekrar algoritmalarinin kullanilmasi.
+*   Yapay zeka yardimiyla kisisellestirilmis ve sinav formatina uygun icerik uretimi.
+*   Dikkat dagitici unsurlardan arindirilmis, premium bir kullanici deneyimi.
+*   Ogrencilerin gelisimlerini veriye dayali metriklerle anlik olarak takip edebilmesi.
 
 ---
 
-## Kurulum ve Dağıtım
+## Teknik Altyapi ve Mimari
 
-Geliştirme ortamını başlatmak için:
+Proje, modern yazilim mimarisi standartlarina uygun olarak moduler ve olceklenebilir bir yapida gelistirilmistir.
 
-1.  **Deponun Klonlanması:**
-    ```bash
-    git clone https://github.com/mertmnvv/ydtfocusv2.git
-    ```
+### Kullanilan Teknolojiler
 
-2.  **Bağımlılıkların Çözümlenmesi:**
+*   **Frontend Framework:** Next.js 16.2.4 (App Router ve Turbopack entegrasyonu).
+*   **Kutuphane:** React 19.2.4 (Concurrent Rendering ve Server Components destegi).
+*   **Backend Servisleri:** Firebase 12 (Authentication, Firestore ve Cloud Messaging).
+*   **Yapay Zeka:** Groq Cloud API (Llama 3.1 8B/70B modelleri) ve Google Translate API proxy katmani.
+*   **Stil Yonetimi:** Vanilla CSS (Custom Design System, Glassmorphism, Responsive Grid).
+*   **Durum Yonetimi:** React Context API ve ozel hook mimarisi.
+
+### Tasarım Sistemi (Design System)
+
+Platform, "Apple-esque" bir estetik anlayisiyla, glassmorphism (cam efekti) ve derinlik hissi veren katmanli bir tasarim dilini benimser.
+
+*   **Dinamik Tema:** Karanlik (Dark) ve Aydinlik (Light) mod destegi.
+*   **Bento Grid:** Verilerin ve istatistiklerin mobil uyumlu, kutucuklu yapida sunumu.
+*   **Mikro-Animasyonlar:** Yuksek kare hizina sahip CSS transition ve keyframe animasyonlari.
+*   **Tipografi:** Okunabilirligi yuksek akademik odakli Inter font ailesi.
+
+---
+
+## Fonksiyonel Moduller
+
+### 1. Akilli Dashboard ve Analitik
+Kullanicinin gunluk kelime hedeflerini, calisma serisini (streak), seviye ilerlemesini ve ogrenilen kelime sayisini anlik olarak gosteren merkezi kontrol paneli.
+
+### 2. Yapay Zeka Destekli Okuma (Reading)
+Llama 3.1 modelleri kullanilarak CEFR seviyelerine gore uretilen akademik metinler. Metin icerisinde gecen akademik kelimelerin otomatik tespiti, uzerine tiklandiginda acilan analiz paneli ve AI tarafindan olusturulan anlama sorulari.
+
+### 3. Aralikli Tekrar Sistemi (SRS)
+Unutma egrisini minimize eden 5 kademeli (Level 0-4) tekrar algoritmasi. Kullanicinin dogru/yanlis yanitlarina gore kelimelerin bir sonraki gosterim zamanini otomatik olarak hesaplar.
+
+### 4. Zero to Hero Kursu
+A1 seviyesinden C1 seviyesine kadar yapilandirilmis, ogrenciyi kademe kademe ileri tasiyan oyunlastirilmis egitim yolu.
+
+### 5. Linefocus (Odakli Okuma)
+Typing (yazim) tabanli, mekanik klavye ses efektleri ve karakter bazli animasyonlarla zenginlestirilmis, metne derinlemesine odaklanmayi saglayan ozel modül.
+
+### 6. Quiz ve Test Merkezi
+Sözlük, Phrasal Verbs, Hatalar ve Akilli Tekrar gibi farkli veri setleri uzerinden calisabilen cok modlu test sistemi.
+
+### 7. Gelismis Admin Paneli
+Icerik yoneticileri icin kelime ekleme/duzenleme (CRUD), gramer konulari yonetimi, kullanici yetkilendirme ve toplu veri yukleme (seeding) araclarini iceren yonetim merkezi.
+
+---
+
+## Kurulum ve Yapilandirma
+
+### Gereksinimler
+*   Node.js 18.x veya uzeri
+*   Firebase Projesi (Auth ve Firestore etkinlestirilmis)
+*   Groq Cloud API Key
+
+### Adimlar
+
+1.  Proje dizinine gidin ve bagimliliklari yukleyin:
     ```bash
     npm install
     ```
 
-3.  **Ortam Yapılandırması:**
-    Kök dizinde bir `.env.local` dosyası oluşturun ve aşağıdaki parametreleri tanımlayın:
+2.  Kok dizinde `.env.local` dosyasi olusturarak asagidaki degiskenleri tanimlayin:
     ```env
-    NEXT_PUBLIC_FIREBASE_API_KEY=api_anahtariniz
-    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=auth_domaininiz
-    NEXT_PUBLIC_FIREBASE_PROJECT_ID=proje_idiniz
-    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=storage_bucketiniz
-    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=sender_idiniz
-    NEXT_PUBLIC_FIREBASE_APP_ID=app_idiniz
-    GROQ_API_KEY=groq_api_anahtariniz
+    NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+    NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+    GROQ_API_KEY=your_groq_key
     ```
 
-4.  **Yerel Çalıştırma:**
+3.  Gelistirme sunucusunu baslatin:
     ```bash
     npm run dev
     ```
 
 ---
 
-## Tasarım Felsefesi
+## Veri Modeli ve Guvenlik
 
-Platform, derinlik ve odaklanma hissi yaratmak için glassmorphism öğelerini kullanan "Premium Karanlık" estetiğine bağlı kalır. Kullanıcı arayüzü etkileşimleri, kesintisiz ve profesyonel bir deneyim sunmak için yüksek performanslı CSS geçişleri ve animasyonları (alt panel kayma efektleri, durum geçişleri) ile güçlendirilmiştir.
+Firestore uzerinde veriler hiyerarşik bir yapida tutulur:
+*   `users/{uid}`: Kullanici profili ve rol bilgileri.
+*   `users/{uid}/words`: Kullaniciya ozel kelime bankasi ve SRS verileri.
+*   `archive`: Genel akademik sozluk veritabani.
+*   `grammarTopics`: Gramer ve sinav taktikleri icerigi.
+
+Guvenlik, Firebase Authentication ve Firestore Security Rules katmanlariyla saglanmaktadir.
 
 ---
 
-## Proje Durumu
+## Gelistirici Notu
 
-Dil öğrenenler için yüksek kaliteli akademik araçlar sunma odağıyla Mert tarafından geliştirilmiştir ve sürdürülmektedir.
-
----
-*Yasal Uyarı: YDT Focus bir eğitim destek aracıdır. Akademik başarı, bireysel çalışma disiplini ve sürekliliğe bağlıdır.*
+Bu proje, dil ogrenme surecini daha verimli, olculebilir ve keyifli hale getirmek amaciyla Mert tarafindan gelistirilmistir. Her bir bilesen, ogrenci performansini maksimize etmek icin ozenle optimize edilmistir.
