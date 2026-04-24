@@ -3,23 +3,23 @@ import { adminDb, adminMessaging } from "@/lib/firebaseAdmin";
 
 const NOTIFICATION_TYPES = [
   {
-    title: "Çalışma Vakti! 📚",
+    title: "Çalışma Vakti",
     body: "Bugün yeni kelimeler öğrenmeye ne dersin? Hedeflerine ulaşmak için küçük bir adım at.",
   },
   {
-    title: "Serini Bozma! 🔥",
+    title: "Serini Bozma",
     body: "Harika bir ilerleme kaydediyorsun. Bugünün hedefini tamamlamak için sadece 5 dakikanı ayır.",
   },
   {
-    title: "Hafızanı Tazele! 🧠",
+    title: "Hafızanı Tazele",
     body: "Bankandaki kelimeler tekrar edilmeyi bekliyor. Akıllı tekrar ile bilgilerini pekiştir.",
   },
   {
-    title: "Günün Motivasyonu ✨",
+    title: "Günün Motivasyonu",
     body: "Dil öğrenmek sabır işidir. Bugün öğrendiğin her kelime seni hedefine bir adım daha yaklaştırır.",
   },
   {
-    title: "Kelime Avı Başladı! 🎯",
+    title: "Kelime Avı Başladı",
     body: "Arşivde keşfedilmeyi bekleyen binlerce akademik kelime var. Göz atmaya ne dersiniz?",
   }
 ];

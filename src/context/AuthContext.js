@@ -9,7 +9,7 @@ import {
   signOut,
   updateProfile,
 } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
 import { auth, db, googleProvider } from "@/lib/firebase";
 import { incrementStudyMinutes } from "@/lib/firestore";
 
@@ -50,19 +50,34 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    let unsubscribeProfile = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
-        const profile = await ensureUserProfile(firebaseUser);
-        setUserProfile(profile);
+        
+        // Önce profili garanti et (yoksa oluştur)
+        await ensureUserProfile(firebaseUser);
+
+        // Real-time profil takibi
+        const userRef = doc(db, "users", firebaseUser.uid);
+        unsubscribeProfile = onSnapshot(userRef, (snap) => {
+          if (snap.exists()) {
+            setUserProfile(snap.data());
+          }
+          setLoading(false);
+        });
       } else {
         setUser(null);
         setUserProfile(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeProfile) unsubscribeProfile();
+    };
   }, []);
 
   // Aktif Çalışma Süresi Takibi (Uygulama içinde geçirilen süre)
