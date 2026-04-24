@@ -1,7 +1,5 @@
 {
   "version": 2,
-  "buildCommand": "next build --no-lint",
-  "installCommand": "npm install",
   "framework": "nextjs",
   "regions": ["iad1"]
 }
