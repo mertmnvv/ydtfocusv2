@@ -27,18 +27,13 @@ export default function AdminUsersPage() {
     setLoading(false);
   }
 
-  async function handleRoleUpdate() {
-    if (!roleConfirm) return;
-    const { uid, currentRole } = roleConfirm;
-    const newRole = currentRole === "admin" ? "user" : "admin";
+  async function handleRoleUpdate(uid, newRole) {
     try {
       await updateUserRole(uid, newRole);
       setUsers(prev => prev.map(u => u.uid === uid || u.id === uid ? { ...u, role: newRole } : u));
       showNotification(`Kullanıcı rolü ${newRole} olarak güncellendi`, "success");
     } catch (err) {
       showNotification("Rol güncellenirken hata oluştu.", "error");
-    } finally {
-      setRoleConfirm(null);
     }
   }
 
@@ -58,28 +53,20 @@ export default function AdminUsersPage() {
       <div className="glass-card">
         <div className="header-split">
           <h3 className="section-title" style={{ marginBottom: 0 }}>Kullanıcı Yönetimi</h3>
-          <span style={{ color: "var(--text-muted)", fontSize: "0.9rem", fontWeight: 600 }}>
-            {users.length} kullanıcı
-          </span>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ color: "var(--accent)", fontWeight: 800, fontSize: "1.2rem" }}>{users.length}</div>
+            <div style={{ color: "var(--text-muted)", fontSize: "0.7rem", textTransform: "uppercase" }}>Kullanıcı</div>
+          </div>
         </div>
 
-        <div style={{ marginTop: 16, marginBottom: 16 }}>
+        <div style={{ marginTop: 20, marginBottom: 20 }}>
           <input
             type="text"
             placeholder="İsim veya e-posta ile ara..."
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid var(--border)",
-              borderRadius: 12,
-              padding: "12px 16px",
-              color: "var(--text)",
-              width: "100%",
-              fontSize: "0.95rem",
-              fontFamily: "var(--font)",
-              outline: "none",
-            }}
+            className="word-input"
+            style={{ width: "100%" }}
           />
         </div>
 
@@ -87,44 +74,42 @@ export default function AdminUsersPage() {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>İsim</th>
-                <th>E-posta</th>
+                <th>Kullanıcı</th>
                 <th>Rol</th>
-                <th>Kayıt Tarihi</th>
-                <th>Son Giriş</th>
+                <th>Aktivite</th>
                 <th>İşlem</th>
               </tr>
             </thead>
             <tbody>
               {filteredUsers.map(u => (
                 <tr key={u.uid || u.id}>
-                  <td style={{ fontWeight: 600 }}>{u.displayName || "-"}</td>
-                  <td style={{ color: "var(--text-muted)" }}>{u.email}</td>
                   <td>
-                    <span className={`admin-badge ${u.role === "admin" ? "admin-badge-admin" : "admin-badge-user"}`}>
-                      {u.role || "user"}
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <span style={{ fontWeight: 700 }}>{u.displayName || "İsimsiz"}</span>
+                      <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>{u.email}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span className={`admin-badge ${u.role === "admin" ? "admin-badge-admin" : u.role === "premium" ? "admin-badge-premium" : "admin-badge-user"}`}>
+                      {u.role || "free"}
                     </span>
                   </td>
-                  <td style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
-                    {u.createdAt?.seconds
-                      ? new Date(u.createdAt.seconds * 1000).toLocaleDateString("tr-TR")
-                      : "-"
-                    }
-                  </td>
-                  <td style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
-                    {u.lastLogin?.seconds
-                      ? new Date(u.lastLogin.seconds * 1000).toLocaleString("tr-TR")
-                      : "-"
-                    }
+                  <td>
+                    <div style={{ fontSize: "0.75rem", display: "flex", flexDirection: "column", gap: 2 }}>
+                      <span title="Kayıt"><i className="fa-regular fa-calendar" style={{ marginRight: 5 }}></i> {u.createdAt?.seconds ? new Date(u.createdAt.seconds * 1000).toLocaleDateString("tr-TR") : "-"}</span>
+                      <span title="Son Giriş" style={{ color: "var(--accent)" }}><i className="fa-solid fa-clock-rotate-left" style={{ marginRight: 5 }}></i> {u.lastLogin?.seconds ? new Date(u.lastLogin.seconds * 1000).toLocaleString("tr-TR") : "-"}</span>
+                    </div>
                   </td>
                   <td>
-                    <button
-                      className={u.role === "admin" ? "admin-btn admin-btn-danger" : "admin-btn"}
-                      style={{ padding: "6px 12px", fontSize: "0.8rem" }}
-                      onClick={() => setRoleConfirm({ uid: u.uid || u.id, currentRole: u.role })}
+                    <select 
+                      className="admin-select-sm"
+                      value={u.role || "free"}
+                      onChange={(e) => handleRoleUpdate(u.uid || u.id, e.target.value)}
                     >
-                      {u.role === "admin" ? "Admin'i Kaldır" : "Admin Yap"}
-                    </button>
+                      <option value="free">Standart</option>
+                      <option value="premium">Premium</option>
+                      <option value="admin">Admin</option>
+                    </select>
                   </td>
                 </tr>
               ))}
@@ -132,15 +117,28 @@ export default function AdminUsersPage() {
           </table>
         </div>
       </div>
-
-      {roleConfirm && (
-        <CustomDialog
-          title="Rolü Güncelle"
-          message={`Bu kullanıcının rolünü ${roleConfirm.currentRole === "admin" ? "Standart Kullanıcı" : "Admin"} olarak değiştirmek istediğinize emin misiniz?`}
-          onConfirm={handleRoleUpdate}
-          onCancel={() => setRoleConfirm(null)}
-        />
-      )}
+      
+      <style jsx>{`
+        .admin-select-sm {
+          background: #1a1a1b;
+          border: 1px solid var(--border);
+          color: #fff;
+          border-radius: 8px;
+          padding: 8px 12px;
+          font-size: 0.85rem;
+          outline: none;
+          cursor: pointer;
+          font-weight: 600;
+          transition: 0.2s;
+        }
+        .admin-select-sm:hover { border-color: var(--accent); }
+        .admin-select-sm option {
+          background: #1a1a1b;
+          color: #fff;
+          padding: 10px;
+        }
+        .admin-badge-premium { background: rgba(226, 183, 20, 0.2); color: var(--accent); }
+      `}</style>
     </div>
   );
 }

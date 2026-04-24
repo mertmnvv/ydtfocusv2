@@ -36,7 +36,7 @@ export function AuthProvider({ children }) {
         email: firebaseUser.email,
         displayName: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "Kullanıcı",
         photoURL: firebaseUser.photoURL || null,
-        role: "user",
+        role: "free",
         createdAt: serverTimestamp(),
         lastLogin: serverTimestamp(),
       };
@@ -137,6 +137,7 @@ export function AuthProvider({ children }) {
     loginWithGoogle,
     logout,
     isAdmin: userProfile?.role === "admin",
+    isPremium: userProfile?.role === "premium" || userProfile?.role === "admin",
     authModalOpen,
     setAuthModalOpen,
     requireAuth: (action) => {
