@@ -1,0 +1,10 @@
+{
+  "extends": "next/core-web-vitals",
+  "rules": {
+    "react-hooks/rules-of-hooks": "warn",
+    "react-hooks/exhaustive-deps": "warn",
+    "react-hooks/set-state-in-effect": "off",
+    "react-hooks/purity": "off",
+    "react-hooks/immutability": "off"
+  }
+}
