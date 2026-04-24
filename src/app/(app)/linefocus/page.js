@@ -139,41 +139,72 @@ STORY HISTORY: "${bookHistory}"
     setLoading(false);
   }
 
+  // Mekanik Ses Üreteci (Web Audio API)
+  const playClick = useCallback((isError = false) => {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = isError ? "sawtooth" : "sine";
+      osc.frequency.setValueAtTime(isError ? 150 : 800, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(isError ? 50 : 400, ctx.currentTime + 0.05);
+      
+      gain.gain.setValueAtTime(0.05, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + 0.05);
+    } catch (e) {}
+  }, []);
+
   // Klavye dinleme
   const handleKeyDown = useCallback((e) => {
     if (phase !== "typing" || !sentences[sIdx] || processingRef.current) return;
 
+    // Sistem tuşlarını engelleme
     if (e.key === " " || e.code === "Space") e.preventDefault();
     if (e.key === "Tab") { e.preventDefault(); return; }
+    if (e.ctrlKey || e.altKey || e.metaKey) return;
 
     const target = sentences[sIdx].en.trim();
 
+    // Backspace
     if (e.key === "Backspace" && charIdx > 0) {
+      playClick();
       setCharIdx(prev => prev - 1);
       setTypedChars(prev => prev.slice(0, -1));
       return;
     }
 
+    // Karakter Girişi
     if (e.key.length === 1 && charIdx < target.length) {
       setTotalKeys(prev => prev + 1);
       const isCorrect = e.key.toLowerCase() === target[charIdx].toLowerCase();
-      if (!isCorrect) setWrongKeys(prev => prev + 1);
+      
+      if (!isCorrect) {
+        setWrongKeys(prev => prev + 1);
+        playClick(true); // Hata sesi
+      } else {
+        playClick(false); // Normal tık
+      }
 
-      // Track each character's correctness for visual feedback
       setTypedChars(prev => [...prev, { char: e.key, correct: isCorrect }]);
-
       const newCharIdx = charIdx + 1;
       setCharIdx(newCharIdx);
 
       // Cümle bitti mi?
       if (newCharIdx >= target.length) {
         processingRef.current = true;
-
-        // History'e kaydet
         const currentEn = sentences[sIdx].en.trim();
         const currentTr = sentences[sIdx].tr?.trim() || "";
         const histArr = JSON.parse(localStorage.getItem("lf_history_blocks") || "[]");
         let sessionObj = histArr.find(h => h.id === sessionRef.current);
+        
         if (!sessionObj) {
           sessionObj = { id: sessionRef.current, en: currentEn, tr: currentTr, isBook: isEndless };
           histArr.unshift(sessionObj);
@@ -184,7 +215,6 @@ STORY HISTORY: "${bookHistory}"
         localStorage.setItem("lf_history_blocks", JSON.stringify(histArr));
         setHistory([...histArr]);
 
-        // Endless book memory
         if (isEndless) {
           const old = localStorage.getItem("ai_book_history") || "";
           localStorage.setItem("ai_book_history", (old + " " + currentEn).trim().slice(-1000));
@@ -195,6 +225,7 @@ STORY HISTORY: "${bookHistory}"
           if (nextIdx < sentences.length) {
             setSIdx(nextIdx);
             setCharIdx(0);
+            setTypedChars([]);
             processingRef.current = false;
           } else {
             if (isEndless) {
@@ -204,10 +235,10 @@ STORY HISTORY: "${bookHistory}"
             sessionRef.current = null;
             setPhase("result");
           }
-        }, 400);
+        }, 300); // 400ms'den 300ms'e düşürdüm (daha hızlı akış)
       }
     }
-  }, [phase, sentences, sIdx, charIdx, isEndless]);
+  }, [phase, sentences, sIdx, charIdx, isEndless, playClick]);
 
   useEffect(() => {
     document.addEventListener("keydown", handleKeyDown);
