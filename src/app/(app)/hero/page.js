@@ -37,12 +37,12 @@ export default function HeroPage() {
   const [correctCount, setCorrectCount] = useState(0);
   const [hasErrored, setHasErrored] = useState(false);
 
-  // Moved declarations up to satisfy React Compiler / Hoisting rules
   const loadHero = useCallback(async () => {
     if (!user) return;
     try {
       const data = await getUserHeroStats(user.uid);
-      let lvls = data?.levels || heroStats;
+      // Immutability fix: Clone the object before modifying
+      let lvls = data?.levels ? JSON.parse(JSON.stringify(data.levels)) : JSON.parse(JSON.stringify(heroStats));
       
       const newReqs = { A1: 10, A2: 15, B1: 20, B2: 25, C1: 30 };
       Object.keys(lvls).forEach(k => { if (lvls[k].required !== newReqs[k]) lvls[k].required = newReqs[k]; });
@@ -51,11 +51,12 @@ export default function HeroPage() {
       if (lvls.A2.completed >= lvls.A2.required && !lvls.B1.unlocked) lvls.B1.unlocked = true;
       if (lvls.B1.completed >= lvls.B1.required && !lvls.B2.unlocked) lvls.B2.unlocked = true;
       if (lvls.B2.completed >= lvls.B2.required && !lvls.C1.unlocked) lvls.C1.unlocked = true;
+      
       setHeroStats(lvls);
       setHeroWords(data?.heroWords || []);
     } catch (err) { console.error(err); }
-    setLoading(false);
-  }, [user, heroStats, heroWords]);
+    finally { setLoading(false); }
+  }, [user]); // Removed heroStats and heroWords from deps to avoid infinite loop
 
   useEffect(() => {
     if (user) {
@@ -157,7 +158,7 @@ export default function HeroPage() {
     const passed = score >= 60;
 
     if (passed) {
-      const ns = { ...heroStats };
+      const ns = JSON.parse(JSON.stringify(heroStats));
       ns[currentLevel].completed += 1;
       if (ns[currentLevel].completed >= ns[currentLevel].required && ns[currentLevel].next) {
         ns[ns[currentLevel].next].unlocked = true;
@@ -229,7 +230,6 @@ export default function HeroPage() {
     const allFilled = s && Object.keys(placedWords).length >= Object.keys(s.blanks).length;
     return (
       <div className="hero-lesson">
-        {/* Header */}
         <div className="hero-lesson-top">
           <button className="btn-ghost" onClick={() => setPhase("roadmap")}>✕</button>
           <div className="hero-progress-track">
@@ -294,7 +294,6 @@ export default function HeroPage() {
           )}
         </div>
 
-        {/* Footer */}
         <div className={`hero-footer ${feedback || ""}`}>
           <div className="hero-footer-inner">
             {feedback && (
@@ -358,7 +357,6 @@ export default function HeroPage() {
       <h2 className="section-title">Zero to Hero</h2>
       <p className="hint-text" style={{ marginBottom: 24 }}>Seviyeleri tamamlayarak ilerleyin.</p>
 
-      {/* Overall progress */}
       <div className="glass-card" style={{ marginBottom: 40, padding: 20 }}>
         <div className="header-split">
           <span className="hint-text">Genel İlerleme</span>
@@ -369,7 +367,6 @@ export default function HeroPage() {
         </div>
       </div>
 
-      {/* Path */}
       <div className="hero-path">
         {levels.map((lvl, idx) => {
           const s = heroStats[lvl];
