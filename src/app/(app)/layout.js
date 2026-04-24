@@ -18,9 +18,11 @@ const navItems = [
 ];
 
 import ThemeToggle from "@/components/ThemeToggle";
+import { useFcmToken } from "@/hooks/useFcmToken";
 
 export default function AppLayout({ children }) {
   const { user, userProfile, loading, logout, isAdmin } = useAuth();
+  useFcmToken(user);
   const router = useRouter();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -269,6 +271,21 @@ export default function AppLayout({ children }) {
                   <span>Admin</span>
                 </Link>
               )}
+              <button 
+                className="popup-link" 
+                onClick={() => {
+                  if ("Notification" in window) {
+                    new Notification("YDT Focus", {
+                      body: "Test bildirimi başarılı! Çalışmaya devam et.",
+                      icon: "/icon-512.png"
+                    });
+                  }
+                  setProfileOpen(false);
+                }}
+              >
+                <i className="fa-solid fa-bell"></i>
+                <span>Test Bildirimi</span>
+              </button>
               <div className="popup-divider"></div>
               <button onClick={() => { logout(); setProfileOpen(false); }} className="popup-link logout-red">
                 <i className="fa-solid fa-right-from-bracket"></i>

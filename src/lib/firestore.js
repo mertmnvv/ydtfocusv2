@@ -257,3 +257,8 @@ export async function clearCollection(collectionName) {
     await batch.commit();
   }
 }
+
+export async function updateFcmToken(uid, token) {
+  const userRef = doc(db, 'users', uid);
+  await setDoc(userRef, { fcmToken: token, lastTokenUpdate: serverTimestamp() }, { merge: true });
+}
