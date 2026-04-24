@@ -138,9 +138,37 @@ export async function searchArchiveWords(searchTerm, level = null) {
   }
   const snapshot = await getDocs(q);
   const term = searchTerm.toLowerCase();
-  return snapshot.docs
+  
+  const results = snapshot.docs
     .map(doc => ({ id: doc.id, ...doc.data() }))
-    .filter(w => w.word?.toLowerCase().includes(term) || w.meaning?.toLowerCase().includes(term));
+    .filter(w => {
+      const word = (w.word || w.phrase || "").toLowerCase();
+      const meaning = (w.meaning || "").toLowerCase();
+      return word.includes(term) || meaning.includes(term);
+    });
+
+  // Sıralama Önceliği: 
+  // 1. İngilizcesi terimle başlayanlar
+  // 2. Türkçesi terimle başlayanlar
+  // 3. Diğerleri
+  return results.sort((a, b) => {
+    const aWord = (a.word || a.phrase || "").toLowerCase();
+    const aMeaning = (a.meaning || "").toLowerCase();
+    const bWord = (b.word || b.phrase || "").toLowerCase();
+    const bMeaning = (b.meaning || "").toLowerCase();
+
+    const aStartsEn = aWord.startsWith(term);
+    const bStartsEn = bWord.startsWith(term);
+    if (aStartsEn && !bStartsEn) return -1;
+    if (!aStartsEn && bStartsEn) return 1;
+
+    const aStartsTr = aMeaning.startsWith(term);
+    const bStartsTr = bMeaning.startsWith(term);
+    if (aStartsTr && !bStartsTr) return -1;
+    if (!aStartsTr && bStartsTr) return 1;
+
+    return aWord.localeCompare(bWord);
+  });
 }
 
 // ===== PHRASAL VERBS =====

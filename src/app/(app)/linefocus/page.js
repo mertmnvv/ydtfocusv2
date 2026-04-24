@@ -33,6 +33,7 @@ export default function LinefocusPage() {
   const [isEndless, setIsEndless] = useState(false);
   const sessionRef = useRef(null);
   const processingRef = useRef(false);
+  const audioCtxRef = useRef(null);
 
   // Load history from localStorage
   useEffect(() => {
@@ -144,8 +145,16 @@ STORY HISTORY: "${bookHistory}"
   // Mekanik Ses Üreteci (Gelişmiş Gürültü Bazlı Tık)
   const playClick = useCallback((isError = false) => {
     try {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      const ctx = new AudioContext();
+      if (!audioCtxRef.current) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtxRef.current = new AudioContext();
+      }
+      
+      const ctx = audioCtxRef.current;
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+
       const bufferSize = ctx.sampleRate * 0.05; // 50ms
       const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
       const data = buffer.getChannelData(0);
@@ -173,7 +182,9 @@ STORY HISTORY: "${bookHistory}"
 
       noise.start();
       noise.stop(ctx.currentTime + 0.05);
-    } catch (e) {}
+    } catch (e) {
+      console.error("Audio Error:", e);
+    }
   }, []);
 
   // Klavye dinleme
@@ -280,7 +291,7 @@ STORY HISTORY: "${bookHistory}"
     setHistory([]);
     sessionRef.current = null;
     setShowClearConfirm(false);
-    showNotification("success", "Okuma geçmişi temizlendi.");
+    showNotification("Okuma geçmişi temizlendi.", "success");
   }
 
   // Render
@@ -315,7 +326,7 @@ STORY HISTORY: "${bookHistory}"
         <div className={`lf-sidebar ${sidebarOpen ? "is-open" : ""}`}>
           <div className="lf-sidebar-inner">
             <h3 className="lf-sidebar-label">completed sentences</h3>
-            <button className="lf-clear-btn" onClick={clearHistory}>gecmisi temizle</button>
+            <button className="lf-clear-btn" onClick={() => setShowClearConfirm(true)}>gecmisi temizle</button>
             <div className="lf-history-list">
               {history.map((item, i) => (
                 <div key={i} className="lf-history-item" onClick={() => setReaderData(item)}>

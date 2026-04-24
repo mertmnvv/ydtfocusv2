@@ -109,12 +109,34 @@ export default function FloatingBank() {
     }
   }
 
-  const filtered = search.trim()
-    ? words.filter(w =>
-        w.word?.toLowerCase().includes(search.toLowerCase()) ||
-        w.meaning?.toLowerCase().includes(search.toLowerCase())
-      )
-    : words;
+  const filtered = (() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return words;
+
+    const results = words.filter(w =>
+      (w.word || "").toLowerCase().includes(term) ||
+      (w.meaning || "").toLowerCase().includes(term)
+    );
+
+    return results.sort((a, b) => {
+      const aWord = (a.word || "").toLowerCase();
+      const aMeaning = (a.meaning || "").toLowerCase();
+      const bWord = (b.word || "").toLowerCase();
+      const bMeaning = (b.meaning || "").toLowerCase();
+
+      const aStartsEn = aWord.startsWith(term);
+      const bStartsEn = bWord.startsWith(term);
+      if (aStartsEn && !bStartsEn) return -1;
+      if (!aStartsEn && bStartsEn) return 1;
+
+      const aStartsTr = aMeaning.startsWith(term);
+      const bStartsTr = bMeaning.startsWith(term);
+      if (aStartsTr && !bStartsTr) return -1;
+      if (!aStartsTr && bStartsTr) return 1;
+
+      return aWord.localeCompare(bWord);
+    });
+  })();
 
   const fabStyle = position.x !== -1 ? {
     left: position.x,

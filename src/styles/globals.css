@@ -2685,7 +2685,7 @@ a {
   align-content: flex-start;
   font-size: 2.2rem;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.45);
   width: 100%;
   margin-top: 50px;
   font-family: 'JetBrains Mono', 'Courier New', monospace;
@@ -2738,7 +2738,7 @@ a {
 
 @keyframes lf-pop {
   0% { transform: scale(1); }
-  50% { transform: translateY(-5px) scale(1.1); }
+  50% { transform: translateY(-8px) scale(1.2); }
   100% { transform: translateY(0) scale(1); }
 }
 
