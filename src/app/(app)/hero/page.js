@@ -110,10 +110,16 @@ export default function HeroPage() {
       .then(data => {
         const raw = data.choices?.[0]?.message?.content || "";
         const json = JSON.parse(raw.match(/\{[\s\S]*\}/)[0]);
-        setLessonSteps(json.steps.map(s => ({
-          ...s,
-          bank: [Object.values(s.blanks)[0], ...(s.distractors || ["go", "book", "new"])].sort(() => Math.random() - 0.5),
-        })));
+        setLessonSteps(json.steps.map(s => {
+          const correctAnswer = Object.values(s.blanks)[0];
+          const dists = (s.distractors || []).filter(d => d && d.trim() !== "");
+          const finalBank = [correctAnswer, ...dists].filter(w => w && w.trim() !== "");
+          
+          return {
+            ...s,
+            bank: finalBank.sort(() => Math.random() - 0.5),
+          };
+        }));
         setGenerating(false);
       })
       .catch(() => {
