@@ -2,7 +2,7 @@
 
 import React from "react";
 
-export default function CustomDialog({ title, message, onConfirm, onCancel }) {
+export default function CustomDialog({ title, message, onConfirm, onCancel, confirmText = "Evet, Eminim", cancelText = "İptal" }) {
   return (
     <div className="dialog-overlay" onClick={onCancel}>
       <div className="custom-dialog" onClick={(e) => e.stopPropagation()}>
@@ -13,8 +13,8 @@ export default function CustomDialog({ title, message, onConfirm, onCancel }) {
           <p>{message}</p>
         </div>
         <div className="dialog-footer">
-          <button className="dialog-btn-cancel" onClick={onCancel}>İptal</button>
-          <button className="dialog-btn-confirm" onClick={onConfirm}>Evet, Eminim</button>
+          <button className="dialog-btn-cancel" onClick={onCancel}>{cancelText}</button>
+          <button className="dialog-btn-confirm" onClick={onConfirm}>{confirmText}</button>
         </div>
       </div>
     </div>

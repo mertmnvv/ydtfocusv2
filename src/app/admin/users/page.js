@@ -57,7 +57,7 @@ export default function AdminUsersPage() {
     <div>
       <div className="glass-card">
         <div className="header-split">
-          <h3 className="section-title" style={{ marginBottom: 0 }}>👥 Kullanıcı Yönetimi</h3>
+          <h3 className="section-title" style={{ marginBottom: 0 }}>Kullanıcı Yönetimi</h3>
           <span style={{ color: "var(--text-muted)", fontSize: "0.9rem", fontWeight: 600 }}>
             {users.length} kullanıcı
           </span>

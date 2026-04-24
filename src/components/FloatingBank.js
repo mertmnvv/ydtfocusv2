@@ -84,14 +84,18 @@ export default function FloatingBank() {
                   <div className="bank-modal-item-info">
                     <span className="bank-modal-word">
                       {w.word}
-                      <button className="audio-btn" onClick={() => playAudio(w.word)} title="Dinle">🔊</button>
+                      <button className="audio-btn" onClick={() => playAudio(w.word)} title="Dinle">
+                        <i className="fa-solid fa-volume-high"></i>
+                      </button>
                     </span>
                     <span className="bank-modal-meaning">
                       {w.meaning}
                       {w.syn && w.syn !== "-" && <span style={{ marginLeft: 8, color: "var(--archive)" }}>(Eş: {w.syn})</span>}
                     </span>
                   </div>
-                  <button className="bank-modal-del" onClick={() => handleDelete(w.id)}>✕</button>
+                  <button className="bank-modal-del" onClick={() => handleDelete(w.id)}>
+                    <i className="fa-solid fa-trash-can"></i>
+                  </button>
                 </div>
               ))}
             </div>

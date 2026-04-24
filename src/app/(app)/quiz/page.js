@@ -74,7 +74,17 @@ export default function QuizPage() {
   // Quiz üret
   function startQuiz(selectedMode) {
     requireAuth(() => {
+      // 1. Validation checks BEFORE setting mode
       if (words.length < 4) return showNotification("En az 4 kelime gerekli!", "warning");
+      
+      if (selectedMode === "mistakes") {
+        const pool = words.filter(w => mistakes.includes(w.word) || mistakes.includes(w.word?.toLowerCase()));
+        if (pool.length < 4) {
+          return showNotification("Hatalar testini çözmek için en az 4 hata kaydınız olmalı!", "warning");
+        }
+      }
+
+      // 2. Set states
       setMode(selectedMode);
       setQIdx(0);
       setScore({ correct: 0, wrong: 0 });
@@ -89,25 +99,15 @@ export default function QuizPage() {
         return;
       }
 
-    const count = Math.min(words.length, 20);
-    let pool = [];
+      const count = Math.min(words.length, 20);
+      let pool = [];
 
-    if (selectedMode === "mistakes") {
-      pool = words.filter(w => mistakes.includes(w.word) || mistakes.includes(w.word?.toLowerCase()));
-      if (pool.length < 4) return showNotification("Hatalar testini çözmek için en az 4 hata kaydınız olmalı!", "warning");
-      pool = pool.sort(() => Math.random() - 0.5);
-    } else if (selectedMode === "smart") {
-      const now = Date.now();
-      const dueWords = words.filter(w => !w.nextReview || w.nextReview <= now);
-      if (dueWords.length >= count) {
-        pool = dueWords.sort(() => Math.random() - 0.5).slice(0, count);
+      if (selectedMode === "mistakes") {
+        pool = words.filter(w => mistakes.includes(w.word) || mistakes.includes(w.word?.toLowerCase()))
+                    .sort(() => Math.random() - 0.5);
       } else {
-        const others = words.filter(w => w.nextReview > now).sort((a, b) => (a.level || 0) - (b.level || 0));
-        pool = [...dueWords, ...others].slice(0, count).sort(() => Math.random() - 0.5);
+        pool = [...words].sort(() => Math.random() - 0.5);
       }
-    } else {
-      pool = [...words].sort(() => Math.random() - 0.5);
-    }
 
       const qs = [];
       for (let i = 0; i < Math.min(count, pool.length); i++) {
@@ -178,20 +178,15 @@ export default function QuizPage() {
 
   if (loading) return <div className="page-loading"><div className="spinner-ring"></div></div>;
 
-  // MOD SEÇİMİ
   if (!mode) {
     return (
       <div>
         <h2 className="section-title">Quiz</h2>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 600, margin: "0 auto" }}>
-          <button className="glass-card quiz-mode-btn" onClick={() => startQuiz("smart")}>
-            <div className="quiz-mode-title">Akıllı Tekrar</div>
-            <p className="quiz-mode-desc">Spaced repetition algoritması ile öğrenme</p>
-          </button>
-          <button className="glass-card quiz-mode-btn" onClick={() => startQuiz("bank")}>
-            <div className="quiz-mode-title">Banka Testi</div>
-            <p className="quiz-mode-desc">Tüm kelime bankandan rastgele sorular</p>
-          </button>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 600, margin: "0 auto" }}>
+            <button className="glass-card quiz-mode-btn" onClick={() => startQuiz("bank")}>
+              <div className="quiz-mode-title">Banka Testi</div>
+              <p className="quiz-mode-desc">Tüm kelime bankandan rastgele sorular</p>
+            </button>
           <button className="glass-card quiz-mode-btn" onClick={() => startQuiz("mistakes")}>
             <div className="quiz-mode-title">Hatalar Testi</div>
             <p className="quiz-mode-desc">Yanlış bildiklerinizi tekrar edin (Doğru bilirseniz silinir)</p>

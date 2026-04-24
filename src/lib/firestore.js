@@ -190,6 +190,11 @@ export async function updateUserRole(uid, role) {
   await updateDoc(userRef, { role });
 }
 
+export async function updateLastReminderDate(uid) {
+  const userRef = doc(db, "users", uid);
+  await updateDoc(userRef, { lastReminderDate: new Date().toDateString() });
+}
+
 export async function addGrammarTopic(topicData) {
   const topicId = `grammar_${Date.now()}`;
   const topicRef = doc(db, "grammarTopics", topicId);

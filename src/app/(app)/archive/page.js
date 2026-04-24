@@ -159,7 +159,9 @@ export default function ArchivePage() {
             <div key={w.id || i} className="archive-item">
               <div style={{ flex: 1, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
                 <b style={{ marginRight: 2 }}>{w.word || w.phrase}</b>
-                <button className="audio-btn" style={{ marginRight: 8 }} onClick={() => playAudio(w.word || w.phrase)} title="Dinle">🔊</button>
+                <button className="audio-btn" style={{ marginRight: 8 }} onClick={() => playAudio(w.word || w.phrase)} title="Dinle">
+                  <i className="fa-solid fa-volume-high"></i>
+                </button>
                 <span className="meaning-text">{w.meaning}</span>
                 {w.syn && w.syn !== "-" && <span className="syn-text" style={{ marginLeft: 8 }}>({w.syn})</span>}
               </div>
@@ -174,7 +176,7 @@ export default function ArchivePage() {
                 )}
                 <button className={saved(w) ? "archive-add-btn saved" : "archive-add-btn"}
                   onClick={() => !saved(w) && addToBank(w)} disabled={saved(w)}>
-                  {saved(w) ? "✓" : "+"}
+                  {saved(w) ? <i className="fa-solid fa-check"></i> : <i className="fa-solid fa-plus"></i>}
                 </button>
               </div>
             </div>

@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getUserWords, updateUserWord, updateUserStats } from "@/lib/firestore";
 import Link from "next/link";
 
-const LEVEL_INTERVALS = { 0: 1, 1: 3, 2: 7, 3: 7 };
+const LEVEL_INTERVALS = { 0: 1, 1: 3, 2: 7, 3: 14, 4: 30 };
 
 const playAmbientSound = (type) => {
   try {
@@ -84,7 +84,7 @@ export default function SRSPage() {
           setPhase("no-due");
           setLoading(false);
         } else {
-          const selected = dueWords.sort(() => Math.random() - 0.5).slice(0, 15);
+          const selected = dueWords.sort(() => Math.random() - 0.5);
           setQuizWords(selected.map(w => ({
             ...w,
             options: generateOptions(w, wordList)
@@ -129,9 +129,13 @@ export default function SRSPage() {
     }]);
     setShowNextDelay(true);
 
-    // SRS Logic updates immediately in firestore
+    // SRS Logic updates - 5 levels (0 to 4)
     let newLevel = target.level || 0;
-    newLevel = isCorrect ? Math.min(3, newLevel + 1) : Math.max(0, newLevel - 1);
+    if (isCorrect) {
+      newLevel = Math.min(4, newLevel + 1);
+    } else {
+      newLevel = 0; // Reset to 0 on wrong
+    }
     const intervalDays = LEVEL_INTERVALS[newLevel] || 1;
     const nextReview = Date.now() + (intervalDays * 24 * 60 * 60 * 1000);
 

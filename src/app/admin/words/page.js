@@ -72,7 +72,7 @@ export default function AdminWordsPage() {
     <div>
       <div className="glass-card">
         <div className="header-split">
-          <h3 className="section-title" style={{ marginBottom: 0 }}>📚 Kelime Yönetimi</h3>
+          <h3 className="section-title" style={{ marginBottom: 0 }}>Kelime Yönetimi</h3>
           <button className="admin-btn" onClick={() => setShowForm(!showForm)}>
             {showForm ? "✕ İptal" : "+ Kelime Ekle"}
           </button>

@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getUserWords, getUserStats } from "@/lib/firestore";
+import { getUserWords, getUserStats, updateLastReminderDate } from "@/lib/firestore";
 import Link from "next/link";
+import CustomDialog from "@/components/CustomDialog";
 
 export default function DashboardPage() {
   const { user, userProfile, isAdmin } = useAuth();
@@ -11,6 +12,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({ correct: 0, wrong: 0, streak: 0, studyTime: 0 });
   const [loading, setLoading] = useState(true);
   const [expandedLevel, setExpandedLevel] = useState(null);
+  const [showReminder, setShowReminder] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -21,32 +23,43 @@ export default function DashboardPage() {
       getUserWords(user.uid),
       getUserStats(user.uid),
     ]).then(([w, s]) => {
-      setWords(w || []);
+      const wordList = w || [];
+      setWords(wordList);
       setStats(s || { correct: 0, wrong: 0, streak: 0, studyTime: 0 });
+
+      // Daily Reminder Logic (Firestore backed)
+      const lastReminder = userProfile?.lastReminderDate;
+      const today = new Date().toDateString();
+      if (lastReminder !== today) {
+        const dueCount = wordList.filter(w => (w.nextReview || 0) <= Date.now()).length;
+        if (dueCount > 0) {
+          setTimeout(() => setShowReminder(true), 1500);
+          updateLastReminderDate(user.uid);
+        }
+      }
     }).catch(console.error).finally(() => setLoading(false));
-  }, [user]);
+  }, [user, userProfile]);
 
   if (loading) return <div className="page-loading"><div className="spinner-ring"></div></div>;
 
   const total = words.length;
-  const masteredCount = words.filter(w => w.level >= 3).length;
+  const masteredCount = words.filter(w => w.level >= 4).length; // Now level 4 is master
   const pct = total > 0 ? Math.round((masteredCount / total) * 100) : 0;
-  const successRate = stats.correct + stats.wrong > 0
-    ? Math.round((stats.correct / (stats.correct + stats.wrong)) * 100)
-    : 0;
-
+  
   const levels = [
-    { name: "Tanışma", key: "new", color: "#ff453a" },
-    { name: "Tekrar", key: "day1", color: "#ff9f0a" },
-    { name: "Pekişme", key: "learning", color: "#ffd60a" },
-    { name: "Hazine", key: "master", color: "#0a84ff" },
+    { name: "Yeni", key: "level0", color: "#ff453a", desc: "Henüz öğrenilmeye başlanmadı" },
+    { name: "Adım 1", key: "level1", color: "#ff9f0a", desc: "İlk tekrar yapıldı" },
+    { name: "Adım 2", key: "level2", color: "#ffd60a", desc: "Hafızaya giriyor" },
+    { name: "Adım 3", key: "level3", color: "#30d158", desc: "Pekişmeye başladı" },
+    { name: "Hazine", key: "level4", color: "#0a84ff", desc: "Kalıcı hafızaya alındı" },
   ];
 
   const levelWords = {
-    new: words.filter(w => !w.level || w.level === 0),
-    day1: words.filter(w => w.level === 1),
-    learning: words.filter(w => w.level === 2),
-    master: words.filter(w => w.level >= 3),
+    level0: words.filter(w => !w.level || w.level === 0),
+    level1: words.filter(w => w.level === 1),
+    level2: words.filter(w => w.level === 2),
+    level3: words.filter(w => w.level === 3),
+    level4: words.filter(w => w.level >= 4),
   };
 
   const maxLevel = Math.max(...Object.values(levelWords).map(arr => arr.length), 1);
@@ -153,13 +166,26 @@ export default function DashboardPage() {
       {/* Hızlı Erişim */}
       <div className="dash-quick-actions">
         <Link href="/srs" className="dash-action-btn dash-action-primary">
-          Akıllı Tekrarı Başlat
+          Tekrarı Başlat
         </Link>
         <Link href="/reading" className="dash-action-btn">
-          Metin Oku
+          Okuma Pratiği
         </Link>
       </div>
 
+      {showReminder && (
+        <CustomDialog
+          title="Günlük Tekrar"
+          message="Bugün tekrar etmeniz gereken kelimeler var. Hafızanızı tazelemek için akıllı tekrarı tamamlayın."
+          confirmText="Başla"
+          cancelText="Daha Sonra"
+          onConfirm={() => {
+            setShowReminder(false);
+            window.location.href = "/srs";
+          }}
+          onCancel={() => setShowReminder(false)}
+        />
+      )}
     </div>
   );
 }
