@@ -2,38 +2,38 @@ import { NextResponse } from "next/server";
 import { adminDb, adminMessaging } from "@/lib/firebaseAdmin";
 
 const MORNING_NOTIFICATIONS = [
-  { 
-    title: "Günün İlk Adımı", 
-    body: "Akademik kelime dağarcığınızı geliştirmek için güne verimli bir başlangıç yapın." 
+  {
+    title: "Günün İlk Adımı",
+    body: "Akademik kelime dağarcığınızı geliştirmek için güne verimli bir başlangıç yapın."
   },
-  { 
-    title: "Zihinsel Hazırlık", 
-    body: "Sabah saatlerinin verimliliğini kullanarak kelime bankanızdaki tekrarları tamamlayın." 
+  {
+    title: "Zihinsel Hazırlık",
+    body: "Sabah saatlerinin verimliliğini kullanarak kelime bankanızdaki tekrarları tamamlayın."
   },
-  { 
-    title: "İstikrar ve Başarı", 
-    body: "YDT hazırlık sürecinde süreklilik en önemli etkendir. Günün ilk çalışmasına şimdi başlayın." 
+  {
+    title: "İstikrar ve Başarı",
+    body: "YDT hazırlık sürecinde süreklilik en önemli etkendir. Günün ilk çalışmasına şimdi başlayın."
   }
 ];
 
 const EVENING_NOTIFICATIONS = [
-  { 
-    title: "Günlük Değerlendirme", 
-    body: "Bugün edindiğiniz bilgileri kalıcı hafızaya aktarmak için kısa bir tekrar yapın." 
+  {
+    title: "Günlük Değerlendirme",
+    body: "Bugün edindiğiniz bilgileri kalıcı hafızaya aktarmak için kısa bir tekrar yapın."
   },
-  { 
-    title: "Akademik Gelişim", 
-    body: "Günü verimli bir şekilde sonlandırmak adına kelime bankanızı gözden geçirin." 
+  {
+    title: "Akademik Gelişim",
+    body: "Günü verimli bir şekilde sonlandırmak adına kelime bankanızı gözden geçirin."
   },
-  { 
-    title: "Günü Kapatırken", 
-    body: "Çalışma serinizi korumak ve bilgilerinizi tazelemek için kısa bir quiz çözmeye ne dersiniz?" 
+  {
+    title: "Günü Kapatırken",
+    body: "Çalışma serinizi korumak ve bilgilerinizi tazelemek için kısa bir quiz çözmeye ne dersiniz?"
   }
 ];
 
 export async function GET(request) {
   const authHeader = request.headers.get("authorization");
-  
+
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -41,7 +41,7 @@ export async function GET(request) {
   try {
     const now = new Date();
     const turkeyHour = (now.getUTCHours() + 3) % 24;
-    
+
     let pool = [...MORNING_NOTIFICATIONS, ...EVENING_NOTIFICATIONS];
     if (turkeyHour >= 5 && turkeyHour < 14) {
       pool = MORNING_NOTIFICATIONS;
@@ -56,7 +56,7 @@ export async function GET(request) {
       const userData = doc.data();
       if (userData.fcmToken) {
         const randomMsg = pool[Math.floor(Math.random() * pool.length)];
-        
+
         messages.push({
           token: userData.fcmToken,
           notification: {
@@ -76,10 +76,10 @@ export async function GET(request) {
 
     const response = await adminMessaging.sendEach(messages);
 
-    return NextResponse.json({ 
-      success: true, 
-      sentCount: response.successCount, 
-      hour: turkeyHour 
+    return NextResponse.json({
+      success: true,
+      sentCount: response.successCount,
+      hour: turkeyHour
     });
 
   } catch (error) {
