@@ -179,23 +179,6 @@ export default function HeroPage() {
 
   if (loading || authLoading) return <div className="page-loading"><div className="spinner-ring"></div></div>;
 
-  if (!isAdmin) {
-    return (
-      <div className="hero-roadmap" style={{ textAlign: "center", padding: "80px 20px" }}>
-        <div className="glass-card" style={{ padding: "60px 20px", maxWidth: 600, margin: "0 auto" }}>
-          <div style={{ fontSize: "3rem", marginBottom: 24, color: "var(--accent)" }}>
-            <i className="fa-solid fa-hourglass-half"></i>
-          </div>
-          <h2 style={{ marginBottom: 16 }}>Çok Yakında</h2>
-          <p className="hint-text">Zero to Hero modülü şu an geliştirme aşamasındadır. Çok yakında tüm kullanıcılarımıza açılacaktır.</p>
-          <Link href="/dashboard" className="btn-primary" style={{ marginTop: 32, display: "inline-block", padding: "12px 32px" }}>
-            Merkeze Dön
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   // ── FAILED ──
   if (phase === "failed") {
     const score = Math.round((correctCount / lessonSteps.length) * 100);
