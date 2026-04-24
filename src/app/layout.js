@@ -31,7 +31,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="tr" data-scroll-behavior="smooth">
       <head>
-        <link rel="manifest" href="/manifest.json" />
+        <link rel="manifest" href="/manifest.webmanifest" />
         <meta name="theme-color" content="#0a0a0b" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
