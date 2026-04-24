@@ -4,92 +4,92 @@ import { adminDb, adminMessaging } from "@/lib/firebaseAdmin";
 export const dynamic = "force-dynamic";
 
 const MORNING_NOTIFICATIONS = [
-  {
-    title: "Yeni Güne Yeni Kelimeler ☀️",
-    body: "Güne 5 yeni akademik kelime ile başlamaya ne dersin? Hedefine bir adım daha yaklaş."
-  },
-  {
-    title: "YDT Maratonu Devam Ediyor 🏃‍♂️",
-    body: "Sabah serinliğinde okuma pratiği yapmak odaklanmanı artırır. Haydi başlayalım!"
-  },
-  {
-    title: "Zihnini Tazele 🧠",
-    body: "Kelime bankandaki tekrarları tamamlayarak güne verimli bir başlangıç yap."
-  }
+    {
+        title: "Günün İlk Adımı",
+        body: "Akademik kelime dağarcığınızı geliştirmek için güne verimli bir başlangıç yapın."
+    },
+    {
+        title: "Zihinsel Hazırlık",
+        body: "Sabah saatlerinin verimliliğini kullanarak kelime bankanızdaki tekrarları tamamlayın."
+    },
+    {
+        title: "İstikrar ve Başarı",
+        body: "YDT hazırlık sürecinde süreklilik en önemli etkendir. Günün ilk çalışmasına şimdi başlayın."
+    }
 ];
 
 const EVENING_NOTIFICATIONS = [
-  {
-    title: "Günün Hasadı 🌙",
-    body: "Bugün öğrendiğin her şeyi pekiştirme vakti. Kısa bir tekrar kalıcılığı artırır."
-  },
-  {
-    title: "Uykudan Önce Son Dokunuş ✨",
-    body: "Yeni öğrendiğin kelimelerin kalıcı olması için son bir göz atmaya ne dersiniz?"
-  },
-  {
-    title: "Başarı Sürekliliktir 🏆",
-    body: "Bugünkü hedeflerini tamamladın mı? Kontrol etmek ve serini korumak için tıkla."
-  }
+    {
+        title: "Günlük Değerlendirme",
+        body: "Bugün edindiğiniz bilgileri kalıcı hafızaya aktarmak için kısa bir tekrar yapın."
+    },
+    {
+        title: "Akademik Gelişim",
+        body: "Günü verimli bir şekilde sonlandırmak adına kelime bankanızı gözden geçirin."
+    },
+    {
+        title: "Günü Kapatırken",
+        body: "Çalışma serinizi korumak ve bilgilerinizi tazelemek için kısa bir quiz çözmeye ne dersiniz?"
+    }
 ];
 
 export async function GET(request) {
-  const authHeader = request.headers.get("authorization");
+    const authHeader = request.headers.get("authorization");
 
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  try {
-    if (!adminDb || !adminMessaging) {
-      throw new Error("Firebase Admin SDK is not initialized. Check environment variables.");
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const now = new Date();
-    const turkeyHour = (now.getUTCHours() + 3) % 24;
+    try {
+        if (!adminDb || !adminMessaging) {
+            throw new Error("Firebase Admin SDK is not initialized. Check environment variables.");
+        }
 
-    let pool = [...MORNING_NOTIFICATIONS, ...EVENING_NOTIFICATIONS];
-    if (turkeyHour >= 5 && turkeyHour < 14) {
-      pool = MORNING_NOTIFICATIONS;
-    } else if (turkeyHour >= 17 || turkeyHour < 5) {
-      pool = EVENING_NOTIFICATIONS;
-    }
+        const now = new Date();
+        const turkeyHour = (now.getUTCHours() + 3) % 24;
 
-    const usersSnapshot = await adminDb.collection("users").get();
-    const messages = [];
+        let pool = [...MORNING_NOTIFICATIONS, ...EVENING_NOTIFICATIONS];
+        if (turkeyHour >= 5 && turkeyHour < 14) {
+            pool = MORNING_NOTIFICATIONS;
+        } else if (turkeyHour >= 17 || turkeyHour < 5) {
+            pool = EVENING_NOTIFICATIONS;
+        }
 
-    usersSnapshot.forEach((doc) => {
-      const userData = doc.data();
-      if (userData.fcmToken) {
-        const randomMsg = pool[Math.floor(Math.random() * pool.length)];
+        const usersSnapshot = await adminDb.collection("users").get();
+        const messages = [];
 
-        messages.push({
-          token: userData.fcmToken,
-          notification: {
-            title: randomMsg.title,
-            body: randomMsg.body,
-          },
-          webpush: {
-            notification: {
-              icon: "https://ydtfocus.vercel.app/icon-512.png",
-            },
-          },
+        usersSnapshot.forEach((doc) => {
+            const userData = doc.data();
+            if (userData.fcmToken) {
+                const randomMsg = pool[Math.floor(Math.random() * pool.length)];
+
+                messages.push({
+                    token: userData.fcmToken,
+                    notification: {
+                        title: randomMsg.title,
+                        body: randomMsg.body,
+                    },
+                    webpush: {
+                        notification: {
+                            icon: "https://ydtfocus.vercel.app/icon-512.png",
+                        },
+                    },
+                });
+            }
         });
-      }
-    });
 
-    if (messages.length === 0) return NextResponse.json({ message: "No tokens found" });
+        if (messages.length === 0) return NextResponse.json({ message: "No tokens found" });
 
-    const response = await adminMessaging.sendEach(messages);
+        const response = await adminMessaging.sendEach(messages);
 
-    return NextResponse.json({
-      success: true,
-      sentCount: response.successCount,
-      hour: turkeyHour
-    });
+        return NextResponse.json({
+            success: true,
+            sentCount: response.successCount,
+            hour: turkeyHour
+        });
 
-  } catch (error) {
-    console.error("Notification Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+    } catch (error) {
+        console.error("Notification Error:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 }
