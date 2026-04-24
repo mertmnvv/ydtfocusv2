@@ -141,26 +141,38 @@ STORY HISTORY: "${bookHistory}"
     setLoading(false);
   }
 
-  // Mekanik Ses Üreteci (Web Audio API)
+  // Mekanik Ses Üreteci (Gelişmiş Gürültü Bazlı Tık)
   const playClick = useCallback((isError = false) => {
     try {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       const ctx = new AudioContext();
-      const osc = ctx.createOscillator();
+      const bufferSize = ctx.sampleRate * 0.05; // 50ms
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+
+      // Beyaz gürültü oluştur (Gerçek tık hissi için)
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.value = isError ? 200 : 1200; // Hata sesi daha kalın
+      filter.Q.value = 1;
+
       const gain = ctx.createGain();
-      
-      osc.type = isError ? "sawtooth" : "sine";
-      osc.frequency.setValueAtTime(isError ? 150 : 800, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(isError ? 50 : 400, ctx.currentTime + 0.05);
-      
-      gain.gain.setValueAtTime(0.05, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
-      
-      osc.connect(gain);
+      gain.gain.setValueAtTime(isError ? 0.2 : 0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.04);
+
+      noise.connect(filter);
+      filter.connect(gain);
       gain.connect(ctx.destination);
-      
-      osc.start();
-      osc.stop(ctx.currentTime + 0.05);
+
+      noise.start();
+      noise.stop(ctx.currentTime + 0.05);
     } catch (e) {}
   }, []);
 
@@ -168,7 +180,6 @@ STORY HISTORY: "${bookHistory}"
   const handleKeyDown = useCallback((e) => {
     if (phase !== "typing" || !sentences[sIdx] || processingRef.current) return;
 
-    // Sistem tuşlarını engelleme
     if (e.key === " " || e.code === "Space") e.preventDefault();
     if (e.key === "Tab") { e.preventDefault(); return; }
     if (e.ctrlKey || e.altKey || e.metaKey) return;
@@ -188,11 +199,16 @@ STORY HISTORY: "${bookHistory}"
       setTotalKeys(prev => prev + 1);
       const isCorrect = e.key.toLowerCase() === target[charIdx].toLowerCase();
       
+      playClick(!isCorrect);
+
       if (!isCorrect) {
         setWrongKeys(prev => prev + 1);
-        playClick(true); // Hata sesi
-      } else {
-        playClick(false); // Normal tık
+        // Yazı kutusuna sarsılma sınıfı ekle
+        const box = document.querySelector(".lf-text-box");
+        if (box) {
+          box.classList.add("lf-shake-box");
+          setTimeout(() => box.classList.remove("lf-shake-box"), 200);
+        }
       }
 
       setTypedChars(prev => [...prev, { char: e.key, correct: isCorrect }]);
@@ -222,6 +238,7 @@ STORY HISTORY: "${bookHistory}"
           localStorage.setItem("ai_book_history", (old + " " + currentEn).trim().slice(-1000));
         }
 
+        // Geçişi hızlandır (100ms) - Neredeyse anında
         setTimeout(() => {
           const nextIdx = sIdx + 1;
           if (nextIdx < sentences.length) {
@@ -237,7 +254,7 @@ STORY HISTORY: "${bookHistory}"
             sessionRef.current = null;
             setPhase("result");
           }
-        }, 300); // 400ms'den 300ms'e düşürdüm (daha hızlı akış)
+        }, 100);
       }
     }
   }, [phase, sentences, sIdx, charIdx, isEndless, playClick]);
