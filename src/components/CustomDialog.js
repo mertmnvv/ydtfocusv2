@@ -2,9 +2,9 @@
 
 import React from "react";
 
-export default function CustomDialog({ title, message, onConfirm, onCancel, confirmText = "Evet, Eminim", cancelText = "İptal" }) {
+export default function CustomDialog({ title, message, onConfirm, onCancel, confirmText = "Evet, Eminim", cancelText = "İptal", className = "" }) {
   return (
-    <div className="dialog-overlay" onClick={onCancel}>
+    <div className={`dialog-overlay ${className}`} onClick={onCancel}>
       <div className="custom-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="dialog-header">
           <h3>{title}</h3>

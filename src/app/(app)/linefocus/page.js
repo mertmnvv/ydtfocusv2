@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
+import CustomDialog from "@/components/CustomDialog";
 
 export default function LinefocusPage() {
   const { user, loading: authLoading, setAuthModalOpen } = useAuth();
@@ -10,6 +11,7 @@ export default function LinefocusPage() {
   const [phase, setPhase] = useState("setup"); // setup | typing | result
   const [isMobile, setIsMobile] = useState(false);
   const [sentences, setSentences] = useState([]);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -254,12 +256,14 @@ STORY HISTORY: "${bookHistory}"
     processingRef.current = false;
   }
 
-  function clearHistory() {
-    if (!confirm("Tüm okuma geçmişini silmek istediğine emin misin?")) return;
+  function handleClearHistory() {
     localStorage.removeItem("lf_history_blocks");
     localStorage.removeItem("ai_book_chapter");
     localStorage.removeItem("ai_book_history");
     setHistory([]);
+    sessionRef.current = null;
+    setShowClearConfirm(false);
+    showNotification("success", "Okuma geçmişi temizlendi.");
   }
 
   // Render
@@ -482,7 +486,7 @@ STORY HISTORY: "${bookHistory}"
       <div className={`lf-sidebar ${sidebarOpen ? "is-open" : ""}`}>
         <div className="lf-sidebar-inner">
           <h3 className="lf-sidebar-label">completed sentences</h3>
-          <button className="lf-clear-btn" onClick={clearHistory}>gecmisi temizle</button>
+          <button className="lf-clear-btn" onClick={() => setShowClearConfirm(true)}>gecmisi temizle</button>
           <div className="lf-history-list">
             {history.map((item, i) => (
               <div key={i} className="lf-history-item" onClick={() => setReaderData(item)}>
@@ -535,6 +539,18 @@ STORY HISTORY: "${bookHistory}"
             <div className="lf-reader-tr">{readerData.tr}</div>
           </div>
         </div>
+      )}
+
+      {showClearConfirm && (
+        <CustomDialog 
+          className="lf-dialog"
+          title="Geçmişi Temizle"
+          message="Tüm okuma geçmişini ve daktilo istatistiklerini silmek istediğine emin misin? Bu işlem geri alınamaz."
+          onConfirm={handleClearHistory}
+          onCancel={() => setShowClearConfirm(false)}
+          confirmText="Evet, Hepsini Sil"
+          cancelText="Vazgeç"
+        />
       )}
     </div>
   );

@@ -5914,3 +5914,67 @@ a {
 [data-theme='light'] .nav-btn:hover { background: rgba(0,0,0,0.03); }
 [data-theme='light'] .logo { color: #1d1d1f; }
 
+/* Linefocus Dialog Styles */
+.lf-dialog .custom-dialog {
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  padding: 30px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+  max-width: 450px;
+}
+
+.lf-dialog .dialog-header h3 {
+  color: var(--accent);
+  text-transform: lowercase;
+  letter-spacing: 2px;
+  border-bottom: 1px solid #222;
+  padding-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.lf-dialog .dialog-body p {
+  color: #888;
+  font-size: 0.9rem;
+  margin: 20px 0;
+  line-height: 1.7;
+  text-transform: lowercase;
+}
+
+.lf-dialog .dialog-footer {
+  gap: 15px;
+}
+
+.lf-dialog .dialog-btn-cancel {
+  background: transparent;
+  border: 1px solid #333;
+  color: #5e5e5e;
+  border-radius: 4px;
+  padding: 8px 20px;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+}
+
+.lf-dialog .dialog-btn-cancel:hover {
+  color: #e2e2e2;
+  border-color: #444;
+}
+
+.lf-dialog .dialog-btn-confirm {
+  background: transparent;
+  border: 1px solid var(--error);
+  color: var(--error);
+  border-radius: 4px;
+  padding: 8px 20px;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+}
+
+.lf-dialog .dialog-btn-confirm:hover {
+  background: rgba(202, 71, 84, 0.1);
+  transform: none;
+  box-shadow: none;
+}
+
+
