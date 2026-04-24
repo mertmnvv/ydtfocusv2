@@ -66,7 +66,7 @@ export default function HeroPage() {
     }
   }, [user, authLoading, loadHero]);
 
-  const startLevel = (level) => {
+  const startLevel = useCallback((level) => {
     if (!heroStats[level].unlocked) return;
     const stats = heroStats[level];
     const subLevel = stats.completed + 1;
@@ -132,9 +132,9 @@ export default function HeroPage() {
         ]);
         setGenerating(false);
       });
-  };
+  }, [heroStats]);
 
-  const handleCheck = () => {
+  const handleCheck = useCallback(() => {
     const s = lessonSteps[currentStep];
     const ok = Object.entries(s.blanks).every(([g, v]) => placedWords[g]?.toLowerCase() === v.toLowerCase());
     if (ok) {
@@ -146,20 +146,9 @@ export default function HeroPage() {
       setWrongGap(true);
       setTimeout(() => setWrongGap(false), 500);
     }
-  };
+  }, [lessonSteps, currentStep, placedWords, hasErrored]);
 
-  const handleNext = () => {
-    if (currentStep < lessonSteps.length - 1) {
-      setCurrentStep(p => p + 1);
-      setPlacedWords({});
-      setFeedback(null);
-      setHasErrored(false);
-    } else {
-      finishLesson();
-    }
-  };
-
-  const finishLesson = async () => {
+  const finishLesson = useCallback(async () => {
     const score = (correctCount / lessonSteps.length) * 100;
     const passed = score >= 60;
 
@@ -175,7 +164,18 @@ export default function HeroPage() {
     } else {
       setPhase("failed");
     }
-  };
+  }, [correctCount, lessonSteps, heroStats, currentLevel, user, heroWords]);
+
+  const handleNext = useCallback(() => {
+    if (currentStep < lessonSteps.length - 1) {
+      setCurrentStep(p => p + 1);
+      setPlacedWords({});
+      setFeedback(null);
+      setHasErrored(false);
+    } else {
+      finishLesson();
+    }
+  }, [currentStep, lessonSteps, finishLesson]);
 
   function WordTip({ text, tr }) {
     const [show, setShow] = useState(false);
