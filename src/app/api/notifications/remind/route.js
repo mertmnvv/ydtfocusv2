@@ -1,33 +1,35 @@
 import { NextResponse } from "next/server";
 import { adminDb, adminMessaging } from "@/lib/firebaseAdmin";
 
+export const dynamic = "force-dynamic";
+
 const MORNING_NOTIFICATIONS = [
   {
-    title: "Günün İlk Adımı",
-    body: "Akademik kelime dağarcığınızı geliştirmek için güne verimli bir başlangıç yapın."
+    title: "Yeni Güne Yeni Kelimeler ☀️",
+    body: "Güne 5 yeni akademik kelime ile başlamaya ne dersin? Hedefine bir adım daha yaklaş."
   },
   {
-    title: "Zihinsel Hazırlık",
-    body: "Sabah saatlerinin verimliliğini kullanarak kelime bankanızdaki tekrarları tamamlayın."
+    title: "YDT Maratonu Devam Ediyor 🏃‍♂️",
+    body: "Sabah serinliğinde okuma pratiği yapmak odaklanmanı artırır. Haydi başlayalım!"
   },
   {
-    title: "İstikrar ve Başarı",
-    body: "YDT hazırlık sürecinde süreklilik en önemli etkendir. Günün ilk çalışmasına şimdi başlayın."
+    title: "Zihnini Tazele 🧠",
+    body: "Kelime bankandaki tekrarları tamamlayarak güne verimli bir başlangıç yap."
   }
 ];
 
 const EVENING_NOTIFICATIONS = [
   {
-    title: "Günlük Değerlendirme",
-    body: "Bugün edindiğiniz bilgileri kalıcı hafızaya aktarmak için kısa bir tekrar yapın."
+    title: "Günün Hasadı 🌙",
+    body: "Bugün öğrendiğin her şeyi pekiştirme vakti. Kısa bir tekrar kalıcılığı artırır."
   },
   {
-    title: "Akademik Gelişim",
-    body: "Günü verimli bir şekilde sonlandırmak adına kelime bankanızı gözden geçirin."
+    title: "Uykudan Önce Son Dokunuş ✨",
+    body: "Yeni öğrendiğin kelimelerin kalıcı olması için son bir göz atmaya ne dersiniz?"
   },
   {
-    title: "Günü Kapatırken",
-    body: "Çalışma serinizi korumak ve bilgilerinizi tazelemek için kısa bir quiz çözmeye ne dersiniz?"
+    title: "Başarı Sürekliliktir 🏆",
+    body: "Bugünkü hedeflerini tamamladın mı? Kontrol etmek ve serini korumak için tıkla."
   }
 ];
 
@@ -39,6 +41,10 @@ export async function GET(request) {
   }
 
   try {
+    if (!adminDb || !adminMessaging) {
+      throw new Error("Firebase Admin SDK is not initialized. Check environment variables.");
+    }
+
     const now = new Date();
     const turkeyHour = (now.getUTCHours() + 3) % 24;
 
