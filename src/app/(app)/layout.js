@@ -17,6 +17,8 @@ const navItems = [
   { id: "mistakes", label: "Hatalar", href: "/mistakes" },
 ];
 
+import ThemeToggle from "@/components/ThemeToggle";
+
 export default function AppLayout({ children }) {
   const { user, userProfile, loading, logout, isAdmin } = useAuth();
   const router = useRouter();
@@ -108,6 +110,7 @@ export default function AppLayout({ children }) {
             )}
           </div>
           <div className="nav-user">
+            <ThemeToggle />
             {user ? (
               <div className="profile-menu-wrapper">
                 <button 
@@ -241,10 +244,11 @@ export default function AppLayout({ children }) {
 
       {/* Mobil Profil Menüsü (Kapsül Popup) */}
       {profileOpen && (
-        <div className="mobile-profile-popup-overlay" onClick={() => setProfileOpen(false)}>
+        <div className="mobile-profile-popup-overlay hide-desktop" onClick={() => setProfileOpen(false)}>
           <div className="mobile-profile-popup" onClick={e => e.stopPropagation()}>
             <div className="popup-header">
               <div className="popup-name">{userProfile?.displayName || "Kullanıcı"}</div>
+              <ThemeToggle />
             </div>
             <div className="popup-links">
               <Link href="/dashboard" className="popup-link" onClick={() => setProfileOpen(false)}>
