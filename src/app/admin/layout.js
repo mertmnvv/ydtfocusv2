@@ -30,11 +30,11 @@ export default function AdminLayout({ children }) {
   if (!user || !isAdmin) return null;
 
   const adminNav = [
-    { href: "/admin", label: "📊 Dashboard" },
-    { href: "/admin/words", label: "📚 Kelimeler" },
-    { href: "/admin/grammar", label: "📖 Gramer" },
-    { href: "/admin/users", label: "👥 Kullanıcılar" },
-    { href: "/admin/seed", label: "🌱 Seed" },
+    { href: "/admin", label: "Dashboard" },
+    { href: "/admin/words", label: "Kelimeler" },
+    { href: "/admin/grammar", label: "Gramer" },
+    { href: "/admin/users", label: "Kullanıcılar" },
+    { href: "/admin/seed", label: "Veri Yükleme" },
   ];
 
   return (
@@ -45,11 +45,11 @@ export default function AdminLayout({ children }) {
             ydt<span>focus</span>
           </Link>
           <div className="nav-links">
-            <Link href="/dashboard" className="nav-btn">← Uygulamaya Dön</Link>
+            <Link href="/dashboard" className="nav-btn">Uygulamaya Dön</Link>
           </div>
           <div className="nav-user">
             <span className="nav-user-name" style={{ color: "var(--warning)" }}>
-              🛡️ Admin Panel
+              Yönetici Paneli
             </span>
           </div>
         </div>
@@ -57,7 +57,7 @@ export default function AdminLayout({ children }) {
 
       <main className="app-main" style={{ maxWidth: "1100px" }}>
         <div className="admin-header">
-          <h1 className="admin-title">🛡️ Admin Panel</h1>
+          <h1 className="admin-title">Yönetici Paneli</h1>
           <p className="admin-subtitle">İçerik ve kullanıcı yönetimi</p>
         </div>
 

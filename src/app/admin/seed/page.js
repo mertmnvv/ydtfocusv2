@@ -2,133 +2,184 @@
 
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { batchAddArchiveWords, batchAddPhrasalVerbs } from "@/lib/firestore";
+import { batchAddArchiveWords, batchAddPhrasalVerbs, clearCollection } from "@/lib/firestore";
+import { useNotification } from "@/context/NotificationContext";
+import CustomDialog from "@/components/CustomDialog";
+import { useRef } from "react";
 
-// data.js'den import yerine, admin panelinden JSON paste ile seed yapılacak
 export default function AdminSeedPage() {
   const { isAdmin } = useAuth();
+  const { showNotification } = useNotification();
   const [status, setStatus] = useState("");
-  const [progress, setProgress] = useState(0);
-  const [jsonInput, setJsonInput] = useState("");
-  const [seedType, setSeedType] = useState("archive");
   const [seeding, setSeeding] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null); // 'add' or 'clear'
+  const fileInputRef = useRef(null);
 
-  async function handleSeed() {
-    if (!jsonInput.trim()) return alert("JSON verisi yapıştırın!");
+  const parseFile = async (file) => {
+    const text = await file.text();
+    let archiveData = [];
+    let phrasalData = [];
+
+    if (file.name.endsWith(".json")) {
+      try {
+        const json = JSON.parse(text);
+        if (Array.isArray(json)) archiveData = json;
+        else {
+          archiveData = json.archiveData || [];
+          phrasalData = json.phrasalData || [];
+        }
+      } catch (e) { throw new Error("Geçersiz JSON formatı."); }
+    } else {
+      // JS Regex parsing (same as API route)
+      const archiveRegex = /\{\s*word:\s*"([^"]+)"\s*,\s*meaning:\s*"([^"]+)"\s*(?:,\s*syn:\s*"([^"]*)")?\s*(?:,\s*level:\s*"([^"]*)")?\s*\}/g;
+      const archiveSection = text.match(/const\s+ydtArchiveData\s*=\s*\[([\s\S]*?)\];/);
+      if (archiveSection) {
+        let m;
+        while ((m = archiveRegex.exec(archiveSection[1])) !== null) {
+          archiveData.push({ word: m[1], meaning: m[2], syn: m[3] || "", level: m[4] || "" });
+        }
+      }
+
+      const phrasalRegex = /\{\s*phrase:\s*"([^"]+)"\s*,\s*meaning:\s*"([^"]+)"\s*(?:,\s*syn:\s*"([^"]*)")?\s*\}/g;
+      const phrasalSection = text.match(/const\s+ydtPhrasalVerbs\s*=\s*\[([\s\S]*?)\];/);
+      if (phrasalSection) {
+        let m;
+        while ((m = phrasalRegex.exec(phrasalSection[1])) !== null) {
+          phrasalData.push({ phrase: m[1], meaning: m[2], syn: m[3] || "" });
+        }
+      }
+
+      const oxfordRegex = /const\s+(oxfordMegaPack\d+)\s*=\s*\[([\s\S]*?)\];/g;
+      let oxMatch;
+      while ((oxMatch = oxfordRegex.exec(text)) !== null) {
+        const wordRegex = /\{\s*word:\s*"([^"]+)"\s*,\s*meaning:\s*"([^"]+)"\s*(?:,\s*syn:\s*"([^"]*)")?\s*(?:,\s*level:\s*"([^"]*)")?\s*\}/g;
+        let wm;
+        while ((wm = wordRegex.exec(oxMatch[2])) !== null) {
+          archiveData.push({ word: wm[1], meaning: wm[2], syn: wm[3] || "", level: wm[4] || "" });
+        }
+      }
+    }
+    return { archiveData, phrasalData };
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
     setSeeding(true);
-    setStatus("Veri işleniyor...");
+    setStatus("Dosya analiz ediliyor...");
 
     try {
-      const data = JSON.parse(jsonInput);
-      if (!Array.isArray(data)) throw new Error("JSON bir dizi olmalı!");
+      const { archiveData, phrasalData } = await parseFile(file);
+      const total = archiveData.length + phrasalData.length;
 
-      const total = data.length;
-      setStatus(`${total} öğe bulundu. Firestore'a yükleniyor...`);
+      if (total === 0) throw new Error("Dosyada geçerli veri bulunamadı.");
 
-      if (seedType === "archive") {
-        await batchAddArchiveWords(data);
-      } else {
-        await batchAddPhrasalVerbs(data);
+      if (pendingAction === "clear") {
+        setStatus("Veritabanı temizleniyor...");
+        await clearCollection("archive");
+        await clearCollection("phrasalVerbs");
       }
 
-      setProgress(100);
-      setStatus(`✅ ${total} öğe başarıyla yüklendi!`);
-      setJsonInput("");
+      setStatus(`${archiveData.length} kelime ve ${phrasalData.length} phrasal verb yükleniyor...`);
+      if (archiveData.length > 0) await batchAddArchiveWords(archiveData);
+      if (phrasalData.length > 0) await batchAddPhrasalVerbs(phrasalData);
+
+      setStatus(`İşlem başarılı. Toplam ${total} öğe güncellendi.`);
+      showNotification("Yükleme tamamlandı.", "success");
     } catch (err) {
-      setStatus(`❌ Hata: ${err.message}`);
+      setStatus(`Hata: ${err.message}`);
+      showNotification("İşlem başarısız.", "error");
     }
+
     setSeeding(false);
-  }
+    e.target.value = ""; // Reset file input
+  };
 
-  // Eski data.js formatından otomatik dönüştürme butonu
-  async function handleAutoSeed() {
-    setSeeding(true);
-    setStatus("data.js dosyası okunuyor...");
-
-    try {
-      const resp = await fetch("/api/seed");
-      const result = await resp.json();
-
-      if (!result.success) {
-        setStatus(`❌ Hata: ${result.error}`);
-        setSeeding(false);
-        return;
-      }
-
-      setStatus(`📦 ${result.archiveCount} arşiv + ${result.phrasalCount} phrasal verb bulundu. Firestore'a yükleniyor...`);
-
-      if (result.archiveData?.length > 0) {
-        await batchAddArchiveWords(result.archiveData);
-      }
-      if (result.phrasalData?.length > 0) {
-        await batchAddPhrasalVerbs(result.phrasalData);
-      }
-
-      setStatus(`✅ ${result.archiveCount} arşiv kelimesi ve ${result.phrasalCount} phrasal verb başarıyla yüklendi!`);
-      setProgress(100);
-    } catch (err) {
-      setStatus(`❌ Seed hatası: ${err.message}`);
-    }
-    setSeeding(false);
-  }
+  const triggerUpload = (action) => {
+    setPendingAction(action);
+    fileInputRef.current.click();
+  };
 
   if (!isAdmin) return null;
 
   return (
     <div>
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept=".js,.json"
+        style={{ display: "none" }}
+      />
+
       <div className="glass-card">
-        <h3 className="section-title" style={{ fontSize: "1.1rem" }}>🌱 Veri Yükleme (Seed)</h3>
-        <p className="hint-text" style={{ marginBottom: 16 }}>
-          Eski projeden data.js içeriğini Firestore&apos;a aktarmak için kullanın.
+        <h3 className="section-title" style={{ fontSize: "1.1rem" }}>Veri Yönetimi</h3>
+        <p className="hint-text" style={{ marginBottom: 24 }}>
+          Eski projeden gelen .js veya .json dosyalarınızı buraya yükleyerek veritabanını güncelleyebilirsiniz.
         </p>
 
-        {/* Otomatik Seed */}
-        <div style={{
-          padding: 20, background: "rgba(48,209,88,0.05)", border: "1px solid rgba(48,209,88,0.2)",
-          borderRadius: 16, marginBottom: 20, textAlign: "center",
-        }}>
-          <h4 style={{ color: "var(--primary)", marginBottom: 8 }}>🚀 Otomatik Seed (Önerilen)</h4>
-          <p className="hint-text" style={{ marginBottom: 12 }}>
-            Eski projedeki data.js dosyasını API Route üzerinden otomatik yükler.
-          </p>
-          <button className="btn-primary" onClick={handleAutoSeed} disabled={seeding}>
-            {seeding ? "⏳ Yükleniyor..." : "🚀 Otomatik Seed Başlat"}
-          </button>
+        <div className="admin-stats-grid" style={{ gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          {/* Temizle ve Yükle */}
+          <div className="glass-card" style={{ 
+            textAlign: "center", border: "1px solid rgba(255,69,58,0.2)", background: "rgba(255,69,58,0.02)" 
+          }}>
+            <h4 style={{ color: "var(--error)", marginBottom: 12 }}>Sıfırla ve Yükle</h4>
+            <p className="hint-text" style={{ fontSize: "0.85rem", marginBottom: 20 }}>
+              Tüm mevcut verileri siler ve dosyayı sıfırdan yükler.
+            </p>
+            <button 
+              className="btn-primary" 
+              style={{ background: "var(--error)" }} 
+              onClick={() => setShowConfirm(true)} 
+              disabled={seeding}
+            >
+              Dosya Seç
+            </button>
+          </div>
+
+          {/* Sadece Ekle */}
+          <div className="glass-card" style={{ 
+            textAlign: "center", border: "1px solid rgba(10,132,255,0.2)", background: "rgba(10,132,255,0.02)" 
+          }}>
+            <h4 style={{ color: "var(--primary)", marginBottom: 12 }}>Üzerine Ekle</h4>
+            <p className="hint-text" style={{ fontSize: "0.85rem", marginBottom: 20 }}>
+              Mevcut verileri korur ve dosyadaki yeni verileri ekler.
+            </p>
+            <button className="btn-primary" onClick={() => triggerUpload("add")} disabled={seeding}>
+              Dosya Seç
+            </button>
+          </div>
         </div>
-
-        {/* Manuel JSON Seed */}
-        <div style={{ marginBottom: 16 }}>
-          <label className="hint-text">Koleksiyon Türü:</label>
-          <select value={seedType} onChange={e => setSeedType(e.target.value)} className="reading-select" style={{ marginLeft: 10 }}>
-            <option value="archive">📚 Arşiv Kelimeleri</option>
-            <option value="phrasal">🔗 Phrasal Verbs</option>
-          </select>
-        </div>
-
-        <textarea
-          className="reading-textarea"
-          placeholder={'JSON formatında yapıştırın, örnek:\n[{"word":"however","meaning":"ancak","syn":"nevertheless"}]'}
-          value={jsonInput}
-          onChange={e => setJsonInput(e.target.value)}
-          rows={8}
-        />
-
-        <button className="admin-btn" style={{ marginTop: 12 }} onClick={handleSeed} disabled={seeding}>
-          {seeding ? "⏳ Yükleniyor..." : "📤 Manuel Seed Başlat"}
-        </button>
 
         {/* Status */}
         {status && (
           <div style={{
-            marginTop: 16, padding: 16,
-            background: status.includes("✅") ? "rgba(48,209,88,0.1)" : status.includes("❌") ? "rgba(255,69,58,0.1)" : "rgba(10,132,255,0.1)",
-            border: `1px solid ${status.includes("✅") ? "rgba(48,209,88,0.3)" : status.includes("❌") ? "rgba(255,69,58,0.3)" : "rgba(10,132,255,0.3)"}`,
-            borderRadius: 14, fontWeight: 600, fontSize: "0.9rem",
+            marginTop: 24, padding: 16,
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid var(--border)",
+            borderRadius: 14, fontWeight: 600, fontSize: "0.9rem", color: "var(--text)", textAlign: "center"
           }}>
-            {status}
+            {seeding && <div className="spinner-ring" style={{ width: 16, height: 16, borderSize: 2, marginBottom: 8, display: "inline-block" }} />}
+            <div>{status}</div>
           </div>
         )}
       </div>
+
+      {showConfirm && (
+        <CustomDialog
+          title="Veritabanını Sıfırla"
+          message="Bu işlem tüm kelimeleri silecek ve seçtiğiniz dosyayı baştan yükleyecektir. Emin misiniz?"
+          confirmText="Devam Et"
+          cancelText="İptal"
+          onConfirm={() => {
+            setShowConfirm(false);
+            triggerUpload("clear");
+          }}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
     </div>
   );
 }

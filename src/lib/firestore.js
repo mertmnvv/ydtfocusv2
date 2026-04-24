@@ -245,3 +245,15 @@ export async function batchAddPhrasalVerbs(verbsArray) {
     await batch.commit();
   }
 }
+
+export async function clearCollection(collectionName) {
+  const colRef = collection(db, collectionName);
+  const snapshot = await getDocs(colRef);
+  const batchSize = 500;
+  for (let i = 0; i < snapshot.docs.length; i += batchSize) {
+    const batch = writeBatch(db);
+    const chunk = snapshot.docs.slice(i, i + batchSize);
+    chunk.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+  }
+}

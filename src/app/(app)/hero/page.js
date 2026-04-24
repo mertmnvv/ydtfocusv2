@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getUserHeroStats, updateUserHeroStats } from "@/lib/firestore";
 import HeroAssistant from "@/components/HeroAssistant";
+import Link from "next/link";
 
 const LEVEL_COLORS = {
   A1: "#30d158",
@@ -14,7 +15,7 @@ const LEVEL_COLORS = {
 };
 
 export default function HeroPage() {
-  const { user, requireAuth } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
 
   const [heroStats, setHeroStats] = useState({
     A1: { completed: 0, required: 5, unlocked: true, next: "A2" },
@@ -36,8 +37,8 @@ export default function HeroPage() {
 
   useEffect(() => {
     if (user) loadHero();
-    else setLoading(false);
-  }, [user]);
+    else if (!authLoading) setLoading(false);
+  }, [user, authLoading]);
 
   async function loadHero() {
     try {
@@ -145,14 +146,33 @@ Return ONLY valid JSON: { "steps": [{ "text": "I [gap1] English.", "blanks": {"g
     );
   }
 
-  if (loading) return <div className="page-loading"><div className="spinner-ring"></div></div>;
+  if (loading || authLoading) return <div className="page-loading"><div className="spinner-ring"></div></div>;
+
+  if (!isAdmin) {
+    return (
+      <div className="hero-roadmap" style={{ textAlign: "center", padding: "80px 20px" }}>
+        <div className="glass-card" style={{ padding: "60px 20px", maxWidth: 600, margin: "0 auto" }}>
+          <div style={{ fontSize: "3rem", marginBottom: 24, color: "var(--accent)" }}>
+            <i className="fa-solid fa-hourglass-half"></i>
+          </div>
+          <h2 style={{ marginBottom: 16 }}>Çok Yakında</h2>
+          <p className="hint-text">Zero to Hero modülü şu an geliştirme aşamasındadır. Çok yakında tüm kullanıcılarımıza açılacaktır.</p>
+          <Link href="/dashboard" className="btn-primary" style={{ marginTop: 32, display: "inline-block", padding: "12px 32px" }}>
+            Merkeze Dön
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   // ── FINISH ──
   if (phase === "finish") {
     return (
       <div className="hero-finish">
         <div className="glass-card hero-finish-inner">
-          <div className="hero-finish-icon">🎉</div>
+          <div className="hero-finish-icon" style={{ fontSize: "3rem", color: "var(--primary)" }}>
+            <i className="fa-solid fa-certificate"></i>
+          </div>
           <h2>Bölüm Tamamlandı!</h2>
           <p className="hint-text">{currentLevel} seviyesinde bir ders daha tamamladın.</p>
           <button className="btn-primary w-100" style={{ marginTop: 24 }} onClick={() => setPhase("roadmap")}>
@@ -266,7 +286,7 @@ Return ONLY valid JSON: { "steps": [{ "text": "I [gap1] English.", "blanks": {"g
   return (
     <div className="hero-roadmap">
       <h2 className="section-title">Zero to Hero</h2>
-      <p className="hint-text" style={{ marginBottom: 24 }}>Seviyeni tamamla, bir sonrakinin kilidini aç.</p>
+      <p className="hint-text" style={{ marginBottom: 24 }}>Seviyeleri tamamlayarak ilerleyin.</p>
 
       {/* Overall progress */}
       <div className="glass-card" style={{ marginBottom: 40 }}>
@@ -303,7 +323,9 @@ Return ONLY valid JSON: { "steps": [{ "text": "I [gap1] English.", "blanks": {"g
                     />
                   )}
                 </svg>
-                <span className="hero-node-text">{locked ? "🔒" : done ? "✓" : lvl}</span>
+                <span className="hero-node-text">
+                  {locked ? <i className="fa-solid fa-lock"></i> : done ? <i className="fa-solid fa-check"></i> : lvl}
+                </span>
               </div>
               <div className="hero-node-meta">
                 <span className="hero-node-badge" style={{ background: `${color}20`, color }}>{lvl}</span>

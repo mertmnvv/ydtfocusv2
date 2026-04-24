@@ -211,13 +211,13 @@ export default function AppLayout({ children }) {
         {children}
       </main>
 
-      {/* Mobile Bottom Nav */}
+      {/* Mobile Bottom Pill Nav (Pinned to Bottom) */}
       <nav className="mobile-bottom-nav">
         {[
-          { id: "reading", label: "Reading", href: "/reading", icon: "fa-book-open" },
+          { id: "reading", label: "Read", href: "/reading", icon: "fa-book-open" },
           { id: "quiz", label: "Quiz", href: "/quiz", icon: "fa-bolt" },
-          { id: "grammar", label: "Gramer", href: "/grammar", icon: "fa-spell-check" },
-          { id: "hero", label: "Hero", href: "/hero", icon: "fa-trophy" },
+          { id: "grammar", label: "Grammar", href: "/grammar", icon: "fa-spell-check" },
+          { id: "hero", label: "Hero", href: "/hero", icon: "fa-arrow-trend-up" },
         ].map(item => (
           <Link
             key={item.id}
@@ -225,60 +225,50 @@ export default function AppLayout({ children }) {
             className={`bottom-nav-item ${activeTab === item.id ? "active" : ""}`}
             onClick={() => setProfileOpen(false)}
           >
-            <div className="bottom-nav-icon">
-              <i className={`fa-solid ${item.icon}`}></i>
-            </div>
-            <span className="bottom-nav-label">{item.label}</span>
+            <i className={`fa-solid ${item.icon}`}></i>
           </Link>
         ))}
-        {/* Mobil Profil Butonu */}
+        {/* Profile Button */}
         <button 
-          className={`bottom-nav-item ${profileOpen ? "active" : ""}`}
+          className={`bottom-nav-item profile ${profileOpen ? "active" : ""}`}
           onClick={() => setProfileOpen(!profileOpen)}
         >
-          <div className="bottom-nav-avatar">
+          <div className="bottom-nav-avatar-mini">
             {userProfile?.displayName?.[0] || user?.email?.[0] || "U"}
           </div>
-          <span className="bottom-nav-label">Profil</span>
         </button>
-
       </nav>
 
-      {/* Mobil Profil Menüsü (Sadece Mobilde Görünür) */}
+      {/* Mobil Profil Menüsü (Kapsül Popup) */}
       {profileOpen && (
-        <div className="mobile-profile-overlay hide-desktop" onClick={() => setProfileOpen(false)}>
-          <div className="mobile-profile-sheet" onClick={e => e.stopPropagation()}>
-            <div className="sheet-handle" onClick={() => setProfileOpen(false)}></div>
-            <div className="sheet-header">
-              <div className="sheet-avatar">{userProfile?.displayName?.[0] || user?.email?.[0] || "U"}</div>
-              <div className="sheet-info">
-                <div className="sheet-name">{userProfile?.displayName || "Kullanıcı"}</div>
-                <div className="sheet-email">{user?.email}</div>
-              </div>
+        <div className="mobile-profile-popup-overlay" onClick={() => setProfileOpen(false)}>
+          <div className="mobile-profile-popup" onClick={e => e.stopPropagation()}>
+            <div className="popup-header">
+              <div className="popup-name">{userProfile?.displayName || "Kullanıcı"}</div>
             </div>
-            <div className="sheet-links">
-              <Link href="/dashboard" className="sheet-link" onClick={() => setProfileOpen(false)}>
+            <div className="popup-links">
+              <Link href="/dashboard" className="popup-link" onClick={() => setProfileOpen(false)}>
                 <i className="fa-solid fa-chart-line"></i>
-                <span>Profil & İstatistikler</span>
+                <span>Profil</span>
               </Link>
-              <Link href="/mistakes" className="sheet-link" onClick={() => setProfileOpen(false)}>
+              <Link href="/mistakes" className="popup-link" onClick={() => setProfileOpen(false)}>
                 <i className="fa-solid fa-circle-xmark"></i>
-                <span>Hatalarım</span>
+                <span>Hatalar</span>
               </Link>
-              <Link href="/archive" className="sheet-link" onClick={() => setProfileOpen(false)}>
-                <i className="fa-solid fa-spell-check"></i>
+              <Link href="/archive" className="popup-link" onClick={() => setProfileOpen(false)}>
+                <i className="fa-solid fa-language"></i>
                 <span>Sözlük</span>
               </Link>
               {isAdmin && (
-                <Link href="/admin" className="sheet-link admin-link" onClick={() => setProfileOpen(false)}>
+                <Link href="/admin" className="popup-link admin-link" onClick={() => setProfileOpen(false)}>
                   <i className="fa-solid fa-user-shield"></i>
-                  <span>Admin Paneli</span>
+                  <span>Admin</span>
                 </Link>
               )}
-              <div className="sheet-divider"></div>
-              <button onClick={() => { logout(); setProfileOpen(false); }} className="sheet-link logout-red">
+              <div className="popup-divider"></div>
+              <button onClick={() => { logout(); setProfileOpen(false); }} className="popup-link logout-red">
                 <i className="fa-solid fa-right-from-bracket"></i>
-                <span>Çıkış Yap</span>
+                <span>Çıkış</span>
               </button>
             </div>
           </div>

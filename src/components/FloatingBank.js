@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getUserWords, deleteUserWord } from "@/lib/firestore";
 
@@ -11,6 +11,19 @@ export default function FloatingBank() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Drag and Drop State
+  const [position, setPosition] = useState({ x: -1, y: -1 }); // -1 means use default CSS
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+  const initialPos = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const savedPos = localStorage.getItem("bank-position");
+    if (savedPos) {
+      setPosition(JSON.parse(savedPos));
+    }
+  }, []);
+
   useEffect(() => {
     if (!user || !open) return;
     setLoading(true);
@@ -19,6 +32,67 @@ export default function FloatingBank() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [user, open]);
+
+  // Drag Handlers
+  const handleStart = (e) => {
+    const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+    
+    setIsDragging(false); // Reset
+    dragStart.current = { x: clientX, y: clientY };
+    
+    const fab = e.currentTarget.getBoundingClientRect();
+    initialPos.current = { x: fab.left, y: fab.top };
+    
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleEnd);
+    window.addEventListener('touchmove', handleMove, { passive: false });
+    window.addEventListener('touchend', handleEnd);
+  };
+
+  const handleMove = (e) => {
+    const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+    
+    const dx = clientX - dragStart.current.x;
+    const dy = clientY - dragStart.current.y;
+    
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+      setIsDragging(true);
+      if (e.cancelable) e.preventDefault();
+    }
+    
+    if (isDragging) {
+      const newX = initialPos.current.x + dx;
+      const newY = initialPos.current.y + dy;
+      
+      // Screen boundaries
+      const maxX = window.innerWidth - 60;
+      const maxY = window.innerHeight - 130; // Above bottom bar
+      
+      setPosition({
+        x: Math.max(10, Math.min(newX, maxX)),
+        y: Math.max(10, Math.min(newY, maxY))
+      });
+    }
+  };
+
+  const handleEnd = () => {
+    window.removeEventListener('mousemove', handleMove);
+    window.removeEventListener('mouseup', handleEnd);
+    window.removeEventListener('touchmove', handleMove);
+    window.removeEventListener('touchend', handleEnd);
+    
+    if (isDragging) {
+      localStorage.setItem("bank-position", JSON.stringify(position));
+    }
+  };
+
+  const handleFabClick = () => {
+    if (!isDragging) {
+      requireAuth(() => setOpen(!open));
+    }
+  };
 
   async function handleDelete(wordId) {
     try {
@@ -42,10 +116,27 @@ export default function FloatingBank() {
       )
     : words;
 
+  const fabStyle = position.x !== -1 ? {
+    left: position.x,
+    top: position.y,
+    bottom: 'auto',
+    right: 'auto',
+    position: 'fixed',
+    zIndex: 9999,
+    touchAction: 'none'
+  } : {};
+
   return (
     <>
-      {/* FAB Button */}
-      <button className="bank-fab" onClick={() => requireAuth(() => setOpen(!open))} title="Öğrenilen Kelimeler">
+      {/* Draggable FAB Button */}
+      <button 
+        className={`bank-fab ${isDragging ? 'dragging' : ''}`}
+        style={fabStyle}
+        onMouseDown={handleStart}
+        onTouchStart={handleStart}
+        onClick={handleFabClick}
+        title="Öğrenilen Kelimeler"
+      >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
         </svg>

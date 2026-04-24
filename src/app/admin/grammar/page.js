@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { getGrammarTopics, addGrammarTopic, deleteGrammarTopic, updateGrammarTopic } from "@/lib/firestore";
+import { useNotification } from "@/context/NotificationContext";
 
 export default function AdminGrammarPage() {
+  const { showNotification } = useNotification();
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -28,7 +30,7 @@ export default function AdminGrammarPage() {
 
   async function handleAdd(e) {
     e.preventDefault();
-    if (!form.title || !form.content) return alert("Başlık ve içerik gerekli!");
+    if (!form.title || !form.content) return showNotification("Başlık ve içerik gerekli!", "warning");
     try {
       await addGrammarTopic({
         title: form.title,
@@ -39,11 +41,13 @@ export default function AdminGrammarPage() {
       setForm({ title: "", content: "", sortOrder: 0, tactics: "" });
       setShowForm(false);
       loadTopics();
-      alert("Gramer konusu eklendi!");
+      showNotification("Gramer konusu eklendi!", "success");
     } catch (err) {
-      alert("Ekleme hatası.");
+      showNotification("Ekleme hatası.", "error");
     }
   }
+
+  // handleDelete logic with CustomDialog would need state, I'll keep it simple or add the dialog
 
   async function handleDelete(id) {
     if (!confirm("Bu konuyu silmek istediğinize emin misiniz?")) return;
@@ -59,7 +63,7 @@ export default function AdminGrammarPage() {
     <div>
       <div className="glass-card">
         <div className="header-split">
-          <h3 className="section-title" style={{ marginBottom: 0 }}>📖 Gramer Yönetimi</h3>
+          <h3 className="section-title" style={{ marginBottom: 0 }}>Gramer Yönetimi</h3>
           <button className="admin-btn" onClick={() => setShowForm(!showForm)}>
             {showForm ? "✕ İptal" : "+ Konu Ekle"}
           </button>
@@ -133,7 +137,7 @@ export default function AdminGrammarPage() {
                   </p>
                   {topic.tactics && (
                     <p style={{ color: "var(--warning)", fontSize: "0.85rem", marginTop: 8 }}>
-                      ⚠️ Taktik: {topic.tactics?.substring(0, 100)}...
+                      Taktik: {topic.tactics?.substring(0, 100)}...
                     </p>
                   )}
                 </div>
