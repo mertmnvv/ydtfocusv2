@@ -2,15 +2,33 @@ import { NextResponse } from "next/server";
 import { adminDb, adminMessaging } from "@/lib/firebaseAdmin";
 
 const MORNING_NOTIFICATIONS = [
-  { title: "Günaydın! ☀️", body: "Güne yeni bir kelimeyle başlamaya ne dersin? Bugün senin günün olsun." },
-  { title: "Sabah Kahvesi ve Kelimeler ☕", body: "Günün ilk okuma pratiğini yapmak için harika bir zaman." },
-  { title: "Zihin Taze, Hafıza Açık! 🧠", body: "Sabah saatleri kelime öğrenmek için en verimli saatlerdir. Hadi başlayalım!" }
+  { 
+    title: "Günün İlk Adımı", 
+    body: "Akademik kelime dağarcığınızı geliştirmek için güne verimli bir başlangıç yapın." 
+  },
+  { 
+    title: "Zihinsel Hazırlık", 
+    body: "Sabah saatlerinin verimliliğini kullanarak kelime bankanızdaki tekrarları tamamlayın." 
+  },
+  { 
+    title: "İstikrar ve Başarı", 
+    body: "YDT hazırlık sürecinde süreklilik en önemli etkendir. Günün ilk çalışmasına şimdi başlayın." 
+  }
 ];
 
 const EVENING_NOTIFICATIONS = [
-  { title: "İyi Akşamlar ✨", body: "Günü kapatmadan önce bankandaki kelimelere son bir göz atmak ister misin?" },
-  { title: "Günün Yorgunluğunu At 🌙", body: "Kısa bir quiz çözerek bugünün verimli geçmesini sağla." },
-  { title: "Uyumadan Önce Son Tekrar 😴", body: "Uykudan önce öğrenilenler akılda daha kalıcı olur. Serini bozma!" }
+  { 
+    title: "Günlük Değerlendirme", 
+    body: "Bugün edindiğiniz bilgileri kalıcı hafızaya aktarmak için kısa bir tekrar yapın." 
+  },
+  { 
+    title: "Akademik Gelişim", 
+    body: "Günü verimli bir şekilde sonlandırmak adına kelime bankanızı gözden geçirin." 
+  },
+  { 
+    title: "Günü Kapatırken", 
+    body: "Çalışma serinizi korumak ve bilgilerinizi tazelemek için kısa bir quiz çözmeye ne dersiniz?" 
+  }
 ];
 
 export async function GET(request) {
@@ -21,12 +39,10 @@ export async function GET(request) {
   }
 
   try {
-    // Türkiye saati tespiti (UTC+3)
     const now = new Date();
     const turkeyHour = (now.getUTCHours() + 3) % 24;
     
-    // Saat aralığına göre mesaj havuzunu seç
-    let pool = [...MORNING_NOTIFICATIONS, ...EVENING_NOTIFICATIONS]; // Varsayılan karışık
+    let pool = [...MORNING_NOTIFICATIONS, ...EVENING_NOTIFICATIONS];
     if (turkeyHour >= 5 && turkeyHour < 14) {
       pool = MORNING_NOTIFICATIONS;
     } else if (turkeyHour >= 17 || turkeyHour < 5) {
