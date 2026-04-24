@@ -271,21 +271,6 @@ export default function AppLayout({ children }) {
                   <span>Admin</span>
                 </Link>
               )}
-              <button 
-                className="popup-link" 
-                onClick={() => {
-                  if ("Notification" in window) {
-                    new Notification("YDT Focus", {
-                      body: "Test bildirimi başarılı! Çalışmaya devam et.",
-                      icon: "/icon-512.png"
-                    });
-                  }
-                  setProfileOpen(false);
-                }}
-              >
-                <i className="fa-solid fa-bell"></i>
-                <span>Test Bildirimi</span>
-              </button>
               <div className="popup-divider"></div>
               <button onClick={() => { logout(); setProfileOpen(false); }} className="popup-link logout-red">
                 <i className="fa-solid fa-right-from-bracket"></i>
