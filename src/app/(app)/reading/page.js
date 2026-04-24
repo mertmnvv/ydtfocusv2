@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useNotification } from "@/context/NotificationContext";
 import { getUserWords, addUserWord } from "@/lib/firestore";
 
 const TOPICS = [
@@ -78,6 +79,7 @@ const YDT_ACADEMIC_WORDS = [
 
 export default function ReadingPage() {
   const { user, requireAuth } = useAuth();
+  const { showNotification } = useNotification();
   const [text, setText] = useState("");
   const [level, setLevel] = useState("B1");
   const [topic, setTopic] = useState("random");
@@ -167,13 +169,13 @@ export default function ReadingPage() {
     requireAuth(async () => {
       if (!wordInput || !meaningInput || meaningInput === "Aranıyor...") return;
       if (myWords.some(w => w.word?.toLowerCase() === wordInput.toLowerCase())) {
-        return alert("Bu kelime zaten bankanızda!");
+        return showNotification("Bu kelime zaten bankanızda!", "warning");
       }
       try {
         await addUserWord(user.uid, { word: wordInput, meaning: meaningInput, syn: synInput || "-" });
         setMyWords(prev => [...prev, { word: wordInput }]);
-        alert("Kelime bankasına eklendi!");
-      } catch { alert("Hata."); }
+        showNotification("Kelime bankasına eklendi!", "success");
+      } catch { showNotification("Hata oluştu.", "error"); }
     });
   }
 
@@ -202,7 +204,7 @@ export default function ReadingPage() {
       const parsed = JSON.parse(data.choices[0].message.content);
       if (parsed.questions) setQuizQuestions(parsed.questions);
     } catch {
-      alert("Soru üretilemedi.");
+      showNotification("Soru üretilemedi.", "error");
     }
     setQuizLoading(false);
   }

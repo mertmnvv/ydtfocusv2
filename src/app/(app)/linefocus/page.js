@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useNotification } from "@/context/NotificationContext";
 
 export default function LinefocusPage() {
   const { user, loading: authLoading, setAuthModalOpen } = useAuth();
+  const { showNotification } = useNotification();
   const [phase, setPhase] = useState("setup"); // setup | typing | result
   const [isMobile, setIsMobile] = useState(false);
   const [sentences, setSentences] = useState([]);
@@ -81,7 +83,7 @@ Return ONLY a JSON array: [{"en": "english sentence", "tr": "natural Turkish"}]`
         setPhase("typing");
       }
     } catch {
-      alert("Bağlantı hatası. Lütfen tekrar deneyin.");
+      showNotification("Bağlantı hatası. Lütfen tekrar deneyin.", "error");
     }
     setLoading(false);
   }
@@ -132,7 +134,7 @@ STORY HISTORY: "${bookHistory}"
         setPhase("typing");
       }
     } catch {
-      alert("AI bağlantı hatası. Tekrar deneyin.");
+      showNotification("AI bağlantı hatası. Tekrar deneyin.", "error");
     }
     setLoading(false);
   }
