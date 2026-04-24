@@ -1,11 +1,7 @@
 {
-  "buildCommand": "next build",
-  "framework": "nextjs",
+  "version": 2,
+  "buildCommand": "next build --no-lint",
   "installCommand": "npm install",
-  "crons": [
-    {
-      "path": "/api/notifications/remind",
-      "schedule": "0 9,18 * * *"
-    }
-  ]
+  "framework": "nextjs",
+  "regions": ["iad1"]
 }
