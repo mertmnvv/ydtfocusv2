@@ -75,6 +75,26 @@ export default function AdminLayout({ children }) {
 
         {children}
       </main>
+      {/* Mobile Bottom Nav (Admin versiyonu) */}
+      <nav className="mobile-bottom-nav">
+        {[
+          { id: "dashboard", label: "Profil", href: "/dashboard", icon: "fa-user" },
+          { id: "reading", label: "Reading", href: "/reading", icon: "fa-book-open" },
+          { id: "quiz", label: "Quiz", href: "/quiz", icon: "fa-bolt" },
+          { id: "admin", label: "Admin", href: "/admin", icon: "fa-user-shield" },
+        ].map(item => (
+          <Link
+            key={item.id}
+            href={item.href}
+            className={`bottom-nav-item ${pathname.startsWith(item.href) ? "active" : ""}`}
+          >
+            <div className="bottom-nav-icon">
+              <i className={`fa-solid ${item.icon}`}></i>
+            </div>
+            <span className="bottom-nav-label">{item.label}</span>
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 }

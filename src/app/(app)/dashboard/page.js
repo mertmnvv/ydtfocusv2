@@ -6,7 +6,7 @@ import { getUserWords, getUserStats } from "@/lib/firestore";
 import Link from "next/link";
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, userProfile, isAdmin } = useAuth();
   const [words, setWords] = useState([]);
   const [stats, setStats] = useState({ correct: 0, wrong: 0, streak: 0, studyTime: 0 });
   const [loading, setLoading] = useState(true);
@@ -29,8 +29,8 @@ export default function DashboardPage() {
   if (loading) return <div className="page-loading"><div className="spinner-ring"></div></div>;
 
   const total = words.length;
-  const goal = 2000;
-  const pct = Math.round((total / goal) * 100);
+  const masteredCount = words.filter(w => w.level >= 3).length;
+  const pct = total > 0 ? Math.round((masteredCount / total) * 100) : 0;
   const successRate = stats.correct + stats.wrong > 0
     ? Math.round((stats.correct / (stats.correct + stats.wrong)) * 100)
     : 0;
@@ -39,7 +39,6 @@ export default function DashboardPage() {
     { name: "Tanışma", key: "new", color: "#ff453a" },
     { name: "Tekrar", key: "day1", color: "#ff9f0a" },
     { name: "Pekişme", key: "learning", color: "#ffd60a" },
-    { name: "Kalıcı", key: "familiar", color: "#30d158" },
     { name: "Hazine", key: "master", color: "#0a84ff" },
   ];
 
@@ -47,30 +46,47 @@ export default function DashboardPage() {
     new: words.filter(w => !w.level || w.level === 0),
     day1: words.filter(w => w.level === 1),
     learning: words.filter(w => w.level === 2),
-    familiar: words.filter(w => w.level === 3),
-    master: words.filter(w => w.level >= 4),
+    master: words.filter(w => w.level >= 3),
   };
 
   const maxLevel = Math.max(...Object.values(levelWords).map(arr => arr.length), 1);
 
   return (
-    <div className="dashboard-page">
+    <div className="dashboard-page profile-panel-view">
+      {/* Profil Başlığı (Minimal) */}
+      <div className="profile-header minimal">
+        <div className="profile-large-avatar sm">
+          {userProfile?.displayName?.[0] || user?.email?.[0] || "U"}
+        </div>
+        <div className="profile-header-info">
+          <h1 className="profile-name-small">{userProfile?.displayName || "Kullanıcı"}</h1>
+          <div className="profile-badges sm">
+            <span className="badge-item">YDT Öğrencisi</span>
+            {isAdmin && <span className="badge-item admin-badge">Admin</span>}
+          </div>
+        </div>
+      </div>
+
+      <div className="dash-divider"></div>
+
       {/* Başlık */}
       <div className="dash-header">
         <h2 className="dash-title">Level Up</h2>
-        <p className="dash-subtitle">Kelime hedefine ne kadar yakınsın?</p>
+        <p className="dash-subtitle">Kişisel gelişim ve istatistiklerin.</p>
       </div>
 
       {/* Ana Hedef */}
       <div className="glass-card dash-goal-card">
         <div className="dash-goal-top">
-          <span className="dash-goal-label">YDT Kelime Hedefi</span>
-          <span className="dash-goal-numbers">{total} / {goal}</span>
+          <span className="dash-goal-label">Öğrenme Oranı (Mastery)</span>
+          <span className="dash-goal-numbers">{masteredCount} / {total} Kelime</span>
         </div>
         <div className="dash-goal-bar">
           <div className="dash-goal-fill" style={{ width: `${Math.min(pct, 100)}%` }}></div>
         </div>
-        <span className="dash-goal-pct">%{pct}</span>
+        <div className="dash-goal-footer">
+          <span className="dash-goal-pct">Kelimelerin %{pct} kadarı kalıcı hafızada</span>
+        </div>
       </div>
 
       {/* Stat Kartları (Bento Grid) */}
@@ -136,7 +152,7 @@ export default function DashboardPage() {
 
       {/* Hızlı Erişim */}
       <div className="dash-quick-actions">
-        <Link href="/quiz" className="dash-action-btn dash-action-primary">
+        <Link href="/srs" className="dash-action-btn dash-action-primary">
           Akıllı Tekrarı Başlat
         </Link>
         <Link href="/reading" className="dash-action-btn">

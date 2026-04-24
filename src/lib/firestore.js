@@ -55,7 +55,12 @@ export async function getUserStats(uid) {
 
 export async function updateUserStats(uid, stats) {
   const statsRef = doc(db, "users", uid, "data", "stats");
-  await setDoc(statsRef, stats, { merge: true });
+  const updateData = {};
+  if (stats.correct !== undefined) updateData.correct = increment(stats.correct);
+  if (stats.wrong !== undefined) updateData.wrong = increment(stats.wrong);
+  if (stats.streak !== undefined) updateData.streak = stats.streak; 
+  
+  await setDoc(statsRef, updateData, { merge: true });
 }
 
 export async function incrementStudyMinutes(uid, minutes) {

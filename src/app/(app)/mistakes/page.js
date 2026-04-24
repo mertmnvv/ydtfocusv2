@@ -3,12 +3,16 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getUserWords, getUserMistakes, updateUserMistakes } from "@/lib/firestore";
+import { useNotification } from "@/context/NotificationContext";
+import CustomDialog from "@/components/CustomDialog";
 
 export default function MistakesPage() {
   const { user } = useAuth();
+  const { showNotification } = useNotification();
   const [myWords, setMyWords] = useState([]);
   const [wrongIds, setWrongIds] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [clearConfirm, setClearConfirm] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -20,14 +24,15 @@ export default function MistakesPage() {
       .catch(() => setLoading(false));
   }, [user]);
 
-  async function clearAll() {
-    if (!window.confirm("Tüm hataları sıfırlamak istediğinize emin misiniz?")) return;
+  async function handleClearAll() {
     try {
       await updateUserMistakes(user.uid, []);
       setWrongIds([]);
+      showNotification("Tüm hatalar sıfırlandı.", "success");
     } catch (err) {
-      console.error("Silme hatası:", err);
-      alert("Silme işlemi başarısız oldu.");
+      showNotification("Sıfırlama başarısız oldu.", "error");
+    } finally {
+      setClearConfirm(false);
     }
   }
 
@@ -36,8 +41,9 @@ export default function MistakesPage() {
     try {
       await updateUserMistakes(user.uid, updated);
       setWrongIds(updated);
+      showNotification("Hata silindi.", "success");
     } catch (err) {
-      console.error("Tekil silme hatası:", err);
+      showNotification("Silme başarısız.", "error");
     }
   }
 
@@ -55,7 +61,7 @@ export default function MistakesPage() {
       <div className="header-split">
         <h2 className="section-title">Hatalarım ({wrongIds.length})</h2>
         {wrongIds.length > 0 && (
-          <button className="btn-ghost" style={{ color: "var(--error)", borderColor: "var(--error)" }} onClick={clearAll}>
+          <button className="btn-ghost" style={{ color: "var(--error)", borderColor: "var(--error)" }} onClick={() => setClearConfirm(true)}>
             Tümünü Sil
           </button>
         )}
@@ -105,6 +111,15 @@ export default function MistakesPage() {
         <a href="/quiz" className="btn-primary" style={{ display: "block", textAlign: "center", marginTop: 20, padding: 16 }}>
           Hata Testi Başlat
         </a>
+      )}
+
+      {clearConfirm && (
+        <CustomDialog
+          title="Hataları Sıfırla"
+          message="Tüm hata kaydı listenizi temizlemek istediğinize emin misiniz?"
+          onConfirm={handleClearAll}
+          onCancel={() => setClearConfirm(false)}
+        />
       )}
     </div>
   );

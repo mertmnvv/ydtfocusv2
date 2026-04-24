@@ -3,12 +3,14 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getArchiveWords, getArchiveWordsByLevel, searchArchiveWords, addUserWord, getUserWords } from "@/lib/firestore";
+import { useNotification } from "@/context/NotificationContext";
 
 const CEFR_LEVELS = ["Tümü", "A1", "A2", "B1", "B2", "C1", "C2"];
 const CEFR_COLORS = { A1: "#30d158", A2: "#e2b714", B1: "#ff9f0a", B2: "#bf5af2", C1: "#ff375f", C2: "#ff2d55" };
 
 export default function ArchivePage() {
   const { user, requireAuth } = useAuth();
+  const { showNotification } = useNotification();
   const [words, setWords] = useState([]);
   const [myWords, setMyWords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -83,12 +85,16 @@ export default function ArchivePage() {
 
   function addToBank(w) {
     requireAuth(async () => {
-      if (myWords.some(m => m.word?.toLowerCase() === w.word?.toLowerCase())) return alert("Zaten bankanda!");
+      if (myWords.some(m => m.word?.toLowerCase() === w.word?.toLowerCase())) {
+        return showNotification("Bu kelime zaten bankanda!", "warning");
+      }
       try {
         await addUserWord(user.uid, { word: w.word, meaning: w.meaning, syn: w.syn || "-" });
         setMyWords(p => [...p, { word: w.word }]);
-        alert(`"${w.word}" eklendi!`);
-      } catch { alert("Hata."); }
+        showNotification(`"${w.word}" başarıyla eklendi!`, "success");
+      } catch { 
+        showNotification("Ekleme sırasında bir hata oluştu.", "error"); 
+      }
     });
   }
 

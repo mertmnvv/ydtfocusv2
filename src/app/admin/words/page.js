@@ -2,13 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { addArchiveWord, deleteArchiveWord, searchArchiveWords, getArchiveWords } from "@/lib/firestore";
+import { useNotification } from "@/context/NotificationContext";
+import CustomDialog from "@/components/CustomDialog";
 
 export default function AdminWordsPage() {
+  const { showNotification } = useNotification();
   const [words, setWords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ word: "", meaning: "", syn: "", level: "B1" });
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // id of word to delete
 
   useEffect(() => {
     loadWords();
@@ -20,7 +24,7 @@ export default function AdminWordsPage() {
       const result = await getArchiveWords(100);
       setWords(result.words);
     } catch (err) {
-      console.error("Kelime yükleme hatası:", err);
+      showNotification("Kelime yükleme hatası", "error");
     }
     setLoading(false);
   }
@@ -32,32 +36,35 @@ export default function AdminWordsPage() {
       const results = await searchArchiveWords(search);
       setWords(results.slice(0, 100));
     } catch (err) {
-      console.error("Arama hatası:", err);
+      showNotification("Arama sırasında bir hata oluştu", "error");
     }
     setLoading(false);
   }
 
   async function handleAdd(e) {
     e.preventDefault();
-    if (!form.word || !form.meaning) return alert("Kelime ve anlam gerekli!");
+    if (!form.word || !form.meaning) return showNotification("Kelime ve anlam gerekli!", "warning");
     try {
       await addArchiveWord(form);
       setForm({ word: "", meaning: "", syn: "", level: "B1" });
       setShowForm(false);
       loadWords();
-      alert("Kelime eklendi!");
+      showNotification("Kelime başarıyla eklendi!", "success");
     } catch (err) {
-      alert("Kelime eklenirken hata oluştu.");
+      showNotification("Kelime eklenirken hata oluştu.", "error");
     }
   }
 
-  async function handleDelete(wordId) {
-    if (!confirm("Bu kelimeyi silmek istediğinize emin misiniz?")) return;
+  async function handleDeleteConfirm() {
+    if (!deleteConfirm) return;
     try {
-      await deleteArchiveWord(wordId);
-      setWords(prev => prev.filter(w => w.id !== wordId));
+      await deleteArchiveWord(deleteConfirm);
+      setWords(prev => prev.filter(w => w.id !== deleteConfirm));
+      showNotification("Kelime başarıyla silindi.", "success");
     } catch (err) {
-      alert("Silme hatası.");
+      showNotification("Silme işlemi başarısız.", "error");
+    } finally {
+      setDeleteConfirm(null);
     }
   }
 
@@ -147,7 +154,7 @@ export default function AdminWordsPage() {
                       <button
                         className="admin-btn admin-btn-danger"
                         style={{ padding: "4px 10px", fontSize: "0.8rem" }}
-                        onClick={() => handleDelete(w.id)}
+                        onClick={() => setDeleteConfirm(w.id)}
                       >
                         Sil
                       </button>
@@ -166,6 +173,15 @@ export default function AdminWordsPage() {
           </div>
         )}
       </div>
+
+      {deleteConfirm && (
+        <CustomDialog
+          title="Kelimeyi Sil"
+          message="Bu kelimeyi arşivden silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setDeleteConfirm(null)}
+        />
+      )}
     </div>
   );
 }

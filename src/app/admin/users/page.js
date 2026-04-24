@@ -2,11 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { getAllUsers, updateUserRole } from "@/lib/firestore";
+import { useNotification } from "@/context/NotificationContext";
+import CustomDialog from "@/components/CustomDialog";
 
 export default function AdminUsersPage() {
+  const { showNotification } = useNotification();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
+  const [roleConfirm, setRoleConfirm] = useState(null); // { uid, currentRole }
 
   useEffect(() => {
     loadUsers();
@@ -18,19 +22,23 @@ export default function AdminUsersPage() {
       const data = await getAllUsers();
       setUsers(data.sort((a, b) => (b.lastLogin?.seconds || 0) - (a.lastLogin?.seconds || 0)));
     } catch (err) {
-      console.error("Kullanıcı listesi hatası:", err);
+      showNotification("Kullanıcı listesi yüklenemedi", "error");
     }
     setLoading(false);
   }
 
-  async function toggleRole(uid, currentRole) {
+  async function handleRoleUpdate() {
+    if (!roleConfirm) return;
+    const { uid, currentRole } = roleConfirm;
     const newRole = currentRole === "admin" ? "user" : "admin";
-    if (!confirm(`Bu kullanıcıyı ${newRole} yapmak istediğinize emin misiniz?`)) return;
     try {
       await updateUserRole(uid, newRole);
       setUsers(prev => prev.map(u => u.uid === uid || u.id === uid ? { ...u, role: newRole } : u));
+      showNotification(`Kullanıcı rolü ${newRole} olarak güncellendi`, "success");
     } catch (err) {
-      alert("Rol güncellenirken hata oluştu.");
+      showNotification("Rol güncellenirken hata oluştu.", "error");
+    } finally {
+      setRoleConfirm(null);
     }
   }
 
@@ -113,7 +121,7 @@ export default function AdminUsersPage() {
                     <button
                       className={u.role === "admin" ? "admin-btn admin-btn-danger" : "admin-btn"}
                       style={{ padding: "6px 12px", fontSize: "0.8rem" }}
-                      onClick={() => toggleRole(u.uid || u.id, u.role)}
+                      onClick={() => setRoleConfirm({ uid: u.uid || u.id, currentRole: u.role })}
                     >
                       {u.role === "admin" ? "Admin'i Kaldır" : "Admin Yap"}
                     </button>
@@ -124,6 +132,15 @@ export default function AdminUsersPage() {
           </table>
         </div>
       </div>
+
+      {roleConfirm && (
+        <CustomDialog
+          title="Rolü Güncelle"
+          message={`Bu kullanıcının rolünü ${roleConfirm.currentRole === "admin" ? "Standart Kullanıcı" : "Admin"} olarak değiştirmek istediğinize emin misiniz?`}
+          onConfirm={handleRoleUpdate}
+          onCancel={() => setRoleConfirm(null)}
+        />
+      )}
     </div>
   );
 }

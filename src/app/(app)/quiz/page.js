@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useNotification } from "@/context/NotificationContext";
 import { getUserWords, getUserMistakes, updateUserMistakes, updateUserWord, incrementStudyMinutes } from "@/lib/firestore";
 
 export default function QuizPage() {
   const { user, requireAuth } = useAuth();
+  const { showNotification } = useNotification();
   const [words, setWords] = useState([]);
   const [mistakes, setMistakes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -72,7 +74,7 @@ export default function QuizPage() {
   // Quiz üret
   function startQuiz(selectedMode) {
     requireAuth(() => {
-      if (words.length < 4) return alert("En az 4 kelime gerekli!");
+      if (words.length < 4) return showNotification("En az 4 kelime gerekli!", "warning");
       setMode(selectedMode);
       setQIdx(0);
       setScore({ correct: 0, wrong: 0 });
@@ -92,7 +94,7 @@ export default function QuizPage() {
 
     if (selectedMode === "mistakes") {
       pool = words.filter(w => mistakes.includes(w.word) || mistakes.includes(w.word?.toLowerCase()));
-      if (pool.length < 4) return alert("Hatalar testini çözmek için en az 4 hata kaydınız olmalı!");
+      if (pool.length < 4) return showNotification("Hatalar testini çözmek için en az 4 hata kaydınız olmalı!", "warning");
       pool = pool.sort(() => Math.random() - 0.5);
     } else if (selectedMode === "smart") {
       const now = Date.now();

@@ -11,6 +11,7 @@ import {
 } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db, googleProvider } from "@/lib/firebase";
+import { incrementStudyMinutes } from "@/lib/firestore";
 
 const AuthContext = createContext({});
 
@@ -63,6 +64,18 @@ export function AuthProvider({ children }) {
 
     return () => unsubscribe();
   }, []);
+
+  // Aktif Çalışma Süresi Takibi (Uygulama içinde geçirilen süre)
+  useEffect(() => {
+    if (!user) return;
+
+    const interval = setInterval(() => {
+      // Her 60 saniyede bir Firestore'u güncelle
+      incrementStudyMinutes(user.uid, 1).catch(console.error);
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [user]);
 
   // Email/Password ile kayıt
   async function register(email, password, displayName) {

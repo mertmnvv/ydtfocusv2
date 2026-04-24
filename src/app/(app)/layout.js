@@ -23,9 +23,12 @@ export default function AppLayout({ children }) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
-    // Auth guard is removed so guests can view pages
+    if (!loading && !user) {
+      router.push("/login");
+    }
   }, [user, loading, router]);
 
   if (loading) {
@@ -39,7 +42,7 @@ export default function AppLayout({ children }) {
     );
   }
 
-  // if (!user) return null; -> Removed to allow guest access
+  if (!user) return null;
 
   const activeTab = navItems.find(item => pathname.startsWith(item.href))?.id || "dashboard";
 
@@ -89,7 +92,7 @@ export default function AppLayout({ children }) {
           </div>
 
           <div className="nav-links">
-            {navItems.map(item => (
+            {navItems.filter(i => i.id !== "dashboard" && i.id !== "mistakes").map(item => (
               <Link
                 key={item.id}
                 href={item.href}
@@ -106,18 +109,45 @@ export default function AppLayout({ children }) {
           </div>
           <div className="nav-user">
             {user ? (
-              <>
-                <span className="nav-user-name">
-                  {userProfile?.displayName || user.email}
-                </span>
-                <button onClick={logout} className="nav-btn nav-btn-logout">
-                  Çıkış
+              <div className="profile-menu-wrapper">
+                <button 
+                  className={`profile-mini-trigger ${profileOpen ? "active" : ""}`}
+                  onClick={() => setProfileOpen(!profileOpen)}
+                >
+                  <div className="profile-avatar">
+                    {userProfile?.displayName?.[0] || user.email?.[0] || "U"}
+                  </div>
+                  <div className="profile-info">
+                    <span className="profile-name">{userProfile?.displayName || "Kullanıcı"}</span>
+                    <span className="profile-sub-text">Hesabım <i className="fa-solid fa-chevron-down"></i></span>
+                  </div>
                 </button>
-              </>
+
+                {profileOpen && (
+                  <>
+                    <div className="switcher-overlay" onClick={() => setProfileOpen(false)} />
+                    <div className="profile-dropdown">
+                      <Link href="/dashboard" className="profile-drop-item" onClick={() => setProfileOpen(false)}>
+                        <i className="fa-solid fa-chart-line"></i>
+                        <span>Level Up (Profil)</span>
+                      </Link>
+                      <Link href="/mistakes" className="profile-drop-item" onClick={() => setProfileOpen(false)}>
+                        <i className="fa-solid fa-circle-xmark"></i>
+                        <span>Hatalarım</span>
+                      </Link>
+                      <div className="drop-divider"></div>
+                      <button onClick={() => { logout(); setProfileOpen(false); }} className="profile-drop-item logout-red">
+                        <i className="fa-solid fa-right-from-bracket"></i>
+                        <span>Çıkış Yap</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             ) : (
               <>
                 <Link href="/login" className="nav-btn">Giriş</Link>
-                <Link href="/register" className="nav-btn nav-btn-primary" style={{ background: "rgba(255,255,255,0.1)", color: "#fff" }}>Kayıt Ol</Link>
+                <Link href="/register" className="nav-btn nav-btn-primary" style={{ background: "var(--accent)", color: "#000" }}>Kayıt Ol</Link>
               </>
             )}
           </div>
@@ -181,8 +211,82 @@ export default function AppLayout({ children }) {
         {children}
       </main>
 
-      {/* Footer */}
-      <footer className="app-footer">
+      {/* Mobile Bottom Nav */}
+      <nav className="mobile-bottom-nav">
+        {[
+          { id: "reading", label: "Reading", href: "/reading", icon: "fa-book-open" },
+          { id: "quiz", label: "Quiz", href: "/quiz", icon: "fa-bolt" },
+          { id: "grammar", label: "Gramer", href: "/grammar", icon: "fa-spell-check" },
+          { id: "hero", label: "Hero", href: "/hero", icon: "fa-trophy" },
+        ].map(item => (
+          <Link
+            key={item.id}
+            href={item.href}
+            className={`bottom-nav-item ${activeTab === item.id ? "active" : ""}`}
+            onClick={() => setProfileOpen(false)}
+          >
+            <div className="bottom-nav-icon">
+              <i className={`fa-solid ${item.icon}`}></i>
+            </div>
+            <span className="bottom-nav-label">{item.label}</span>
+          </Link>
+        ))}
+        {/* Mobil Profil Butonu */}
+        <button 
+          className={`bottom-nav-item ${profileOpen ? "active" : ""}`}
+          onClick={() => setProfileOpen(!profileOpen)}
+        >
+          <div className="bottom-nav-avatar">
+            {userProfile?.displayName?.[0] || user?.email?.[0] || "U"}
+          </div>
+          <span className="bottom-nav-label">Profil</span>
+        </button>
+
+      </nav>
+
+      {/* Mobil Profil Menüsü (Sadece Mobilde Görünür) */}
+      {profileOpen && (
+        <div className="mobile-profile-overlay hide-desktop" onClick={() => setProfileOpen(false)}>
+          <div className="mobile-profile-sheet" onClick={e => e.stopPropagation()}>
+            <div className="sheet-handle" onClick={() => setProfileOpen(false)}></div>
+            <div className="sheet-header">
+              <div className="sheet-avatar">{userProfile?.displayName?.[0] || user?.email?.[0] || "U"}</div>
+              <div className="sheet-info">
+                <div className="sheet-name">{userProfile?.displayName || "Kullanıcı"}</div>
+                <div className="sheet-email">{user?.email}</div>
+              </div>
+            </div>
+            <div className="sheet-links">
+              <Link href="/dashboard" className="sheet-link" onClick={() => setProfileOpen(false)}>
+                <i className="fa-solid fa-chart-line"></i>
+                <span>Profil & İstatistikler</span>
+              </Link>
+              <Link href="/mistakes" className="sheet-link" onClick={() => setProfileOpen(false)}>
+                <i className="fa-solid fa-circle-xmark"></i>
+                <span>Hatalarım</span>
+              </Link>
+              <Link href="/archive" className="sheet-link" onClick={() => setProfileOpen(false)}>
+                <i className="fa-solid fa-spell-check"></i>
+                <span>Sözlük</span>
+              </Link>
+              {isAdmin && (
+                <Link href="/admin" className="sheet-link admin-link" onClick={() => setProfileOpen(false)}>
+                  <i className="fa-solid fa-user-shield"></i>
+                  <span>Admin Paneli</span>
+                </Link>
+              )}
+              <div className="sheet-divider"></div>
+              <button onClick={() => { logout(); setProfileOpen(false); }} className="sheet-link logout-red">
+                <i className="fa-solid fa-right-from-bracket"></i>
+                <span>Çıkış Yap</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Footer (Desktop only) */}
+      <footer className="app-footer hide-mobile">
         <div className="footer-content">
           <span className="footer-brand">ydt<span>focus</span></span>
           <span className="footer-copy">© 2026 YDT Focus | Mert Manav</span>
