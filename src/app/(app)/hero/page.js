@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getUserHeroStats, updateUserHeroStats } from "@/lib/firestore";
 import HeroAssistant from "@/components/HeroAssistant";
@@ -37,17 +37,13 @@ export default function HeroPage() {
   const [correctCount, setCorrectCount] = useState(0);
   const [hasErrored, setHasErrored] = useState(false);
 
-  useEffect(() => {
-    if (user) loadHero();
-    else if (!authLoading) setLoading(false);
-  }, [user, authLoading]);
-
-  async function loadHero() {
+  // Moved declarations up to satisfy React Compiler / Hoisting rules
+  const loadHero = useCallback(async () => {
+    if (!user) return;
     try {
       const data = await getUserHeroStats(user.uid);
       let lvls = data?.levels || heroStats;
       
-      // Update requirements to new standards
       const newReqs = { A1: 10, A2: 15, B1: 20, B2: 25, C1: 30 };
       Object.keys(lvls).forEach(k => { if (lvls[k].required !== newReqs[k]) lvls[k].required = newReqs[k]; });
       
@@ -59,14 +55,21 @@ export default function HeroPage() {
       setHeroWords(data?.heroWords || []);
     } catch (err) { console.error(err); }
     setLoading(false);
-  }
+  }, [user, heroStats, heroWords]);
 
-  function startLevel(level) {
+  useEffect(() => {
+    if (user) {
+      loadHero();
+    } else if (!authLoading) {
+      setLoading(false);
+    }
+  }, [user, authLoading, loadHero]);
+
+  const startLevel = (level) => {
     if (!heroStats[level].unlocked) return;
     const stats = heroStats[level];
     const subLevel = stats.completed + 1;
     
-    // Scale question count: A1 (5-8), A2 (6-10), B1 (8-12), B2 (10-14), C1 (10-15)
     const baseQs = { A1: 5, A2: 6, B1: 8, B2: 10, C1: 10 };
     const maxQs = { A1: 8, A2: 10, B1: 12, B2: 14, C1: 15 };
     const progress = stats.completed / (stats.required - 1 || 1);
@@ -122,9 +125,9 @@ export default function HeroPage() {
         ]);
         setGenerating(false);
       });
-  }
+  };
 
-  function handleCheck() {
+  const handleCheck = () => {
     const s = lessonSteps[currentStep];
     const ok = Object.entries(s.blanks).every(([g, v]) => placedWords[g]?.toLowerCase() === v.toLowerCase());
     if (ok) {
@@ -136,9 +139,9 @@ export default function HeroPage() {
       setWrongGap(true);
       setTimeout(() => setWrongGap(false), 500);
     }
-  }
+  };
 
-  function handleNext() {
+  const handleNext = () => {
     if (currentStep < lessonSteps.length - 1) {
       setCurrentStep(p => p + 1);
       setPlacedWords({});
@@ -147,9 +150,9 @@ export default function HeroPage() {
     } else {
       finishLesson();
     }
-  }
+  };
 
-  async function finishLesson() {
+  const finishLesson = async () => {
     const score = (correctCount / lessonSteps.length) * 100;
     const passed = score >= 60;
 
@@ -165,7 +168,7 @@ export default function HeroPage() {
     } else {
       setPhase("failed");
     }
-  }
+  };
 
   function WordTip({ text, tr }) {
     const [show, setShow] = useState(false);

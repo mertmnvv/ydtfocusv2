@@ -15,35 +15,54 @@ export default function DashboardPage() {
   const [showReminder, setShowReminder] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+    
     if (!user) {
       setLoading(false);
       return;
     }
-    Promise.all([
-      getUserWords(user.uid),
-      getUserStats(user.uid),
-    ]).then(([w, s]) => {
-      const wordList = w || [];
-      setWords(wordList);
-      setStats(s || { correct: 0, wrong: 0, streak: 0, studyTime: 0 });
 
-      // Daily Reminder Logic (Firestore backed)
-      const lastReminder = userProfile?.lastReminderDate;
-      const today = new Date().toDateString();
-      if (lastReminder !== today) {
-        const dueCount = wordList.filter(w => (w.nextReview || 0) <= Date.now()).length;
-        if (dueCount > 0) {
-          setTimeout(() => setShowReminder(true), 1500);
-          updateLastReminderDate(user.uid);
+    const fetchData = async () => {
+      try {
+        const [w, s] = await Promise.all([
+          getUserWords(user.uid),
+          getUserStats(user.uid),
+        ]);
+        
+        if (!isMounted) return;
+
+        const wordList = w || [];
+        setWords(wordList);
+        setStats(s || { correct: 0, wrong: 0, streak: 0, studyTime: 0 });
+
+        // Daily Reminder Logic
+        const lastReminder = userProfile?.lastReminderDate;
+        const today = new Date().toDateString();
+        if (lastReminder !== today) {
+          const dueCount = wordList.filter(w => (w.nextReview || 0) <= Date.now()).length;
+          if (dueCount > 0) {
+            setTimeout(() => {
+              if (isMounted) setShowReminder(true);
+            }, 1500);
+            updateLastReminderDate(user.uid);
+          }
         }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (isMounted) setLoading(false);
       }
-    }).catch(console.error).finally(() => setLoading(false));
+    };
+
+    fetchData();
+
+    return () => { isMounted = false; };
   }, [user, userProfile]);
 
   if (loading) return <div className="page-loading"><div className="spinner-ring"></div></div>;
 
   const total = words.length;
-  const masteredCount = words.filter(w => w.level >= 4).length; // Now level 4 is master
+  const masteredCount = words.filter(w => w.level >= 4).length;
   const pct = total > 0 ? Math.round((masteredCount / total) * 100) : 0;
   
   const levels = [
@@ -66,7 +85,6 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard-page profile-panel-view">
-      {/* Profil Başlığı (Minimal) */}
       <div className="profile-header minimal">
         <div className="profile-large-avatar sm">
           {userProfile?.displayName?.[0] || user?.email?.[0] || "U"}
@@ -82,13 +100,11 @@ export default function DashboardPage() {
 
       <div className="dash-divider"></div>
 
-      {/* Başlık */}
       <div className="dash-header">
         <h2 className="dash-title">Level Up</h2>
         <p className="dash-subtitle">Kişisel gelişim ve istatistiklerin.</p>
       </div>
 
-      {/* Ana Hedef */}
       <div className="glass-card dash-goal-card">
         <div className="dash-goal-top">
           <span className="dash-goal-label">Öğrenme Oranı (Mastery)</span>
@@ -102,7 +118,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Stat Kartları (Bento Grid) */}
       <div className="dash-bento-stats">
         <div className="dash-bento-card" style={{ background: "linear-gradient(135deg, rgba(48,209,88,0.1), transparent)", borderColor: "rgba(48,209,88,0.2)" }}>
           <div className="dash-bento-value" style={{ color: "var(--primary)" }}>{total}</div>
@@ -118,7 +133,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Seviye Barları (Akordeon) */}
       <div className="glass-card">
         <h3 className="dash-section-title">Kelime Seviyeleri</h3>
         <p className="hint-text" style={{ marginBottom: 16 }}>İçeriğini görmek için bir seviyeye tıklayın.</p>
@@ -163,7 +177,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Hızlı Erişim */}
       <div className="dash-quick-actions">
         <Link href="/srs" className="dash-action-btn dash-action-primary">
           Tekrarı Başlat

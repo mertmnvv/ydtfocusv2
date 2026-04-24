@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { addArchiveWord, deleteArchiveWord, searchArchiveWords, getArchiveWords } from "@/lib/firestore";
 import { useNotification } from "@/context/NotificationContext";
 import CustomDialog from "@/components/CustomDialog";
@@ -21,11 +21,8 @@ export default function AdminWordsPage() {
     A1: "#30d158", A2: "#e2b714", B1: "#ff9f0a", B2: "#bf5af2", C1: "#ff375f", C2: "#ff2d55" 
   };
 
-  useEffect(() => {
-    loadWords();
-  }, []);
-
-  async function loadWords() {
+  // Hoisting fix: Declarations before usage
+  const loadWords = useCallback(async () => {
     setLoading(true);
     try {
       const result = await getArchiveWords(50);
@@ -33,12 +30,17 @@ export default function AdminWordsPage() {
       setLastDoc(result.lastDoc);
       setHasMore(result.words.length === 50);
     } catch (err) {
-      showNotification("Kelime yükleme hatası", "error");
+      if (showNotification) showNotification("Kelime yükleme hatası", "error");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }
+  }, [showNotification]);
 
-  async function loadMore() {
+  useEffect(() => {
+    loadWords();
+  }, [loadWords]);
+
+  const loadMore = async () => {
     if (!lastDoc || loadingMore) return;
     setLoadingMore(true);
     try {
@@ -47,12 +49,13 @@ export default function AdminWordsPage() {
       setLastDoc(result.lastDoc);
       setHasMore(result.words.length === 50);
     } catch (err) {
-      showNotification("Daha fazla kelime yüklenemedi", "error");
+      if (showNotification) showNotification("Daha fazla kelime yüklenemedi", "error");
+    } finally {
+      setLoadingMore(false);
     }
-    setLoadingMore(false);
-  }
+  };
 
-  async function handleSearch() {
+  const handleSearch = async () => {
     if (!search.trim()) { loadWords(); return; }
     setLoading(true);
     try {
@@ -61,12 +64,13 @@ export default function AdminWordsPage() {
       setHasMore(false);
       setLastDoc(null);
     } catch (err) {
-      showNotification("Arama sırasında bir hata oluştu", "error");
+      if (showNotification) showNotification("Arama sırasında bir hata oluştu", "error");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }
+  };
 
-  async function handleAdd(e) {
+  const handleAdd = async (e) => {
     e.preventDefault();
     if (!form.word || !form.meaning) return showNotification("Kelime ve anlam gerekli!", "warning");
     try {
@@ -78,9 +82,9 @@ export default function AdminWordsPage() {
     } catch (err) {
       showNotification("Kelime eklenirken hata oluştu.", "error");
     }
-  }
+  };
 
-  async function handleDeleteConfirm() {
+  const handleDeleteConfirm = async () => {
     if (!deleteConfirm) return;
     try {
       await deleteArchiveWord(deleteConfirm);
@@ -91,7 +95,7 @@ export default function AdminWordsPage() {
     } finally {
       setDeleteConfirm(null);
     }
-  }
+  };
 
   return (
     <div className="admin-words-view">
@@ -251,14 +255,13 @@ export default function AdminWordsPage() {
 
         .mobile-word-text { font-weight: 800; font-size: 1.05rem; }
         .syn-subtext { color: var(--archive); font-size: 0.75rem; }
-        .mobile-only-meaning { display: none; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 2px; }
+        .mobile-only-meaning { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 2px; }
 
         @media (max-width: 600px) {
           .mobile-stack { flex-direction: column; }
           .admin-header-mobile { flex-direction: column; align-items: flex-start !important; gap: 15px; }
           .admin-header-mobile button { width: 100%; }
           .hide-mobile { display: none; }
-          .mobile-only-meaning { display: block; }
           .admin-table th, .admin-table td { padding: 12px 10px; }
           .admin-form-container { padding: 15px; }
         }
