@@ -89,13 +89,28 @@ export default function HeroPage() {
     const themes = ["daily life", "work", "travel", "hobbies", "shopping", "technology", "nature", "emotions", "socializing", "education", "science", "arts", "politics", "history"];
     const randomTheme = themes[Math.floor(Math.random() * themes.length)];
 
-    const prompt = `Generate ${qCount} UNIQUE English sentence completion exercises for CEFR level ${level}, specifically for step ${subLevel} of ${stats.required}.
-    Step 1 is introductory, step ${stats.required} is peak difficulty for this level. 
-    CURRENT THEME: ${randomTheme}.
+    const prompt = `Task: Generate ${qCount} English "Fill in the Blank" exercises.
+    Level: CEFR ${level}, Step ${subLevel}/${stats.required}.
+    Theme: ${randomTheme}.
+
+    FORMAT EXAMPLE:
+    {
+      "steps": [
+        {
+          "text": "He usually [gap1] to the gym on Mondays.",
+          "blanks": {"gap1": "goes"},
+          "translation": "O genellikle Pazartesi günleri spor salonuna gider.",
+          "distractors": ["go", "going", "gone"],
+          "allTranslations": {"He": "O", "usually": "genellikle", "goes": "gider", "to": "-e", "the": "o", "gym": "spor salonu"}
+        }
+      ]
+    }
+
     RULES:
-    1. Each sentence has ONE blank [gap1].
-    2. Provide 3 WRONG high-quality distractors.
-    3. Return ONLY JSON: { "steps": [{ "text": "...", "blanks": {"gap1": "word"}, "translation": "...", "distractors": ["...", "...", "..."], "allTranslations": {...} }] }`;
+    1. "text" MUST contain exactly one "[gap1]".
+    2. "blanks" MUST contains the correct word for "[gap1]".
+    3. "distractors" MUST be 3 single words, NOT full sentences.
+    4. Return ONLY the JSON object.`;
 
     fetch("/api/groq", {
       method: "POST",
@@ -103,14 +118,20 @@ export default function HeroPage() {
       body: JSON.stringify({
         model: "llama-3.1-8b-instant",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.9,
+        temperature: 0.7, // Lower temperature for more consistency
       }),
     })
       .then(r => r.json())
       .then(data => {
         const raw = data.choices?.[0]?.message?.content || "";
         const json = JSON.parse(raw.match(/\{[\s\S]*\}/)[0]);
-        setLessonSteps(json.steps.map(s => {
+        
+        // Filter out steps without [gap1]
+        const validSteps = json.steps.filter(s => s.text.includes("[gap1]"));
+        
+        if (validSteps.length === 0) throw new Error("No valid steps");
+
+        setLessonSteps(validSteps.map(s => {
           const correctAnswer = Object.values(s.blanks)[0];
           const dists = (s.distractors || []).filter(d => d && d.trim() !== "");
           const finalBank = [correctAnswer, ...dists].filter(w => w && w.trim() !== "");
