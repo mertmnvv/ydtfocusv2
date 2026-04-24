@@ -210,6 +210,86 @@ export default function HeroPage() {
 
   if (loading || authLoading) return <div className="page-loading"><div className="spinner-ring"></div></div>;
 
+  // ── MAINTENANCE MODE (NON-ADMIN) ──
+  if (!isAdmin) {
+    return (
+      <div className="hero-maintenance">
+        <div className="glass-card maintenance-card">
+          <div className="maintenance-icon">
+            <i className="fa-solid fa-rocket"></i>
+          </div>
+          <h1>Zero to Hero Çok Yakında!</h1>
+          <p>YDT Focus'un en kapsamlı öğrenme modülü şu an son hazırlık aşamasında.</p>
+          <div className="maintenance-features">
+            <div className="m-feat">
+              <i className="fa-solid fa-check"></i>
+              <span>100 Basamaklı Müfredat</span>
+            </div>
+            <div className="m-feat">
+              <i className="fa-solid fa-check"></i>
+              <span>AI Destekli Akıllı Sorular</span>
+            </div>
+            <div className="m-feat">
+              <i className="fa-solid fa-check"></i>
+              <span>Kişiselleştirilmiş İlerleme</span>
+            </div>
+          </div>
+          <div className="maintenance-badge">ÇOK YAKINDA SİZLERLE</div>
+        </div>
+        <style jsx>{`
+          .hero-maintenance {
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+          }
+          .maintenance-card {
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+            text-align: center;
+            border-top: 4px solid var(--accent);
+          }
+          .maintenance-icon {
+            font-size: 4rem;
+            color: var(--accent);
+            margin-bottom: 24px;
+            animation: float 3s ease-in-out infinite;
+          }
+          h1 { font-size: 1.8rem; margin-bottom: 16px; font-weight: 800; }
+          p { color: var(--text-muted); line-height: 1.6; margin-bottom: 30px; }
+          .maintenance-features {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 30px;
+            text-align: left;
+            background: rgba(255,255,255,0.03);
+            padding: 20px;
+            border-radius: 12px;
+          }
+          .m-feat { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 0.9rem; }
+          .m-feat i { color: #30d158; }
+          .maintenance-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            background: var(--accent);
+            color: #000;
+            border-radius: 20px;
+            font-weight: 900;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+          }
+          @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
   // ── FAILED ──
   if (phase === "failed") {
     const score = Math.round((correctCount / lessonSteps.length) * 100);
