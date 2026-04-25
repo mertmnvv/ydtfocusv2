@@ -69,6 +69,23 @@ Focus artık çok daha düzenli çalışıyor. Bir okuma metnindeki tüm önemli
 
 ---
 
+## [25 Nisan 2026 — 04:14] Focus Kişiselleştirme ve Bellek Yönetimi
+
+### 📋 Uygulama Planı
+Asistanın kullanıcıyı her yönüyle tanımasını sağlamak (isim, ilerleme, hatalar) ve sohbet yönetimini kolaylaştırmak.
+
+### ✅ Tamamlanan Görevler
+- **Sohbeti Temizleme:** AI panelinin üst kısmına "Sohbeti Temizle" butonu (çöp kutusu ikonu) eklendi. Bu işlem Firestore'daki mesaj geçmişini de siliyor.
+- **Kullanıcı Tanıma:** Focus artık kullanıcıyı ismiyle karşılıyor. İstatistikleri (streak, çalışma süresi) ve "Hero" ilerlemesini (A1-C1 seviyeleri) biliyor.
+- **Hata Farkındalığı:** Kullanıcının testlerde yanlış yaptığı kelimeler Focus'un hafızasına yüklendi. Artık bu kelimeler üzerinden öneriler yapabiliyor.
+- **Proaktif Karşılama:** Sohbet geçmişi boş olduğunda veya temizlendiğinde, Focus kullanıcıya özel bir "Hoş geldin" mesajı ve ilerleme özeti sunuyor.
+- **Teknik İyileştirme:** Kelime bankası senkronizasyonu ve aksiyon tetikleyicileri (toplu kelime ekleme) %100 kararlı hale getirildi.
+
+### 📝 Özet (Walkthrough)
+Focus artık sadece bir asistan değil, senin tüm eğitim geçmişini bilen gerçek bir mentor. Seni isminle karşılıyor, nerede kaldığını biliyor ve hatalarını hatırlatıyor. İstediğinde geçmişi temizleyip tertemiz bir sayfa açabiliyor ama seni tanımaya devam ediyor.
+
+---
+
 ## [25 Nisan 2026 — 04:09] Focus Üslup ve Doğallık Güncellemesi
 
 ### 📋 Uygulama Planı

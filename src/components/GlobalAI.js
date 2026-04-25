@@ -3,26 +3,58 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import ReactMarkdown from "react-markdown";
-import { saveAIMessage, getAIMessages, addUserWord, subscribeToUserWords } from "@/lib/firestore";
+import { saveAIMessage, getAIMessages, addUserWord, subscribeToUserWords, clearAIChat, getUserStats, getUserHeroStats, getUserMistakes } from "@/lib/firestore";
 import { useNotification } from "@/context/NotificationContext";
 
 export default function GlobalAI() {
   const { user } = useAuth();
   const { showNotification } = useNotification();
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    { role: "ai", content: "Selam! Ben **Focus**. YDT, YDS veya YÖKDİL sürecinde aklına takılanları bana sorabilirsin. Hem hocan hem de çalışma arkadaşın olarak buradayım! \n\n*Örneğin: 'YDT ne zaman?', 'Present Perfect vs Past Simple' gibi sorular sorabilirsin.*" }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [pageContext, setPageContext] = useState(null);
-  const [words, setWords] = useState([]); // Kullanıcının bankasındaki kelimeler
+  const [words, setWords] = useState([]); 
+  const [userMetadata, setUserMetadata] = useState(null);
   const scrollRef = useRef(null);
 
-  // Kelime bankasını dinle (Duplicate engellemek için AI'ya vereceğiz)
+  // 1. Veri Senkronizasyonu (Kelime Bankası, İstatistikler, Hatalar)
   useEffect(() => {
     if (!user) return;
+
+    // Kelime Bankası (Realtime)
     const unsubscribe = subscribeToUserWords(user.uid, (w) => setWords(w || []));
+
+    // Diğer Veriler (Statik/Mount sırasında)
+    const fetchData = async () => {
+      const [stats, hero, mistakes, history] = await Promise.all([
+        getUserStats(user.uid),
+        getUserHeroStats(user.uid),
+        getUserMistakes(user.uid),
+        getAIMessages(user.uid)
+      ]);
+      
+      const mistakenWordList = mistakes.map(id => words.find(w => w.id === id)?.word).filter(Boolean);
+
+      setUserMetadata({
+        name: user.displayName || "Arkadaşım",
+        streak: stats.streak || 0,
+        minutes: stats.dailyMinutes || 0,
+        levels: hero.levels || {},
+        mistakes: mistakenWordList
+      });
+
+      if (history.length > 0) {
+        setMessages(history.map(m => ({ role: m.role, content: m.content })));
+      } else {
+        setMessages([{
+          role: "ai",
+          content: `Selam **${user.displayName || "çalışma arkadaşım"}**! 👋 Tekrar hoş geldin. Bugün seninle birlikte çalışmak için sabırsızlanıyorum. İlerlemene baktım, harika gidiyorsun! Nereden başlayalım?`
+        }]);
+      }
+    };
+
+    fetchData();
     return () => unsubscribe();
   }, [user]);
 
@@ -33,16 +65,19 @@ export default function GlobalAI() {
     return () => window.removeEventListener("focus-page-context", handleContext);
   }, []);
 
-  // 1. Hafıza: Geçmiş mesajları yükle
-  useEffect(() => {
-    if (!user) return;
-    getAIMessages(user.uid).then(history => {
-      if (history.length > 0) {
-        const formatted = history.map(m => ({ role: m.role, content: m.content }));
-        setMessages(formatted);
-      }
-    });
-  }, [user]);
+  async function handleClearChat() {
+    if (!user || !confirm("Sohbet geçmişini silmek istediğine emin misin? (Bilgilerini hatırlamaya devam edeceğim)")) return;
+    try {
+      await clearAIChat(user.uid);
+      setMessages([{
+        role: "ai",
+        content: `Sohbeti temizledim ama seni unutmadım **${userMetadata?.name}**! 😉 Hadi yeni bir başlangıç yapalım. Bugün ne üzerine çalışalım?`
+      }]);
+      showNotification("Sohbet geçmişi silindi.", "success");
+    } catch (e) {
+      showNotification("Hata oluştu.", "error");
+    }
+  }
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -64,11 +99,18 @@ export default function GlobalAI() {
 
     const systemPrompt = `Senin adın Focus. Mert tarafından geliştirilen, öğrencinin en yakın çalışma arkadaşı ve uzman İngilizce hocasısın.
     
+    KULLANICI BİLGİLERİ:
+    - İsim: ${userMetadata?.name || "Arkadaşım"}
+    - Streak: ${userMetadata?.streak} gün
+    - Bugün çalışma süresi: ${userMetadata?.minutes} dakika
+    - Seviye İlerlemesi: ${userMetadata?.levels ? Object.entries(userMetadata.levels).map(([k,v]) => `${k}: %${Math.round((v.completed/v.required)*100)}`).join(", ") : "Bilgi yok"}
+    - Hatalı Olduğu Kelimeler: ${userMetadata?.mistakes?.join(", ") || "Henüz hatası yok, harika!"}
+    
     ÜSLUP VE KİŞİLİK KURALLARI:
     - Robotik, klişe ve yapay cümlelerden (Örn: "Metinde bahsedilmektedir", "Bu kadar, anlattım", "Metin şunu vurgular") kesinlikle kaçın.
     - Sanki öğrenciyle yan yana oturmuş, metni birlikte okumuşsunuz gibi doğal ve samimi bir dille konuş. 
+    - Kullanıcıya ismiyle hitap et. Onu motive et, hatalı olduğu kelimelerden örnekler vererek konuyu açıkla.
     - Bir metni anlatırken rapor sunar gibi değil, "Bak burada aslında şunu demek istiyor...", "Şu kısım sınavda çok önemli..." gibi ifadeler kullan.
-    - Gereksiz nezaket kalıplarından veya kendini sürekli tekrar eden özet şablonlarından uzak dur.
     
     ÖNEMLİ KISITLAMALAR:
     - Mert dışında hiçbir ekip/kuruluş isminden bahsetme.
@@ -76,7 +118,7 @@ export default function GlobalAI() {
     - Modals: can, must, should, would vb. yardımcı fiillerdir.
     
     YETENEKLER:
-    - Kelime ekleme isteği gelirse: [ACTION: ADD_WORD {"word": "...", "meaning": "...", "syn": "..."}]
+    - Kelime ekleme: [ACTION: ADD_WORD {"word": "...", "meaning": "...", "syn": "..."}]
     
     BİLGİ TABANI:
     - YDT, YDS, YÖKDİL odaklı konuş.`;
@@ -165,9 +207,14 @@ export default function GlobalAI() {
               <h4>Focus</h4>
               <span>Senin Çalışma Arkadaşın</span>
             </div>
-            <button className="close-ai" onClick={() => setIsOpen(false)}>
-              <i className="fa-solid fa-chevron-down"></i>
-            </button>
+            <div className="ai-header-actions">
+              <button className="clear-ai" onClick={handleClearChat} title="Sohbeti Temizle">
+                <i className="fa-solid fa-trash-can"></i>
+              </button>
+              <button className="close-ai" onClick={() => setIsOpen(false)}>
+                <i className="fa-solid fa-chevron-down"></i>
+              </button>
+            </div>
           </div>
 
           <div className="global-ai-messages" ref={scrollRef}>
@@ -296,15 +343,25 @@ export default function GlobalAI() {
 
         .ai-header-info h4 { margin: 0; font-size: 1rem; font-weight: 800; }
         .ai-header-info span { font-size: 0.75rem; color: var(--text-muted); }
-
-        .close-ai {
+        
+        .ai-header-actions {
           margin-left: auto;
+          display: flex;
+          align-items: center;
+          gap: 15px;
+        }
+
+        .clear-ai, .close-ai {
           background: none;
           border: none;
           color: var(--text-muted);
           cursor: pointer;
-          font-size: 1.2rem;
+          font-size: 1.1rem;
+          transition: color 0.2s;
         }
+
+        .clear-ai:hover { color: #ff453a; }
+        .close-ai:hover { color: var(--text); }
 
         .global-ai-messages {
           flex: 1;

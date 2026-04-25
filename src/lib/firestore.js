@@ -316,3 +316,10 @@ export async function getAIMessages(uid, limitCount = 20) {
   const snap = await getDocs(q);
   return snap.docs.map(doc => doc.data()).reverse();
 }
+export async function clearAIChat(uid) {
+  const chatRef = collection(db, "users", uid, "ai_messages");
+  const snapshot = await getDocs(chatRef);
+  const batch = writeBatch(db);
+  snapshot.docs.forEach(d => batch.delete(d.ref));
+  await batch.commit();
+}
