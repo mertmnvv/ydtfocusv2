@@ -14,7 +14,7 @@ export default function GlobalAI() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [pageContext, setPageContext] = useState(null);
-  const [words, setWords] = useState([]); 
+  const [words, setWords] = useState([]);
   const [userMetadata, setUserMetadata] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -35,7 +35,7 @@ export default function GlobalAI() {
         getUserMistakes(user.uid),
         getAIMessages(user.uid)
       ]);
-      
+
       const mistakenWordList = mistakes.map(id => words.find(w => w.id === id)?.word).filter(Boolean);
       const firstName = (user.displayName || "Arkadaşım").split(" ")[0];
 
@@ -73,16 +73,21 @@ export default function GlobalAI() {
       { id: "mistakes", label: "Hatalarımı çalışalım", prompt: "En son yaptığım hatalı kelimeler üzerinden bana bir pratik yaptırır mısın?" },
       { id: "progress", label: "İlerlememi özetle", prompt: "Şu anki ilerlememi ve eksiklerimi bana bir öğretmen gözüyle özetler misin?" },
       { id: "word", label: "Yeni bir kelime", prompt: "Seviyeme uygun, sınavda çıkabilecek rastgele bir akademik kelime öğretir misin?" },
-      { id: "special_reading", label: "✨ Sana Özel Metin Üret", action: generateSpecialPassage }
+      { id: "special_reading", label: "Sana Özel Metin Üret", action: generateSpecialPassage }
     ];
 
+    // Özel metin üretme her zaman görünsün (farkındalık için)
+    s.push(randomPersonal[3]);
+
     if (meta?.mistakes?.length > 0) {
-      s.push(randomPersonal[3]); // Special Reading if mistakes exist
-      s.push(randomPersonal[0]);
+      s.push(randomPersonal[0]); // Hatalarımı çalışalım
     } else {
-      const rand = randomPersonal[Math.floor(Math.random() * (randomPersonal.length - 2)) + 1];
+      // Rastgele bir diğer seçenek
+      const otherOptions = [randomPersonal[1], randomPersonal[2]];
+      const rand = otherOptions[Math.floor(Math.random() * otherOptions.length)];
       s.push(rand);
     }
+
     setSuggestions(s);
   }
 
@@ -119,13 +124,13 @@ export default function GlobalAI() {
       });
       const data = await response.json();
       const result = JSON.parse(data.choices[0].message.content);
-      
+
       const event = new CustomEvent("focus-load-passage", { detail: result });
       window.dispatchEvent(event);
 
-      setMessages(prev => [...prev, { 
-        role: "ai", 
-        content: `Harika! Hatalı olduğun kelimeleri içeren özel metnini hazırladım ve Reading paneline yükledim. Hadi hemen göz atalım.` 
+      setMessages(prev => [...prev, {
+        role: "ai",
+        content: `Harika! Hatalı olduğun kelimeleri içeren özel metnini hazırladım ve Reading paneline yükledim. Hadi hemen göz atalım.`
       }]);
     } catch (e) {
       setMessages(prev => [...prev, { role: "ai", content: "Metni üretirken bir sorun oluştu, lütfen tekrar dener misin?" }]);
@@ -179,14 +184,14 @@ export default function GlobalAI() {
     if (!textToSend.trim() || loading) return;
 
     if (typeof overrideText === 'string') setSuggestions([]);
-    
+
     const userMsg = textToSend.trim();
     if (!overrideText) setInput("");
-    
+
     const newMessage = { role: "user", content: userMsg };
     setMessages(prev => [...prev, newMessage]);
     if (user) saveAIMessage(user.uid, newMessage);
-    
+
     setLoading(true);
 
     const systemPrompt = `Senin adın Focus. Mert tarafından geliştirilen, öğrencinin sınav yolculuğundaki en yakın çalışma arkadaşı ve uzman İngilizce hocasısın.
@@ -246,10 +251,10 @@ export default function GlobalAI() {
       });
       const data = await resp.json();
       let aiContent = data.choices?.[0]?.message?.content || "Şu an cevap veremiyorum, lütfen tekrar dene.";
-      
+
       // Aksiyon Yakalama ve İşleme
       const actionMatches = [...aiContent.matchAll(/\[ACTION: ADD_WORD\s+(\{.*?\})\]/gs)];
-      
+
       if (actionMatches.length > 0 && user) {
         let addedCount = 0;
         for (const match of actionMatches) {
@@ -257,7 +262,7 @@ export default function GlobalAI() {
             // JSON içindeki potansiyel hatalı karakterleri temizleyelim
             const jsonStr = match[1].replace(/[\n\r]/g, "").trim();
             const wordData = JSON.parse(jsonStr);
-            
+
             const exists = words.some(w => w.word?.toLowerCase() === wordData.word?.toLowerCase());
             if (!exists) {
               await addUserWord(user.uid, wordData);
@@ -284,8 +289,8 @@ export default function GlobalAI() {
 
   return (
     <>
-      <button 
-        className={`global-ai-fab ${isOpen ? "active" : ""}`} 
+      <button
+        className={`global-ai-fab ${isOpen ? "active" : ""}`}
         onClick={() => setIsOpen(!isOpen)}
         title="Focus AI Asistanı"
       >
@@ -342,13 +347,13 @@ export default function GlobalAI() {
                 </div>
               </div>
             ))}
-            
+
             {suggestions.length > 0 && !loading && (
               <div className="ai-suggestions">
                 {suggestions.map(s => (
-                  <button 
-                    key={s.id} 
-                    onClick={() => s.action ? s.action() : sendMessage(s.prompt)} 
+                  <button
+                    key={s.id}
+                    onClick={() => s.action ? s.action() : sendMessage(s.prompt)}
                     className="suggestion-chip"
                   >
                     {s.label}
@@ -367,9 +372,9 @@ export default function GlobalAI() {
           </div>
 
           <div className="global-ai-input">
-            <input 
-              type="text" 
-              placeholder="Sınavlar hakkında bir şey sor..." 
+            <input
+              type="text"
+              placeholder="Sınavlar hakkında bir şey sor..."
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === "Enter" && sendMessage()}
