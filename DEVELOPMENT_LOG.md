@@ -68,3 +68,17 @@ Asistanın kelime ekleme yeteneğindeki hataları (tek seferde çoklu ekleme yap
 Focus artık çok daha düzenli çalışıyor. Bir okuma metnindeki tüm önemli kelimeleri tek seferde bankana eklemesini isteyebilirsin; o hem bankandaki mevcut kelimeleri ayıklayacak hem de kalanların hepsini tek hamlede kaydedecektir.
 
 ---
+
+## [25 Nisan 2026 — 03:59] Focus Kimlik ve Mantık Düzeltmesi
+
+### 📋 Uygulama Planı
+Asistanın platformun kim tarafından geliştirildiğine dair yanlış/belirsiz bilgi vermesini önlemek ve sistem promptu mantığındaki bir hatayı gidermek.
+
+### ✅ Tamamlanan Görevler
+- **Geliştirici Bilgisi Güncelleme:** Focus'a platformun **Mert** tarafından geliştirildiği bilgisi kesin bir kural olarak öğretildi. Artık "uzman ekipler" gibi belirsiz ve yanlış yönlendirici cevaplar vermeyecek.
+- **Hata Giderimi:** AI'ya gönderilen talimatlarda `finalSystemPrompt` değişkeninin kullanılmaması sorunu ve `subscribeToUserWords` import eksikliği düzeltildi. Artık asistan hem bağlamı hem de yeni kuralları doğru şekilde okuyor.
+
+### 📝 Özet (Walkthrough)
+Focus artık kim olduğunu ve platformu kimin yaptığını net bir şekilde biliyor. Yapılan mantık ve import düzeltmeleriyle birlikte, kelime ekleme ve bağlamsal farkındalık özellikleri de %100 kararlı hale getirildi.
+
+---

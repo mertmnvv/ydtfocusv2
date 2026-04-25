@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import ReactMarkdown from "react-markdown";
-import { saveAIMessage, getAIMessages, addUserWord } from "@/lib/firestore";
+import { saveAIMessage, getAIMessages, addUserWord, subscribeToUserWords } from "@/lib/firestore";
 import { useNotification } from "@/context/NotificationContext";
 
 export default function GlobalAI() {
@@ -61,8 +61,12 @@ export default function GlobalAI() {
     
     setLoading(true);
 
-    let systemPrompt = `Selam! Senin adın Focus. YDT Focus platformunun hem uzman öğretmeni hem de en yakın çalışma arkadaşısın. 
+    const systemPrompt = `Selam! Senin adın Focus. YDT Focus platformunun hem uzman öğretmeni hem de en yakın çalışma arkadaşısın. 
     Kullanıcıya karşı samimi, destekleyici, motive edici ve bir dost gibi yaklaşmalısın. "Siz" yerine "Sen" dilini kullan.
+    
+    ÖNEMLİ BİLGİ:
+    - Bu platform (YDT Focus), Mert tarafından dil öğrenme sürecini daha verimli hale getirmek amacıyla geliştirilmiştir. 
+    - "Bu platformu kim yaptı?" gibi sorulara net bir şekilde "Mert tarafından geliştirildi" cevabını ver. Yanlış veya belirsiz bilgiler verme.
     
     Görevin SADECE YDT, YDS, YÖKDİL ve İngilizce dil öğrenimi konularında yardımcı olmaktır. 
     
@@ -71,15 +75,17 @@ export default function GlobalAI() {
     - YDS: Yılda 2 kez + aylık e-YDS. 80 soru, 180 dk.
     - YÖKDİL: Yılda 2 kez. 80 soru, 180 dk.`;
 
+    let finalSystemPrompt = systemPrompt;
+
     if (pageContext) {
-      systemPrompt += `\n\nŞU ANKİ SAYFA İÇERİĞİ: ${JSON.stringify(pageContext)}`;
+      finalSystemPrompt += `\n\nŞU ANKİ SAYFA İÇERİĞİ: ${JSON.stringify(pageContext)}`;
     }
 
     if (words.length > 0) {
-      systemPrompt += `\n\nKULLANICININ KELİME BANKASI (Bu kelimeleri tekrar ekleme): ${words.map(w => w.word).join(", ")}`;
+      finalSystemPrompt += `\n\nKULLANICININ KELİME BANKASI (Bu kelimeleri tekrar ekleme): ${words.map(w => w.word).join(", ")}`;
     }
 
-    systemPrompt += `\n\nYETENEKLER & KURALLAR:
+    finalSystemPrompt += `\n\nYETENEKLER & KURALLAR:
     - Kelime ekleme isteği gelirse: [ACTION: ADD_WORD {"word": "ENGLISH_WORD", "meaning": "TURKISH_MEANING", "syn": "SYNONYM"}]
     - ÖNEMLİ: "word" kısmına MUTLAKA kelimenin İngilizcesini yaz. 
     - Tek bir mesajda birden fazla kelime ekleyebilirsin. Her biri için ayrı [ACTION: ADD_WORD ...] etiketi kullan.
@@ -95,7 +101,7 @@ export default function GlobalAI() {
         body: JSON.stringify({
           model: "llama-3.1-8b-instant",
           messages: [
-            { role: "system", content: systemPrompt },
+            { role: "system", content: finalSystemPrompt },
             ...messages.slice(-10).map(m => ({ role: m.role === "ai" ? "assistant" : "user", content: m.content })),
             { role: "user", content: userMsg }
           ],
