@@ -69,6 +69,22 @@ Focus artık çok daha düzenli çalışıyor. Bir okuma metnindeki tüm önemli
 
 ---
 
+## [25 Nisan 2026 — 04:07] Focus Zekâ ve Doğruluk Hardening
+
+### 📋 Uygulama Planı
+Asistanın halüsinasyon görmesini engellemek, gramer bilgilerini doğru vermesini sağlamak ve komutları (aksiyonları) asla atlamamasını garanti altına almak.
+
+### ✅ Tamamlanan Görevler
+- **Halüsinasyon Engelleme:** Modals gibi temel gramer konularında uydurma bilgi vermesi engellendi. Sistem promptuna "bilmiyorsan uydurma" ve "Modals İngilizce yardımcı fiillerdir" gibi net direktifler eklendi.
+- **Sıcaklık (Temperature) Optimizasyonu:** Modelin yaratıcılık/uydurma dengesini korumak için `temperature` değeri `0.5`'ten `0.3`'e düşürüldü. Bu, daha kararlı ve doğru cevaplar üretmesini sağlayacak.
+- **Kesin Kimlik Tanımı:** Platformun sadece Mert tarafından yapıldığı, "ekip" veya "işbirliği" gibi ifadelerin kullanılmaması gerektiği netleştirildi.
+- **Aksiyon Tetikleyici Güçlendirme:** "Hepsini kaydet" gibi toplu komutlarda AI'nın etiketleri (tags) üretmeyi unutmaması için talimatlar agresifleştirildi.
+
+### 📝 Özet (Walkthrough)
+Focus artık çok daha disiplinli bir hoca oldu. Uydurma bilgilerden kaçınıyor, kimliğini (Mert'in eseri olduğunu) net bir şekilde koruyor ve kelime kaydetme komutlarını çok daha sadık bir şekilde yerine getiriyor.
+
+---
+
 ## [25 Nisan 2026 — 03:59] Focus Kimlik ve Mantık Düzeltmesi
 
 ### 📋 Uygulama Planı
