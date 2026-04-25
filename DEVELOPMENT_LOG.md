@@ -69,6 +69,37 @@ Focus artık çok daha düzenli çalışıyor. Bir okuma metnindeki tüm önemli
 
 ---
 
+## [25 Nisan 2026 — 04:29] Focus Hata Giderimi ve Veri Kısıtlama
+
+### 📋 Uygulama Planı
+Kodda oluşan bir söz dizimi hatasını düzeltmek ve kullanıcının isteği üzerine Focus'un "Zero to Hero" ilerleme panelini görmesini engellemek.
+
+### ✅ Tamamlanan Görevler
+- **Syntax Fix:** `GlobalAI.js` dosyasında template literal içinde oluşan ve uygulamanın çökmesine neden olan yazım hatası düzeltildi.
+- **Veri Kısıtlama:** Focus'un sistem promptundan "Zero to Hero" (Hero/Level Up) ilerleme verileri tamamen çıkarıldı. Artık Focus bu paneli görmüyor ve oradaki sayılar üzerinden yorum yapmıyor.
+- **Odak Güncellemesi:** Focus artık sadece senin ismin, çalışma süren, streak bilgin ve hatalı kelimelerin üzerinden sana rehberlik edecek.
+
+### 📝 Özet (Walkthrough)
+Uygulamadaki çökme hatası giderildi ve Focus'un erişebildiği veriler senin isteğin doğrultusunda sınırlandırıldı. Artık "Zero to Hero" panelindeki teknik detaylara takılmadan, sadece senin çalışma alışkanlıklarına ve hatalarına odaklanan daha sade bir asistan deneyimi sunuyor.
+
+---
+
+## [25 Nisan 2026 — 04:28] Focus İlerleme Analizi ve Doğallaştırma
+
+### 📋 Uygulama Planı
+Asistanın kullanıcı ilerlemesini bir robot gibi (A1 şu, B1 bu...) listelemesini engellemek; daha anlamlı, özetleyici ve teşvik edici bir hoca dili kurmak.
+
+### ✅ Tamamlanan Görevler
+- **Filtreli Veri Akışı:** Focus'a gönderilen seviye verileri filtrelendi. Artık %0 olan (henüz başlanmamış) seviyeler AI'ya hiç gönderilmiyor. Bu sayede AI'nın gereksiz liste yapması kökten engellendi.
+- **Liste Yasağı:** Sistem promptuna "Tüm seviyeleri tek tek sayma, sadece aktif olana odaklan" kuralı eklendi.
+- **Daha Doğal Teşvik:** "Şu kadar metne ihtiyacın var" gibi rapor cümleleri yerine, "Hadi gel şu hedefi bugün tamamlayalım" gibi daha insansı ve motive edici kalıplar teşvik edildi.
+- **Hata Giderimi:** Streak ve çalışma süresi yorumlarındaki tutarsızlıklar giderildi.
+
+### 📝 Özet (Walkthrough)
+Focus artık ilerlemen hakkında bir memur gibi rapor vermiyor. Sadece neredeysen ve neye ihtiyacın varsa ona odaklanıyor. Gereksiz seviye isimlerini saymayı bıraktı ve tamamen senin aktif hedeflerine yönelik bir hoca gibi konuşmaya başladı.
+
+---
+
 ## [25 Nisan 2026 — 04:26] Focus Aksiyon Güvenilirliği ve JSON Fix
 
 ### 📋 Uygulama Planı
@@ -82,6 +113,21 @@ AI'nın kelime ekleme komutlarını (ACTION tags) atlamasını veya hatalı form
 
 ### 📝 Özet (Walkthrough)
 Focus'un komutları anlama ve uygulama kapasitesi en üst seviyeye çıkarıldı. Artık metindeki kelimeleri topluca veya tek tek kaydetme isteklerini çok daha sadık bir şekilde yerine getiriyor ve hata payı minimize edildi.
+
+---
+
+## [25 Nisan 2026 — 04:24] Focus Veri Şeffaflığı ve İsim Revizyonu
+
+### 📋 Uygulama Planı
+Asistanın kullanıcı verilerini (seviyeler, ilerleme) daha doğru yorumlamasını sağlamak, verilerin kaynağını açıklamasını öğretmek ve hitap şeklini resmileşmekten kurtarmak.
+
+### ✅ Tamamlanan Görevler
+- **İsim Revizyonu:** Focus artık kullanıcının tam ismini (ad soyad) değil, sadece **ilk ismini** kullanıyor. Bu, "öğretmen-arkadaş" kimliğiyle daha uyumlu hale getirildi.
+- **Veri Kaynağı Netleştirme:** Focus'a, senin hakkında verdiği bilgileri (seviye ilerlemeleri, hatalar vb.) nereden aldığı öğretildi. Artık "bu bilgiyi nereden biliyorsun?" diye sorduğunda, platformdaki "Level Up" paneli ve çalışma geçmişini kaynak olarak gösterecek.
+- **Seviye Verisi Hassasiyeti:** AI'ya gönderilen seviye verileri (Tamamlanan: X / Gereken: Y) şeklinde detaylandırıldı. Bu sayede "A1'de misin B1'de misin?" kafa karışıklığı giderildi.
+
+### 📝 Özet (Walkthrough)
+Focus artık seninle soyadını kullanmadan, daha samimi bir dille konuşuyor. Seviyen veya ilerlemen hakkında bir şey söylediğinde, bunun platformdaki gerçek verilerine (Level Up paneli) dayandığını biliyor ve bunu sana açıklayabiliyor.
 
 ---
 
