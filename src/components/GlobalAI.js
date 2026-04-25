@@ -16,16 +16,23 @@ export default function GlobalAI() {
   const [pageContext, setPageContext] = useState(null);
   const [words, setWords] = useState([]);
   const [userMetadata, setUserMetadata] = useState(null);
+  const [mistakeIds, setMistakeIds] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [showConfirm, setShowConfirm] = useState(false);
   const scrollRef = useRef(null);
 
   // 1. Veri Senkronizasyonu (Kelime Bankası, İstatistikler, Hatalar)
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setWords([]);
+      setMessages([]);
+      setUserMetadata(null);
+      setMistakeIds([]);
+      return;
+    }
 
     // Kelime Bankası (Realtime)
-    const unsubscribe = subscribeToUserWords(user.uid, (w) => setWords(w || []));
+    const unsubscribe = subscribeToUserWords(user.uid, setWords);
 
     // Diğer Veriler (Statik/Mount sırasında)
     const fetchData = async () => {
@@ -36,15 +43,14 @@ export default function GlobalAI() {
         getAIMessages(user.uid)
       ]);
 
-      const mistakenWordList = mistakes.map(id => words.find(w => w.id === id)?.word).filter(Boolean);
+      setMistakeIds(mistakes || []);
       const firstName = (user.displayName || "Arkadaşım").split(" ")[0];
 
       const metadata = {
         name: firstName,
         streak: stats.streak || 0,
         minutes: stats.dailyMinutes || 0,
-        levels: hero.levels || {},
-        mistakes: mistakenWordList
+        levels: hero.levels || {}
       };
       setUserMetadata(metadata);
 
