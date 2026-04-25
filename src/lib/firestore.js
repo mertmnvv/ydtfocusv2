@@ -298,3 +298,21 @@ export async function updateFcmToken(uid, token) {
   const userRef = doc(db, 'users', uid);
   await setDoc(userRef, { fcmToken: token, lastTokenUpdate: serverTimestamp() }, { merge: true });
 }
+
+// ===== AI CHAT MEMORY =====
+
+export async function saveAIMessage(uid, message) {
+  const chatRef = collection(db, "users", uid, "ai_messages");
+  const msgId = `${Date.now()}_${Math.random().toString(36).slice(2, 5)}`;
+  await setDoc(doc(chatRef, msgId), {
+    ...message,
+    timestamp: serverTimestamp()
+  });
+}
+
+export async function getAIMessages(uid, limitCount = 20) {
+  const chatRef = collection(db, "users", uid, "ai_messages");
+  const q = query(chatRef, orderBy("timestamp", "desc"), limit(limitCount));
+  const snap = await getDocs(q);
+  return snap.docs.map(doc => doc.data()).reverse();
+}

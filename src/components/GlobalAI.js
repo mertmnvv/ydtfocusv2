@@ -3,15 +3,31 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import ReactMarkdown from "react-markdown";
+import { saveAIMessage, getAIMessages, addUserWord } from "@/lib/firestore";
+import { useNotification } from "@/context/NotificationContext";
 
 export default function GlobalAI() {
+  const { user } = useAuth();
+  const { showNotification } = useNotification();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: "ai", content: "Selam! Ben **Focus AI**. YDT, YDS veya YÖKDİL sürecinde aklına takılanları bana sorabilirsin. Dil öğrenimi üzerine her konuda buradayım! \n\n*Örneğin: 'YDT ne zaman?', 'Present Perfect vs Past Simple' gibi sorular sorabilirsin.*" }
+    { role: "ai", content: "Selam! Ben **Focus**. YDT, YDS veya YÖKDİL sürecinde aklına takılanları bana sorabilirsin. Hem hocan hem de çalışma arkadaşın olarak buradayım! \n\n*Örneğin: 'YDT ne zaman?', 'Present Perfect vs Past Simple' gibi sorular sorabilirsin.*" }
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef(null);
+
+  // 1. Hafıza: Geçmiş mesajları yükle
+  useEffect(() => {
+    if (!user) return;
+    getAIMessages(user.uid).then(history => {
+      if (history.length > 0) {
+        // Timestamp nesnesini temizle (JSON serileştirme için gerekebilir)
+        const formatted = history.map(m => ({ role: m.role, content: m.content }));
+        setMessages(formatted);
+      }
+    });
+  }, [user]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -24,42 +40,67 @@ export default function GlobalAI() {
 
     const userMsg = input.trim();
     setInput("");
-    setMessages(prev => [...prev, { role: "user", content: userMsg }]);
+    
+    const newMessage = { role: "user", content: userMsg };
+    setMessages(prev => [...prev, newMessage]);
+    if (user) saveAIMessage(user.uid, newMessage);
+    
     setLoading(true);
 
-    const systemPrompt = `Sen YDT Focus platformunun uzman yapay zeka asistanısın. 
-    Görevin SADECE YDT, YDS, YÖKDİL ve İngilizce dil öğrenimi (gramer, kelime, okuma, sınav stratejileri) konularında yardımcı olmaktır. 
+    const systemPrompt = `Selam! Senin adın Focus. YDT Focus platformunun hem uzman öğretmeni hem de en yakın çalışma arkadaşısın. 
+    Kullanıcıya karşı samimi, destekleyici, motive edici ve bir dost gibi yaklaşmalısın. "Siz" yerine "Sen" dilini kullan.
     
-    ÖNEMLİ BİLGİLER (KNOWLEDGE BASE):
-    - YDT (Dil Sınavı): Yılda SADECE 1 kez (Haziran ayında) yapılır. TYT'den sonraki gün girilir. 80 sorudur ve 120 dakika sürer.
-    - YDS: Yılda 2 kez (İlkbahar ve Sonbahar) yapılır. Ayrıca e-YDS'ler neredeyse her ay Ankara, İstanbul ve İzmir'de yapılır. 80 sorudur, 180 dakika sürer.
-    - YÖKDİL: Yılda 2 kez yapılır. Sosyal, Fen ve Sağlık bilimleri olarak 3 alana ayrılır. 80 sorudur, 180 dakika sürer.
-    - Diğer alakasız konularda gelen soruları (yemek tarifi, kodlama vb.) nazikçe reddet.
+    Görevin SADECE YDT, YDS, YÖKDİL ve İngilizce dil öğrenimi konularında yardımcı olmaktır. 
     
-    FORMATLAMA KURALLARI:
-    - Cevaplarında Markdown kullanmalısın. 
-    - Başlıkları **Bold** veya ### şeklinde belirginleştir.
-    - Önemli terimleri *İtalik* veya **Bold** yap.
-    - Maddeler için liste kullan.
-    - Cevapların profesyonel, motive edici ve düzenli olmalı.`;
+    BİLGİ TABANI:
+    - YDT: Yılda 1 kez (Haziran). 80 soru, 120 dk.
+    - YDS: Yılda 2 kez + aylık e-YDS. 80 soru, 180 dk.
+    - YÖKDİL: Yılda 2 kez. 80 soru, 180 dk.
+    
+    YETENEKLER:
+    - Kelime ekleme isteği gelirse: [ACTION: ADD_WORD {"word": "...", "meaning": "...", "syn": "..."}] formatını ekle.
+    
+    KİŞİLİK:
+    - Sıkıcı bir yapay zeka gibi değil, enerjik bir hoca/arkadaş gibi konuş. 
+    - Karmaşık konuları basitleştirerek anlat. 
+    - Arada "Hadi başarabilirsin!", "Harika gidiyorsun!" gibi motivasyon cümleleri kur.`;
 
     try {
       const resp = await fetch("/api/groq", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+          model: "llama-3.1-70b-versatile",
           messages: [
             { role: "system", content: systemPrompt },
-            ...messages.map(m => ({ role: m.role === "ai" ? "assistant" : "user", content: m.content })),
+            ...messages.slice(-10).map(m => ({ role: m.role === "ai" ? "assistant" : "user", content: m.content })),
             { role: "user", content: userMsg }
           ],
-          temperature: 0.6,
+          temperature: 0.5,
         }),
       });
       const data = await resp.json();
-      const aiContent = data.choices?.[0]?.message?.content || "Üzgünüm, şu an bağlantı kurulamadı.";
-      setMessages(prev => [...prev, { role: "ai", content: aiContent }]);
+      let aiContent = data.choices?.[0]?.message?.content || "Üzgünüm, şu an bağlantı kurulamadı.";
+      
+      // 2. Tool/Action Yakalama
+      if (aiContent.includes("[ACTION: ADD_WORD")) {
+        const match = aiContent.match(/\[ACTION: ADD_WORD (\{.*?\})\]/);
+        if (match && user) {
+          try {
+            const wordData = JSON.parse(match[1]);
+            await addUserWord(user.uid, wordData);
+            showNotification(`"${wordData.word}" kelime bankana eklendi!`, "success");
+            // Action tag'ini kullanıcıdan gizle
+            aiContent = aiContent.replace(match[0], "").trim();
+          } catch (e) {
+            console.error("Action parsing error:", e);
+          }
+        }
+      }
+
+      const aiMessage = { role: "ai", content: aiContent };
+      setMessages(prev => [...prev, aiMessage]);
+      if (user) saveAIMessage(user.uid, aiMessage);
     } catch {
       setMessages(prev => [...prev, { role: "ai", content: "Bir hata oluştu. Lütfen tekrar dene." }]);
     }
@@ -86,8 +127,8 @@ export default function GlobalAI() {
           <div className="global-ai-header">
             <div className="ai-status-dot"></div>
             <div className="ai-header-info">
-              <h4>Focus AI</h4>
-              <span>Sınav Uzmanı</span>
+              <h4>Focus</h4>
+              <span>Senin Çalışma Arkadaşın</span>
             </div>
             <button className="close-ai" onClick={() => setIsOpen(false)}>
               <i className="fa-solid fa-chevron-down"></i>

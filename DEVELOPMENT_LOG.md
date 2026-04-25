@@ -20,3 +20,19 @@ Global bir yapay zeka asistanı eklemek, kayıt formundaki tasarım hatalarını
 Bu seansta Focus AI asistanı hem bilgi düzeyi hem de görsel sunum açısından tamamen yenilendi. Yapay zekaya YDT, YDS ve YÖKDİL hakkında güncel bilgiler yüklendi. Kelime bankası senkronizasyonu sayesinde kullanıcı deneyimi pürüzsüz hale getirildi. Tüm değişiklikler başarıyla GitHub'a pushlandı.
 
 ---
+
+## [25 Nisan 2026 — 03:48] Focus AI Zekâ ve Kişilik Güncellemesi
+
+### 📋 Uygulama Planı
+Asistanı daha zeki, hafızası olan ve interaktif bir hale getirmek. İsmini "Focus" olarak güncellemek ve daha samimi bir kişilik kazandırmak.
+
+### ✅ Tamamlanan Görevler
+- **Kalıcı Hafıza:** Firestore entegrasyonu ile sohbet geçmişi kaydedilmeye başlandı. Sayfa yenilense de mesajlar korunuyor.
+- **Yetenekler (Tools):** AI artık kullanıcının isteğiyle doğrudan kelime bankasına kelime ekleyebiliyor.
+- **Model Yükseltmesi:** `llama-3.1-70b-versatile` modeline geçilerek akıl yürütme kapasitesi artırıldı.
+- **Yeni Kişilik:** "Focus AI" ismi "Focus" olarak değiştirildi. Daha samimi, hoca-arkadaş karışımı destekleyici bir dil benimsendi.
+
+### 📝 Özet (Walkthrough)
+Bu seansta Focus artık sadece bir yapay zeka olmaktan çıkıp gerçek bir çalışma arkadaşına dönüştü. Kullanıcıyı hatırlıyor, onun adına işlem yapabiliyor ve çok daha zeki cevaplar veriyor. Tasarımda ve karşılama mesajlarında yapılan güncellemelerle samimiyet artırıldı.
+
+---
