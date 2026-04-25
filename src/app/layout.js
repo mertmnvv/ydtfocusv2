@@ -37,7 +37,8 @@ export const metadata = {
   },
   icons: {
     icon: "/favicon.ico",
-    apple: "/opengraph-image.png",
+    shortcut: "/favicon.ico",
+    apple: "/icon-512.png",
   },
 };
 

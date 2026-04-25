@@ -33,7 +33,7 @@ export default function Home() {
         <p className="landing-subtitle">Kelime bankanı oluştur, yapay zeka ile çalış ve sınavda fark at.</p>
         <div className="landing-btns">
           <button onClick={() => router.push("/register")} className="landing-btn-primary">Hemen Başla</button>
-          <button onClick={() => router.push("/register")} className="landing-btn-outline">Giriş Yap</button>
+          <button onClick={() => router.push("/login")} className="landing-btn-outline">Giriş Yap</button>
         </div>
       </div>
     </div>

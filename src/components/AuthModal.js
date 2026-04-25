@@ -13,7 +13,9 @@ export default function AuthModal() {
     <div className="auth-modal-overlay" onClick={() => setAuthModalOpen(false)}>
       <div className="auth-modal-card" onClick={e => e.stopPropagation()}>
         <button className="auth-modal-close" onClick={() => setAuthModalOpen(false)}>✕</button>
-        <div className="auth-modal-icon">🔒</div>
+        <div className="auth-modal-icon">
+          <i className="fa-solid fa-lock"></i>
+        </div>
         <h2 className="auth-modal-title">Kayıt Olmalısın</h2>
         <p className="auth-modal-desc">
           İlerlemelerini kaydetmek, kelimeleri bankana eklemek ve akıllı tekrar algoritmasından faydalanmak için ücretsiz bir hesap oluşturmalısın.

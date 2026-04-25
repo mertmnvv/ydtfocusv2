@@ -52,7 +52,12 @@ export default function MistakesPage() {
   }
 
   const mistakeWords = wrongIds.map(wText => {
-    const found = myWords.find(w => w.word === wText || w.word?.toLowerCase() === wText?.toLowerCase());
+    // Hem ID bazlı hem de metin bazlı eşleşme ara (Legacy ve yeni ID formatı desteği)
+    const found = myWords.find(w => 
+      w.id === wText || 
+      w.word === wText || 
+      w.word?.toLowerCase() === wText?.toLowerCase()
+    );
     return found ? { ...found, originalId: wText } : { word: wText, meaning: "—", originalId: wText };
   }).filter(Boolean);
 

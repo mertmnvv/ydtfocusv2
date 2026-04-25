@@ -44,8 +44,19 @@ export function AuthProvider({ children }) {
       return profile;
     } else {
       // Mevcut kullanıcı: lastLogin güncelle
-      await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
-      return userSnap.data();
+      const updates = { lastLogin: serverTimestamp() };
+      
+      // Eğer mevcut isim generic ise ve Firebase Auth'da daha iyi bir isim varsa güncelle
+      const currentData = userSnap.data();
+      if ((!currentData.displayName || currentData.displayName === "Kullanıcı") && firebaseUser.displayName) {
+        updates.displayName = firebaseUser.displayName;
+      }
+      if (!currentData.photoURL && firebaseUser.photoURL) {
+        updates.photoURL = firebaseUser.photoURL;
+      }
+
+      await setDoc(userRef, updates, { merge: true });
+      return { ...currentData, ...updates };
     }
   }
 
@@ -53,6 +64,12 @@ export function AuthProvider({ children }) {
     let unsubscribeProfile = null;
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      // Önceki profil aboneliğini temizle (Eğer varsa)
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+        unsubscribeProfile = null;
+      }
+
       if (firebaseUser) {
         setUser(firebaseUser);
         
@@ -96,6 +113,8 @@ export function AuthProvider({ children }) {
   async function register(email, password, displayName) {
     const result = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(result.user, { displayName });
+    // Firestore'u hemen güncelle ki onAuthStateChanged'deki yarışı kazanalım
+    await setDoc(doc(db, "users", result.user.uid), { displayName }, { merge: true });
     return result;
   }
 
@@ -108,11 +127,18 @@ export function AuthProvider({ children }) {
   async function loginWithGoogle() {
     try {
       const result = await signInWithPopup(auth, googleProvider);
+      if (result.user) {
+        // Google'dan gelen profil bilgilerini hemen Firestore'a yansıt
+        await setDoc(doc(db, "users", result.user.uid), {
+          displayName: result.user.displayName,
+          photoURL: result.user.photoURL,
+          lastLogin: serverTimestamp()
+        }, { merge: true });
+      }
       return result;
     } catch (err) {
       // If popup is blocked, try redirect method
       if (err.code === "auth/popup-blocked" || err.code === "auth/popup-closed-by-user") {
-        // Import dynamically to avoid SSR issues
         const { signInWithRedirect } = await import("firebase/auth");
         return signInWithRedirect(auth, googleProvider);
       }

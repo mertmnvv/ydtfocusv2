@@ -5,13 +5,15 @@ import { useAuth } from "@/context/AuthContext";
 import { getUserWords, getUserStats, updateLastReminderDate } from "@/lib/firestore";
 import Link from "next/link";
 import Leaderboard from "@/components/Leaderboard";
+import CustomDialog from "@/components/CustomDialog";
 
 export default function DashboardPage() {
-  const { user, userProfile, isAdmin } = useAuth();
+  const { user, userProfile, isAdmin, isPremium } = useAuth();
   const [words, setWords] = useState([]);
   const [stats, setStats] = useState({ correct: 0, wrong: 0, streak: 0, studyTime: 0, weeklyMinutes: 0 });
   const [loading, setLoading] = useState(true);
   const [expandedLevel, setExpandedLevel] = useState(null);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -77,10 +79,26 @@ export default function DashboardPage() {
           {userProfile?.displayName?.[0] || user?.email?.[0] || "U"}
         </div>
         <div className="profile-header-info">
-          <h1 className="profile-name-small">{userProfile?.displayName || "Kullanıcı"}</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <h1 className="profile-name-small" style={{ margin: 0 }}>{userProfile?.displayName || "Kullanıcı"}</h1>
+            <div className="plan-badge-wrapper">
+              {isPremium ? (
+                <span className="premium-plan-badge">
+                  <i className="fa-solid fa-crown"></i> Premium Üye
+                </span>
+              ) : (
+                <span className="standard-plan-badge">Standart Üye</span>
+              )}
+            </div>
+          </div>
           <div className="profile-badges sm">
             <span className="badge-item">YDT Öğrencisi</span>
             {isAdmin && <span className="badge-item admin-badge">Admin</span>}
+            {!isPremium && (
+              <button className="buy-premium-mini-btn" onClick={() => setShowPremiumModal(true)}>
+                Premium&apos;a Geç
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -173,7 +191,34 @@ export default function DashboardPage() {
 
 
 
+      {showPremiumModal && (
+        <CustomDialog
+          title="YDT Focus Premium"
+          message="Şu anda YDT Focus test aşamasında olduğu için tüm özellikler herkese ÜCRETSİZ! Çok yakında gelecek olan özel soru bankaları, yapay zeka analizleri ve ek özellikler ile Premium üyeliği aktifleştireceğiz. Şimdilik her şeyin tadını çıkarın! "
+          confirmText="Harika!"
+          onConfirm={() => setShowPremiumModal(false)}
+          onCancel={() => setShowPremiumModal(false)}
+        />
+      )}
+
       <style jsx>{`
+        .plan-badge-wrapper { display: flex; }
+        .premium-plan-badge { 
+          background: linear-gradient(135deg, #ffd60a, #ff9f0a); color: #000; 
+          padding: 4px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 800;
+          display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(255, 214, 10, 0.3);
+        }
+        .standard-plan-badge {
+          background: rgba(255,255,255,0.05); color: var(--text-muted);
+          padding: 4px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 700;
+          border: 1px solid var(--border);
+        }
+        .buy-premium-mini-btn {
+          background: transparent; border: 1px solid var(--accent); color: var(--accent);
+          padding: 2px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 800;
+          cursor: pointer; transition: all 0.2s;
+        }
+        .buy-premium-mini-btn:hover { background: var(--accent); color: #000; }
         .daily-focus-container { margin-bottom: 32px; }
         .daily-focus-card {
           display: flex; align-items: center; justify-content: space-between; gap: 24px;

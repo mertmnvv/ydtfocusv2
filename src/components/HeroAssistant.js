@@ -53,7 +53,7 @@ export default function HeroAssistant({ lessonContext, level }) {
   return (
     <>
       <button className="hero-assistant-toggle" onClick={() => setIsOpen(!isOpen)}>
-        {isOpen ? "✕" : "💬"}
+        {isOpen ? <i className="fa-solid fa-xmark"></i> : <i className="fa-solid fa-comment-dots"></i>}
       </button>
 
       {isOpen && (

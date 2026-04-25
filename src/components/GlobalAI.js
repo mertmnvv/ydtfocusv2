@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import ReactMarkdown from "react-markdown";
-import { saveAIMessage, getAIMessages, addUserWord, subscribeToUserWords, clearAIChat, getUserStats, getUserHeroStats, getUserMistakes } from "@/lib/firestore";
+import { saveAIMessage, getAIMessages, addUserWord, getUserWords, subscribeToUserWords, clearAIChat, getUserStats, getUserHeroStats, getUserMistakes } from "@/lib/firestore";
 import { useNotification } from "@/context/NotificationContext";
 
 export default function GlobalAI() {
@@ -42,11 +42,12 @@ export default function GlobalAI() {
 
     // Diğer Veriler (Statik/Mount sırasında)
     const fetchData = async () => {
-      const [stats, hero, mistakes, history] = await Promise.all([
+      const [stats, hero, mistakes, history, allWords] = await Promise.all([
         getUserStats(user.uid),
         getUserHeroStats(user.uid),
         getUserMistakes(user.uid),
-        getAIMessages(user.uid)
+        getAIMessages(user.uid),
+        getUserWords(user.uid)
       ]);
 
       setMistakeIds(mistakes || []);
@@ -54,7 +55,7 @@ export default function GlobalAI() {
 
       // Hatalı kelime ID'lerini gerçek kelimelere dönüştür
       const mistakeWords = (mistakes || [])
-        .map(id => (w || []).find(word => word.id === id)?.word)
+        .map(id => (allWords || []).find(word => word.id === id)?.word)
         .filter(Boolean);
 
       const metadata = {

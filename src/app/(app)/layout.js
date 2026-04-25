@@ -24,7 +24,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { useFcmToken } from "@/hooks/useFcmToken";
 
 export default function AppLayout({ children }) {
-  const { user, userProfile, loading, logout, isAdmin } = useAuth();
+  const { user, userProfile, loading, logout, isAdmin, isPremium } = useAuth();
   useFcmToken(user);
   const router = useRouter();
   const pathname = usePathname();
@@ -126,7 +126,10 @@ export default function AppLayout({ children }) {
                     {userProfile?.displayName?.[0] || user.email?.[0] || "U"}
                   </div>
                   <div className="profile-info">
-                    <span className="profile-name">{userProfile?.displayName || "Kullanıcı"}</span>
+                    <span className="profile-name">
+                      {userProfile?.displayName || "Kullanıcı"}
+                      {isPremium && <i className="fa-solid fa-crown" style={{ color: "var(--accent)", marginLeft: 6, fontSize: "0.7rem" }}></i>}
+                    </span>
                     <span className="profile-sub-text">Hesabım <i className="fa-solid fa-chevron-down"></i></span>
                   </div>
                 </button>
@@ -254,7 +257,18 @@ export default function AppLayout({ children }) {
         <div className="mobile-profile-popup-overlay hide-desktop" onClick={() => setProfileOpen(false)}>
           <div className="mobile-profile-popup" onClick={e => e.stopPropagation()}>
             <div className="popup-header">
-              <div className="popup-name">{userProfile?.displayName || "Kullanıcı"}</div>
+              <div className="popup-name-group">
+                <div className="popup-name">{userProfile?.displayName || "Kullanıcı"}</div>
+                <div className="popup-plan-tag" style={{ 
+                  fontSize: '0.65rem', 
+                  fontWeight: 800, 
+                  color: isPremium ? 'var(--accent)' : 'var(--text-muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px'
+                }}>
+                  {isPremium ? 'Premium Plan' : 'Standart Plan'}
+                </div>
+              </div>
               <ThemeToggle />
             </div>
             <div className="popup-links">

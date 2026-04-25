@@ -26,6 +26,9 @@ export default function QuizPage() {
   const [timer, setTimer] = useState(0);
   const [timerInterval, setTimerInterval] = useState(null);
   const [showAllMistakes, setShowAllMistakes] = useState(false);
+  const [sessionKey, setSessionKey] = useState(0);
+  const activeRef = useRef(true); // Component mount status
+  const quizActiveRef = useRef(false); // If a quiz is currently running
 
   // Swipe UI Ref
   const scrollRef = useRef(null);
@@ -131,6 +134,8 @@ export default function QuizPage() {
       setFinished(false);
       setTimer(0);
       setShowAllMistakes(false);
+      setSessionKey(Date.now());
+      quizActiveRef.current = true;
 
       if (selectedMode === "flash") {
         setFlashIdx(0);
@@ -148,6 +153,11 @@ export default function QuizPage() {
         qs.push({ word: correct.word, correctMeaning: correct.meaning, options, wordId: correct.id });
       }
       setQuestions(qs);
+      
+      // Kaydırma pozisyonunu hemen sıfırla
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = 0;
+      }
     });
   }
 
@@ -190,6 +200,8 @@ export default function QuizPage() {
     }
 
     setTimeout(() => {
+      if (!quizActiveRef.current) return; // Kullanıcı quizi terk ettiyse devam etme
+      
       if (qIdx + 1 < questions.length) {
         const nextIdx = qIdx + 1;
         setAnswered(null);
@@ -199,6 +211,7 @@ export default function QuizPage() {
         }
       } else {
         setFinished(true);
+        quizActiveRef.current = false;
         if (timerInterval) clearInterval(timerInterval);
         if (user && timer > 0) {
           const mins = Math.max(1, Math.round(timer / 60));
@@ -294,28 +307,48 @@ export default function QuizPage() {
     const card = words[safeIdx];
     return (
       <div style={{ maxWidth: 400, margin: "0 auto", textAlign: "center" }}>
-        <div className="header-split" style={{ marginBottom: 20 }}>
-          <button className="btn-ghost" onClick={() => setMode(null)}>Geri</button>
-          <span className="hint-text">{safeIdx + 1} / {words.length}</span>
+        <div className="header-split" style={{ marginBottom: 30 }}>
+          <button className="flash-back-btn" onClick={() => setMode(null)}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Geri
+          </button>
+          <span className="hint-text" style={{ fontWeight: 800 }}>{safeIdx + 1} / {words.length}</span>
         </div>
+        
         <div className="flash-scene" onClick={() => setFlashFlipped(!flashFlipped)}>
           <div className={`flash-card-inner ${flashFlipped ? "flipped" : ""}`}>
             <div className="flash-front">
-              <h2 style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                {card.word}
-                <button className="audio-btn" onClick={(e) => playAudio(card.word, e)} title="Dinle">🔊</button>
-              </h2>
-              <span className="flash-hint">Tıklayarak çevir</span>
+              <div className="flash-word-text">{card.word}</div>
+              <button className="flash-audio-trigger" onClick={(e) => playAudio(card.word, e)} title="Dinle">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+              </button>
+              <span className="flash-hint">Çevirmek için tıkla</span>
             </div>
             <div className="flash-back">
-              <h3>{card.meaning}</h3>
-              {card.syn && card.syn !== "-" && <p className="flash-syn">{card.syn}</p>}
+              <div className="flash-meaning-text">{card.meaning}</div>
+              {card.syn && card.syn !== "-" && <div className="flash-syn">{card.syn}</div>}
+              <span className="flash-hint">Kelimelere dön</span>
             </div>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
-          <button className="btn-ghost" style={{ flex: 1 }} disabled={safeIdx <= 0} onClick={() => { setFlashIdx(Math.max(0, safeIdx - 1)); setFlashFlipped(false); }}>Önceki</button>
-          <button className="btn-primary" style={{ flex: 1 }} disabled={safeIdx >= words.length - 1} onClick={() => { if (safeIdx < words.length - 1) { setFlashIdx(safeIdx + 1); setFlashFlipped(false); } }}>Sonraki</button>
+
+        <div className="flash-nav-controls">
+          <button 
+            className="flash-nav-btn prev" 
+            disabled={safeIdx <= 0} 
+            onClick={() => { setFlashIdx(Math.max(0, safeIdx - 1)); setFlashFlipped(false); }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            Önceki
+          </button>
+          <button 
+            className="flash-nav-btn next" 
+            disabled={safeIdx >= words.length - 1} 
+            onClick={() => { if (safeIdx < words.length - 1) { setFlashIdx(safeIdx + 1); setFlashFlipped(false); } }}
+          >
+            Sonraki
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
         </div>
       </div>
     );
@@ -408,9 +441,13 @@ export default function QuizPage() {
   }
 
   return (
-    <div className="quiz-sim">
+    <div className="quiz-sim" key={sessionKey}>
       <div className="quiz-sim-bar">
-        <button className="quiz-exit-icon" onClick={() => { if (timerInterval) clearInterval(timerInterval); setMode(null); }}>
+        <button className="quiz-exit-icon" onClick={() => { 
+          if (timerInterval) clearInterval(timerInterval); 
+          quizActiveRef.current = false;
+          setMode(null); 
+        }}>
           <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
         <div className="quiz-sim-progress">
