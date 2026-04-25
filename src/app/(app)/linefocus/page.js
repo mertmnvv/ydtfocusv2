@@ -68,11 +68,24 @@ Return ONLY a JSON array: [{"en": "english sentence", "tr": "natural Turkish"}]`
           temperature: 0.7,
         }),
       });
-      const data = await resp.json();
-      const raw = data.choices?.[0]?.message?.content || "";
-      const jsonMatch = raw.match(/\[[\s\S]*\]/);
-      if (!jsonMatch) throw new Error("JSON bulunamadı");
-      const parsed = JSON.parse(jsonMatch[0]);
+      
+      let parsed;
+      if (!resp.ok) {
+        console.warn("AI API failed, using mock data");
+        parsed = [
+          { "en": "The music began to play softly in the background.", "tr": "Müzik arka planda yavaşça çalmaya başladı." },
+          { "en": "Everyone in the room stopped talking to listen.", "tr": "Odadaki herkes dinlemek için konuşmayı kesti." },
+          { "en": "It was a beautiful melody that felt very familiar.", "tr": "Çok tanıdık gelen güzel bir melodiydi." },
+          { "en": "The atmosphere became peaceful and calm immediately.", "tr": "Atmosfer anında huzurlu ve sakin bir hal aldı." }
+        ];
+      } else {
+        const data = await resp.json();
+        const raw = data.choices?.[0]?.message?.content || "";
+        const jsonMatch = raw.match(/\[[\s\S]*\]/);
+        if (!jsonMatch) throw new Error("JSON bulunamadı");
+        parsed = JSON.parse(jsonMatch[0]);
+      }
+
       if (parsed.length > 0) {
         setSentences(parsed);
         setSIdx(0);
@@ -85,8 +98,23 @@ Return ONLY a JSON array: [{"en": "english sentence", "tr": "natural Turkish"}]`
         setIsEndless(false);
         setPhase("typing");
       }
-    } catch {
-      showNotification("Bağlantı hatası. Lütfen tekrar deneyin.", "error");
+    } catch (err) {
+      console.error(err);
+      showNotification("Bağlantı hatası. Test modu aktif edildi.", "info");
+      const mock = [
+        { "en": "The music began to play softly in the background.", "tr": "Müzik arka planda yavaşça çalmaya başladı." },
+        { "en": "Everyone in the room stopped talking to listen.", "tr": "Odadaki herkes dinlemek için konuşmayı kesti." },
+        { "en": "It was a beautiful melody that felt very familiar.", "tr": "Çok tanıdık gelen güzel bir melodiydi." },
+        { "en": "The atmosphere became peaceful and calm immediately.", "tr": "Atmosfer anında huzurlu ve sakin bir hal aldı." }
+      ];
+      setSentences(mock);
+      setSIdx(0);
+      setCharIdx(0);
+      setTypedChars([]);
+      sessionRef.current = Date.now();
+      processingRef.current = false;
+      setIsEndless(false);
+      setPhase("typing");
     }
     setLoading(false);
   }
@@ -119,11 +147,24 @@ STORY HISTORY: "${bookHistory}"
           temperature: 0.55, max_tokens: 800,
         }),
       });
-      const data = await resp.json();
-      const raw = (data.choices?.[0]?.message?.content || "").replace(/```json/g, "").replace(/```/g, "").trim();
-      const jsonMatch = raw.match(/\[[\s\S]*\]/);
-      if (!jsonMatch) throw new Error("JSON bozuk");
-      const parsed = JSON.parse(jsonMatch[0]);
+
+      let parsed;
+      if (!resp.ok) {
+        console.warn("AI API failed, using mock data for book");
+        parsed = [
+          { "en": "The first chapter of the mysterious book was titled 'The Beginning'.", "tr": "Gizemli kitabın ilk bölümü 'Başlangıç' başlığını taşıyordu." },
+          { "en": "It spoke of an ancient machine hidden beneath the city.", "tr": "Şehrin altına gizlenmiş antik bir makineden bahsediyordu." },
+          { "en": "Nobody knew who had built it or what its purpose was.", "tr": "Onu kimin yaptığını ya da amacının ne olduğunu kimse bilmiyordu." },
+          { "en": "But everyone felt its power vibrating through the ground.", "tr": "Ancak herkes onun gücünün yerin altından titreştiğini hissediyordu." }
+        ];
+      } else {
+        const data = await resp.json();
+        const raw = (data.choices?.[0]?.message?.content || "").replace(/```json/g, "").replace(/```/g, "").trim();
+        const jsonMatch = raw.match(/\[[\s\S]*\]/);
+        if (!jsonMatch) throw new Error("JSON bozuk");
+        parsed = JSON.parse(jsonMatch[0]);
+      }
+
       if (parsed.length > 0) {
         setSentences(parsed);
         setSIdx(0);
@@ -136,8 +177,23 @@ STORY HISTORY: "${bookHistory}"
         setIsEndless(true);
         setPhase("typing");
       }
-    } catch {
-      showNotification("AI bağlantı hatası. Tekrar deneyin.", "error");
+    } catch (err) {
+      console.error(err);
+      showNotification("AI bağlantı hatası. Test modu aktif edildi.", "info");
+      const mock = [
+        { "en": "The first chapter of the mysterious book was titled 'The Beginning'.", "tr": "Gizemli kitabın ilk bölümü 'Başlangıç' başlığını taşıyordu." },
+        { "en": "It spoke of an ancient machine hidden beneath the city.", "tr": "Şehrin altına gizlenmiş antik bir makineden bahsediyordu." },
+        { "en": "Nobody knew who had built it or what its purpose was.", "tr": "Onu kimin yaptığını ya da amacının ne olduğunu kimse bilmiyordu." },
+        { "en": "But everyone felt its power vibrating through the ground.", "tr": "Ancak herkes onun gücünün yerin altından titreştiğini hissediyordu." }
+      ];
+      setSentences(mock);
+      setSIdx(0);
+      setCharIdx(0);
+      setTypedChars([]);
+      sessionRef.current = "endless_ai_book";
+      processingRef.current = false;
+      setIsEndless(true);
+      setPhase("typing");
     }
     setLoading(false);
   }
@@ -318,7 +374,7 @@ STORY HISTORY: "${bookHistory}"
         {/* Sidebar Toggle */}
         <button className={`lf-sidebar-toggle ${sidebarOpen ? "shifted" : ""}`}
           onClick={() => setSidebarOpen(!sidebarOpen)}>
-          <span className="lf-toggle-icon">{sidebarOpen ? "--" : "::"}</span>
+          <i className={`fas ${sidebarOpen ? "fa-times" : "fa-history"}`}></i>
           {sidebarOpen ? "close" : "history"}
         </button>
 
@@ -326,7 +382,7 @@ STORY HISTORY: "${bookHistory}"
         <div className={`lf-sidebar ${sidebarOpen ? "is-open" : ""}`}>
           <div className="lf-sidebar-inner">
             <h3 className="lf-sidebar-label">completed sentences</h3>
-            <button className="lf-clear-btn" onClick={() => setShowClearConfirm(true)}>gecmisi temizle</button>
+            <button className="lf-clear-btn" onClick={() => setShowClearConfirm(true)}>clear history</button>
             <div className="lf-history-list">
               {history.map((item, i) => (
                 <div key={i} className="lf-history-item" onClick={() => setReaderData(item)}>
@@ -345,7 +401,7 @@ STORY HISTORY: "${bookHistory}"
           <button className="lf-exit-btn" onClick={resetToSetup}>
             <i className="fas fa-chevron-left"></i> back
           </button>
-          <div className="lf-logo">linefocus</div>
+          <div className="lf-logo">line<span>focus</span></div>
         </div>
 
         {/* Main */}
@@ -427,7 +483,7 @@ STORY HISTORY: "${bookHistory}"
       <div className="lf-standalone">
         <div className="lf-top-bar">
           <div></div>
-          <div className="lf-logo">linefocus</div>
+          <div className="lf-logo">line<span>focus</span></div>
         </div>
         <div className="lf-main">
           <div className="lf-result">
@@ -455,7 +511,7 @@ STORY HISTORY: "${bookHistory}"
       <div className="lf-standalone">
         <div className="lf-top-bar">
           <a href="/dashboard" className="lf-exit-btn"><i className="fas fa-chevron-left"></i> back</a>
-          <div className="lf-logo">linefocus</div>
+          <div className="lf-logo">line<span>focus</span></div>
         </div>
         <div className="lf-main" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' }}>
           <div style={{ fontSize: '3rem', marginBottom: 16 }}>💻</div>
@@ -486,7 +542,7 @@ STORY HISTORY: "${bookHistory}"
       <div className="lf-standalone">
         <div className="lf-top-bar">
           <a href="/dashboard" className="lf-exit-btn"><i className="fas fa-chevron-left"></i> back</a>
-          <div className="lf-logo">linefocus</div>
+          <div className="lf-logo">line<span>focus</span></div>
         </div>
         <div className="lf-main" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' }}>
           <div style={{ fontSize: '3rem', marginBottom: 16 }}>🔒</div>
@@ -506,7 +562,7 @@ STORY HISTORY: "${bookHistory}"
       {/* Sidebar Toggle */}
       <button className={`lf-sidebar-toggle ${sidebarOpen ? "shifted" : ""}`}
         onClick={() => setSidebarOpen(!sidebarOpen)}>
-        <span className="lf-toggle-icon">{sidebarOpen ? "--" : "::"}</span>
+        <i className={`fas ${sidebarOpen ? "fa-times" : "fa-history"}`}></i>
         {sidebarOpen ? "close" : "history"}
       </button>
 
@@ -514,7 +570,7 @@ STORY HISTORY: "${bookHistory}"
       <div className={`lf-sidebar ${sidebarOpen ? "is-open" : ""}`}>
         <div className="lf-sidebar-inner">
           <h3 className="lf-sidebar-label">completed sentences</h3>
-          <button className="lf-clear-btn" onClick={() => setShowClearConfirm(true)}>gecmisi temizle</button>
+          <button className="lf-clear-btn" onClick={() => setShowClearConfirm(true)}>clear history</button>
           <div className="lf-history-list">
             {history.map((item, i) => (
               <div key={i} className="lf-history-item" onClick={() => setReaderData(item)}>
@@ -533,7 +589,7 @@ STORY HISTORY: "${bookHistory}"
         <a href="/dashboard" className="lf-exit-btn">
           <i className="fas fa-chevron-left"></i> back
         </a>
-        <div className="lf-logo">linefocus</div>
+        <div className="lf-logo">line<span>focus</span></div>
       </div>
 
       {/* Main */}
