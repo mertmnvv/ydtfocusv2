@@ -7,49 +7,63 @@ const onboardingSteps = [
   {
     id: "welcome",
     title: "YDT Focus'a Hoş Geldin!",
-    desc: "Sınav yolculuğunda akademik İngilizceyi en verimli ve eğlenceli şekilde öğrenmen için tasarlandık. Hadi, kısaca panelleri tanıyalım!",
+    desc: "Sınav yolculuğunda akademik İngilizceyi en verimli şekilde öğrenmen için yanındayız. Hadi, tüm panelleri ve özelliklerini hızlıca tanıyalım!",
     icon: "fa-rocket",
     color: "var(--accent)"
   },
   {
     id: "dashboard",
-    title: "Level Up (Dashboard)",
-    desc: "Burası senin ana kumanda merkezin. Günlük kelime hedeflerini, çalışma süreni ve streak (seri) bilgilerini buradan anlık takip edebilirsin.",
-    icon: "fa-chart-line",
+    title: "Level Up (Profil & Dashboard)",
+    desc: "Burası senin ana merkezin. Streak, çalışma süresi ve istatistiklerini gör. Ayrıca 'Akıllı Tekrar' sistemine ve profiline buradan ulaşabilirsin.",
+    icon: "fa-user-astronaut",
     color: "#30d158"
   },
   {
     id: "reading",
     title: "Reading (Okuma Paneli)",
-    desc: "Yapay zeka tarafından seviyeye özel üretilen metinleri oku. Bilmediğin kelimeye tıkla, analizini gör ve tek tuşla bankana kaydet.",
+    desc: "AI destekli akademik metinleri oku. Bilmediğin kelimelere tıklayarak analizlerini gör ve tek tuşla kelime bankana dahil et.",
     icon: "fa-book-open",
     color: "#0a84ff"
   },
   {
     id: "quiz",
-    title: "Quiz & Test Merkezi",
-    desc: "Kelimeleri kalıcı hafızaya atmak için SRS (Aralıklı Tekrar) sistemini kullan. Hatalarından ders çıkar ve kendini test et.",
+    title: "Quiz & Flashcards",
+    desc: "Öğrenilen kelimelerinden quiz yap veya Flashcard'lar ile pratik yap. SRS sistemi sayesinde kelimeler asla unutulmaz.",
     icon: "fa-bolt",
     color: "#ff9f0a"
   },
   {
+    id: "mistakes",
+    title: "Hatalarım",
+    desc: "Sınavlarda yanlış yaptığın kelimeler burada birikir. Sadece hatalarına odaklanarak eksiklerini hızla kapatabilirsin.",
+    icon: "fa-circle-xmark",
+    color: "#ff453a"
+  },
+  {
+    id: "archive",
+    title: "Sözlük & Arşiv",
+    desc: "Binlerce akademik kelime ve Phrasal Verb içeren dev kütüphane! İstediğin kelimeyi ara, anlamını öğren ve bankana ekle.",
+    icon: "fa-language",
+    color: "#5e5ce6"
+  },
+  {
     id: "hero",
     title: "Zero to Hero",
-    desc: "A1'den C1'e uzanan oyunlaştırılmış bir yolculuk. Her seviyedeki kelime hedeflerini tamamla, 'Boss'ları yen ve dil seviyeni yükselt.",
+    desc: "A1'den C1'e uzanan oyunlaştırılmış başarı yolun. Seviyeleri tamamla, hedeflerine ulaş ve dil seviyeni adım adım yükselt.",
     icon: "fa-arrow-trend-up",
-    color: "#5e5ce6"
+    color: "#bf5af2"
   },
   {
     id: "linefocus",
     title: "Linefocus",
-    desc: "Dikkatini sadece metne odakla. Mekanik klavye sesleri ve yazım tabanlı çalışma ile kelimeleri parmak uçlarında hisset.",
+    desc: "Mekanik klavye sesleri eşliğinde, sadece metne odaklanarak yazarak çalış. En sürükleyici çalışma deneyimi burada.",
     icon: "fa-keyboard",
     color: "#ff375f"
   },
   {
     id: "focus-ai",
     title: "Focus AI",
-    desc: "Ekranın sol altındaki asistanın senin en yakın dostun. Ona metinleri sorabilir, gramer analizi isteyebilir veya sana özel sınav hazırlatabilirsin.",
+    desc: "Sol alttaki akıllı asistanın! Ona gramer sor, metin analizi iste veya senin eksiklerine özel okuma parçaları üretmesini söyle.",
     icon: "fa-wand-magic-sparkles",
     color: "var(--accent)"
   }

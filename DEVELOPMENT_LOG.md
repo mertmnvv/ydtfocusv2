@@ -10,13 +10,13 @@ Bu dosya, projede yapılan tüm geliştirmelerin, planların ve tamamlanan göre
 Yeni kullanıcıların platformu hızlıca kavrayabilmesi için tüm modülleri (Dashboard, Reading, Quiz, Hero, Linefocus, Focus AI) açıklayan premium bir onboarding turu eklemek.
 
 ### ✅ Tamamlanan Görevler
-- **Onboarding Bileşeni:** `src/components/Onboarding.js` oluşturuldu. 7 adımlı, her modüle özel ikon ve renk temasına sahip interaktif slayt yapısı kuruldu.
-- **Zekâ ve Hafıza:** Kullanıcının turu tamamlayıp tamamlamadığı `localStorage` (UID bazlı) ile takip ediliyor; böylece tur her seferinde açılmıyor.
-- **Tasarım Entegrasyonu:** Glassmorphism, yumuşak geçişler ve "pop" animasyonları ile platformun premium tasarım dili korundu.
-- **Global Entegrasyon:** `AppLayout` içerisine dahil edilerek tüm sayfalarda (yeni kullanıcılar için) aktif hale getirildi.
+- **Kapsamlı Onboarding:** `src/components/Onboarding.js` güncellendi. Artık Dashboard (Akıllı Tekrar/Profil), Reading, Quiz (Flashcards/Öğrenilen Kelimeler), Hatalarım, Sözlük/Arşiv, Zero to Hero, Linefocus ve Focus AI modüllerini detaylıca açıklıyor.
+- **Zekâ ve Hafıza:** Kullanıcının turu tamamlayıp tamamlamadığı `localStorage` (UID bazlı) ile takip ediliyor.
+- **Doğrulama:** Focus AI yetenekleri ve panel erişim yolları kullanıcı geri bildirimine göre revize edildi.
+- **Global Entegrasyon:** `AppLayout` içerisine dahil edilerek tüm sayfalarda aktif hale getirildi.
 
 ### 📝 Özet (Walkthrough)
-YDT Focus v2 projesi, bu son kullanıcı alıştırma sistemiyle birlikte teknik ve tasarım açısından tam kapasiteye ulaştı. Kullanıcılar artık platforma ilk adımlarını attıklarında karmaşıklık hissetmeden, her bir modülün amacını öğrenerek çalışmaya başlayabilecekler. Proje, "Launch-Ready" (Yayına Hazır) durumuna getirildi.
+YDT Focus v2 projesi, bu kapsamlı onboarding sistemiyle birlikte profesyonel bir lansman seviyesine ulaştı. Kullanıcılar artık uygulamanın her köşesindeki özelliği (Hatalarım, Akıllı Tekrar, Flashcardlar vb.) adım adım öğrenerek platformu en verimli şekilde kullanabilecekler. Teknik ve içerik rehberliği açısından proje tam kapasiteyle tamamlandı.
 
 ---
 
