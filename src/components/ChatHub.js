@@ -471,6 +471,10 @@ export default function ChatHub() {
         .search-profile-btn { background: var(--glass); border: 1px solid var(--border); color: var(--text-muted); padding: 6px 12px; border-radius: 10px; font-size: 0.7rem; font-weight: 800; transition: 0.2s; }
         .search-profile-btn:hover { border-color: var(--accent); color: var(--accent); }
         .search-section-title { font-size: 0.65rem; font-weight: 800; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 12px; padding-left: 4px; opacity: 0.8; }
+        .search-view { display: flex; flex-direction: column; height: 100%; }
+        .search-results-list { flex: 1; overflow-y: auto; padding-right: 4px; }
+        .search-results-list::-webkit-scrollbar { width: 3px; }
+        .search-results-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 
         .chat-active-view { display: flex; flex-direction: column; height: 100%; position: relative; background: var(--bg-card); }
         .chat-window-header { padding: 12px 16px; display: flex; align-items: center; gap: 10px; z-index: 10; background: var(--glass); border-bottom: 1px solid var(--border); border-radius: 0; min-height: 64px; }
