@@ -213,7 +213,11 @@ export default function ChatHub() {
                     {chats.length === 0 ? <div className="empty-state">Henüz mesaj yok.</div> : chats.map(chat => (
                       <div key={chat.id} className="chat-item" onClick={() => setActiveChat(chat)}>
                         <div className="chat-item-avatar msg-av" onClick={(e) => { e.stopPropagation(); setSelectedProfileId(chat.otherUser.id); }}>
-                          {chat.otherUser.displayName?.[0]}
+                          {chat.otherUser.photoURL ? (
+                            <img src={chat.otherUser.photoURL} alt={chat.otherUser.displayName} className="chat-avatar-img" />
+                          ) : (
+                            chat.otherUser.displayName?.[0]
+                          )}
                         </div>
                         <div className="chat-item-info">
                           <div className="chat-item-name">
@@ -235,7 +239,13 @@ export default function ChatHub() {
                     {friends.map(f => (
                       <div key={f.id} className="chat-item" onClick={() => handleFriendClick(f)}>
                         <div className="friend-item-indicator"></div>
-                        <div className="chat-item-avatar friend-av" onClick={(e) => { e.stopPropagation(); setSelectedProfileId(f.id); }}>{f.displayName?.[0]}</div>
+                        <div className="chat-item-avatar friend-av" onClick={(e) => { e.stopPropagation(); setSelectedProfileId(f.id); }}>
+                          {f.photoURL ? (
+                            <img src={f.photoURL} alt={f.displayName} className="chat-avatar-img" />
+                          ) : (
+                            f.displayName?.[0]
+                          )}
+                        </div>
                         <div className="chat-item-info">
                           <div className="chat-item-name">
                             {f.displayName}
@@ -285,7 +295,13 @@ export default function ChatHub() {
                     <div className="search-results-list">
                       {searchResults.length > 0 ? searchResults.map(r => (
                         <div key={r.id} className="chat-item search-item" onClick={() => setSelectedProfileId(r.id)}>
-                          <div className="chat-item-avatar search-av">{r.displayName?.[0]}</div>
+                          <div className="chat-item-avatar search-av">
+                            {r.photoURL ? (
+                              <img src={r.photoURL} alt={r.displayName} className="chat-avatar-img" />
+                            ) : (
+                              r.displayName?.[0]
+                            )}
+                          </div>
                           <div className="chat-item-info">
                             <div className="chat-item-name">{r.displayName}</div>
                             <div className="chat-item-last">Profilini görüntüle</div>
@@ -306,7 +322,11 @@ export default function ChatHub() {
                 </button>
                 <div className="header-user-info" onClick={() => setSelectedProfileId(activeChat.otherUser.id)} style={{ cursor: 'pointer' }}>
                   <div className={`header-avatar ${activeChat.otherUser.role === 'admin' ? 'role-admin' : activeChat.otherUser.role === 'premium' ? 'role-premium' : ''}`}>
-                    {activeChat.otherUser.displayName?.[0]}
+                    {activeChat.otherUser.photoURL ? (
+                      <img src={activeChat.otherUser.photoURL} alt={activeChat.otherUser.displayName} className="chat-header-img" />
+                    ) : (
+                      activeChat.otherUser.displayName?.[0]
+                    )}
                   </div>
                   <div className="header-name-group">
                     <span className="header-name">
@@ -411,22 +431,25 @@ export default function ChatHub() {
           background: var(--bg-card); border: 1px solid var(--border);
           box-shadow: 0 25px 60px rgba(0,0,0,0.4); border-radius: 30px; backdrop-filter: blur(30px);
         }
+        :global([data-theme='light']) .chat-hub-window {
+          box-shadow: 0 25px 60px rgba(0,0,0,0.1);
+        }
 
-        .hub-tabs { display: flex; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.1); flex-shrink: 0; }
+        .hub-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--glass); flex-shrink: 0; }
         .hub-tab { flex: 1; padding: 16px 10px; border: none; background: none; color: var(--text-muted); font-weight: 800; cursor: pointer; font-size: 0.75rem; position: relative; }
         .hub-tab.active { color: var(--accent); }
         .hub-tab.active::after { content: ''; position: absolute; bottom: 0; left: 20%; right: 20%; height: 3px; background: var(--accent); border-radius: 3px 3px 0 0; }
         
         .hub-content { flex: 1; overflow-y: auto; padding: 12px; }
         .scroll-styled::-webkit-scrollbar { width: 4px; }
-        .scroll-styled::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        .scroll-styled::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 
         .chat-item { 
           display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 20px; 
-          cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); margin-bottom: 8px; background: rgba(255,255,255,0.02);
-          position: relative; overflow: hidden;
+          cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); margin-bottom: 8px; background: var(--glass);
+          position: relative; overflow: hidden; border: 1px solid transparent;
         }
-        .chat-item:hover { background: rgba(255,255,255,0.06); transform: translateY(-2px); }
+        .chat-item:hover { background: var(--bg-elevated); transform: translateY(-2px); border-color: var(--border); }
         
         .friend-item-indicator { position: absolute; left: 0; top: 20%; bottom: 20%; width: 3px; background: var(--primary); border-radius: 0 4px 4px 0; opacity: 0.6; }
         .chat-item-avatar { width: 46px; height: 46px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.2rem; flex-shrink: 0; }
@@ -446,30 +469,30 @@ export default function ChatHub() {
         .search-profile-btn { background: var(--glass); border: 1px solid var(--border); color: var(--text-muted); padding: 6px 12px; border-radius: 10px; font-size: 0.7rem; font-weight: 800; transition: 0.2s; }
         .search-profile-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-        .chat-active-view { display: flex; flex-direction: column; height: 100%; position: relative; }
-        .chat-window-header { padding: 12px 16px; display: flex; align-items: center; gap: 12px; z-index: 10; background: rgba(20,20,20,0.4); border-bottom: 1px solid var(--border); border-radius: 0; }
+        .chat-active-view { display: flex; flex-direction: column; height: 100%; position: relative; background: var(--bg-card); }
+        .chat-window-header { padding: 12px 16px; display: flex; align-items: center; gap: 12px; z-index: 10; background: var(--glass); border-bottom: 1px solid var(--border); border-radius: 0; }
         .back-btn { width: 34px; height: 34px; border-radius: 12px; background: var(--glass); border: 1px solid var(--border); color: var(--text); cursor: pointer; transition: all 0.2s; }
         .header-avatar { width: 34px; height: 34px; border-radius: 10px; background: var(--bg-elevated); color: var(--text); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.9rem; border: 1px solid var(--border); }
         .header-avatar.role-premium { border-color: #ffd60a; color: #ffd60a; box-shadow: 0 0 10px rgba(255, 214, 10, 0.2); }
         .header-avatar.role-admin { border-color: #ff453a; color: #ff453a; box-shadow: 0 0 10px rgba(255, 69, 58, 0.2); }
-        .header-name-group { display: flex; flex-direction: column; }
-        .header-name { font-size: 0.9rem; font-weight: 800; color: #fff; }
+        .header-name-group { display: flex; flex-direction: column; line-height: 1.2; }
+        .header-name { font-size: 0.9rem; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 4px; }
         .header-status { font-size: 0.65rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
         .mini-profile-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 8px; font-size: 0.85rem; opacity: 0.5; transition: 0.2s; }
         .mini-profile-btn:hover { color: var(--accent); opacity: 1; transform: scale(1.1); }
         
         .clear-chat-btn {
-          margin-left: auto; background: none; border: none; color: var(--text-muted);
-          width: 34px; height: 34px; border-radius: 10px; cursor: pointer;
+          margin-left: auto; background: var(--glass); border: 1px solid var(--border); color: var(--text-muted);
+          width: 32px; height: 32px; border-radius: 10px; cursor: pointer;
           display: flex; align-items: center; justify-content: center; transition: all 0.2s;
         }
-        .clear-chat-btn:hover { background: rgba(255, 69, 58, 0.1); color: #ff453a; }
+        .clear-chat-btn:hover { background: rgba(255, 69, 58, 0.1); color: #ff453a; border-color: rgba(255, 69, 58, 0.2); }
 
         .chat-messages { flex: 1; overflow-y: auto; padding: 20px 16px; display: flex; flex-direction: column; gap: 16px; }
         .msg-wrapper { display: flex; width: 100%; }
         .mine { justify-content: flex-end; }
         .theirs { justify-content: flex-start; }
-        .msg-bubble { max-width: 85%; border-radius: 20px; font-size: 0.9rem; line-height: 1.5; box-shadow: 0 4px 15px rgba(0,0,0,0.2); position: relative; }
+        .msg-bubble { max-width: 85%; border-radius: 20px; font-size: 0.9rem; line-height: 1.5; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; }
         .mine .msg-bubble { background: var(--accent); color: #000; border-bottom-right-radius: 4px; padding: 10px 16px; font-weight: 600; }
         .theirs .msg-bubble { background: var(--bg-elevated); border: 1px solid var(--border); border-bottom-left-radius: 4px; padding: 10px 16px; color: var(--text); }
         .content-bubble { padding: 0 !important; background: none !important; border: none !important; box-shadow: none !important; }
@@ -490,14 +513,14 @@ export default function ChatHub() {
         .card-main-text { font-size: 1.3rem; font-weight: 900; margin-bottom: 12px; }
         .card-action { font-size: 0.7rem; font-weight: 900; text-transform: uppercase; padding: 6px 12px; background: rgba(255,255,255,0.05); border-radius: 8px; width: fit-content; }
 
-        .chat-input-bar { margin: 12px; padding: 8px 12px; display: flex; gap: 10px; align-items: center; border-radius: 20px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); transition: all 0.2s; }
-        .chat-input-bar:focus-within { border-color: var(--accent); background: rgba(255,255,255,0.05); }
+        .chat-input-bar { margin: 12px; padding: 8px 12px; display: flex; gap: 10px; align-items: center; border-radius: 20px; background: var(--glass); border: 1px solid var(--border); transition: all 0.2s; }
+        .chat-input-bar:focus-within { border-color: var(--accent); background: var(--bg-elevated); }
         .chat-input-bar input { flex: 1; background: none; border: none; color: var(--text); outline: none; font-size: 0.9rem; }
         .chat-input-bar button { width: 38px; height: 38px; border-radius: 12px; background: var(--accent); color: #000; border: none; cursor: pointer; transition: 0.2s; }
 
         .solution-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 30000; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(20px); }
         .solution-modal { width: 100%; max-width: 400px; padding: 45px 35px; border-radius: 40px; background: rgba(30,30,30,0.85); border: 1px solid rgba(226, 183, 20, 0.3); box-shadow: 0 40px 100px rgba(0,0,0,0.6); text-align: center; position: relative; }
-        .sol-close-floating { position: absolute; top: 20px; right: 20px; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10; }
+        .sol-close-floating { position: absolute; top: 20px; right: 20px; width: 40px; height: 40px; border-radius: 50%; background: var(--glass); border: 1px solid var(--border); color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10; }
         .sol-close-floating:hover { background: rgba(255, 69, 58, 0.2); color: #ff453a; border-color: rgba(255, 69, 58, 0.3); transform: rotate(90deg); }
 
         .sol-label { font-size: 0.75rem; font-weight: 900; color: var(--accent); letter-spacing: 2px; opacity: 0.8; }

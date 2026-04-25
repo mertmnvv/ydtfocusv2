@@ -76,7 +76,11 @@ export default function DashboardPage() {
     <div className="dashboard-page profile-panel-view">
       <div className="profile-header minimal">
         <div className="profile-large-avatar sm">
-          {userProfile?.displayName?.[0] || user?.email?.[0] || "U"}
+          {userProfile?.photoURL ? (
+            <img src={userProfile.photoURL} alt={userProfile.displayName} className="avatar-img" />
+          ) : (
+            userProfile?.displayName?.[0] || user?.email?.[0] || "U"
+          )}
         </div>
         <div className="profile-header-info">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>

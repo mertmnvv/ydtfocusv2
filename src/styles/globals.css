@@ -83,6 +83,15 @@ a {
   gap: 20px;
 }
 
+/* Avatar Image Styles */
+.avatar-img, .leader-avatar-img, .p-modal-avatar-img, .chat-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  display: block;
+}
+
 .spinner-ring {
   width: 48px;
   height: 48px;

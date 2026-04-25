@@ -52,7 +52,11 @@ export default function Leaderboard() {
             <div key={u.id} className="leader-item glass-card" onClick={() => setSelectedUserId(u.id)}>
               <div className="leader-rank">{idx + 1}</div>
               <div className={`leader-avatar ${(u.role === 'premium' || u.role === 'admin') ? 'premium-glow' : ''}`}>
-                {u.displayName?.[0] || "?"}
+                {u.photoURL ? (
+                  <img src={u.photoURL} alt={u.displayName} className="leader-avatar-img" />
+                ) : (
+                  u.displayName?.[0] || "?"
+                )}
               </div>
               <div className="leader-info">
                 <div className="leader-name">

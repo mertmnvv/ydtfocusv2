@@ -123,7 +123,11 @@ export default function AppLayout({ children }) {
                   onClick={() => setProfileOpen(!profileOpen)}
                 >
                   <div className="profile-avatar">
-                    {userProfile?.displayName?.[0] || user.email?.[0] || "U"}
+                    {userProfile?.photoURL ? (
+                      <img src={userProfile.photoURL} alt="Profil" className="avatar-img" />
+                    ) : (
+                      userProfile?.displayName?.[0] || user.email?.[0] || "U"
+                    )}
                   </div>
                   <div className="profile-info">
                     <span className="profile-name">
@@ -251,7 +255,11 @@ export default function AppLayout({ children }) {
           onClick={() => setProfileOpen(!profileOpen)}
         >
           <div className="bottom-nav-avatar-mini">
-            {userProfile?.displayName?.[0] || user?.email?.[0] || "U"}
+            {userProfile?.photoURL ? (
+              <img src={userProfile.photoURL} alt="Profil" className="avatar-img" />
+            ) : (
+              userProfile?.displayName?.[0] || user?.email?.[0] || "U"
+            )}
           </div>
         </button>
       </nav>
