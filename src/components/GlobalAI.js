@@ -328,24 +328,34 @@ export default function GlobalAI() {
 
       // Aksiyon Yakalama ve İşleme (Regex: [ACTION: ADD_WORD {...}])
       const actionMatches = [...aiContent.matchAll(/\[ACTION:?\s*ADD_WORD\s*(\{.*?\})\]/gis)];
-      console.log("AI Action Matches:", actionMatches.length);
+      console.log("AI Actions Found:", actionMatches.length);
 
       if (actionMatches.length > 0 && user) {
         let addedCount = 0;
+        const newlyAdded = []; // Bu mesaj döngüsünde eklenenleri takip et
+        
         for (const match of actionMatches) {
           try {
             // JSON içindeki potansiyel hatalı karakterleri temizleyelim
             const jsonStr = match[1].replace(/[\n\r]/g, "").trim();
             const wordData = JSON.parse(jsonStr);
+            const wordLower = wordData.word?.toLowerCase().trim();
 
-            // GÜVENLİK KONTROLÜ: Eğer kelime bir ID formatındaysa (timestamp_random) kaydetme
-            const isIdFormat = /^\d{10,15}_[a-z0-9]{3,10}$/.test(wordData.word);
+            if (!wordLower) continue;
+
+            // GÜVENLİK KONTROLÜ: Eğer kelime bir ID formatındaysa kaydetme
+            const isIdFormat = /^\d{10,15}_[a-z0-9]{3,10}$/.test(wordLower);
             
-            const exists = words.some(w => w.word?.toLowerCase() === wordData.word?.toLowerCase());
-            if (!exists && !isIdFormat) {
+            const alreadyInBank = words.some(w => w.word?.toLowerCase().trim() === wordLower);
+            const alreadyInSession = newlyAdded.includes(wordLower);
+
+            if (!alreadyInBank && !alreadyInSession && !isIdFormat) {
+              console.log("Adding Word:", wordLower);
               await addUserWord(user.uid, wordData);
+              newlyAdded.push(wordLower);
               addedCount++;
             }
+            
             // Etiketi mesajdan temizle
             aiContent = aiContent.replace(match[0], "");
           } catch (e) {
