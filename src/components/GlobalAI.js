@@ -285,6 +285,7 @@ export default function GlobalAI() {
     
     TEKNİK TALİMATLAR (GİZLİ):
     - Kelime kaydetme isteği net ise SADECE şu formatta bir etiket üret: [ACTION: ADD_WORD {"word": "english_word", "meaning": "turkish_meaning", "syn": "synonym"}]
+    - 'meaning' alanı KESİNLİKLE kelimenin Türkçe karşılığı olmalıdır.
     - JSON formatına ve anahtar isimlerine (word, meaning, syn) KESİNLİKLE uy.
     - Tek bir mesajda birden fazla kelime ekleyebilirsin. Her biri için ayrı etiket kullan.
     
