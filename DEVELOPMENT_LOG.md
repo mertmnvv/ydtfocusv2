@@ -45,9 +45,10 @@ Focus'un okunan metinleri otomatik olarak bilmesini sağlamak (Bağlamsal Farkı
 ### ✅ Tamamlanan Görevler
 - **Model Stabilizasyonu:** Bağlantı sorunlarını gidermek adına model tekrar `llama-3.1-8b-instant` sürümüne çekildi.
 - **Bağlamsal Farkındalık (Context Awareness):** `CustomEvent` mimarisi kullanılarak asistanın sayfa içeriğinden haberdar olması sağlandı.
-- **Reading Entegrasyonu:** Okuma panelinde bir metin oluşturulduğunda, Focus bu metni otomatik olarak öğreniyor. Artık "bu metni açıkla" dendiğinde metni kopyalamaya gerek kalmıyor.
+- **Reading Entegrasyonu:** Okuma panelinde bir metin oluşturulduğunda, Focus bu metni otomatik olarak öğreniyor.
+- **Hata Giderimi:** Reading sayfasındaki `aiText` değişken ismi hatası (`text` olarak) düzeltildi ve ReferenceError giderildi.
 
 ### 📝 Özet (Walkthrough)
-Focus artık daha stabil çalışıyor ve en önemlisi "gözleri açıldı". Okuma sayfasındaki metinleri sen sormadan biliyor, bu da soru-cevap sürecini inanılmaz hızlandırıyor.
+Focus artık daha stabil çalışıyor ve en önemlisi "gözleri açıldı". Okuma sayfasındaki metinleri sen sormadan biliyor. Kodlama hatasından kaynaklanan `ReferenceError` giderildi, sayfa şu an sorunsuz çalışıyor.
 
 ---

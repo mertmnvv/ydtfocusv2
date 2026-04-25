@@ -109,18 +109,18 @@ export default function ReadingPage() {
 
   // Sayfa içeriğini Focus AI'ya bildir
   useEffect(() => {
-    if (aiText || analysis) {
+    if (text) {
       const event = new CustomEvent("focus-page-context", {
         detail: {
           type: "reading_passage",
-          topic: selectedTopic,
-          text: aiText,
-          analysis_summary: analysis?.length > 0 ? "Kelimeler analiz edildi" : "Henüz analiz yok"
+          topic: topic,
+          text: text,
+          status: "Metin oluşturuldu"
         }
       });
       window.dispatchEvent(event);
     }
-  }, [aiText, analysis, selectedTopic]);
+  }, [text, topic]);
 
   async function generateAIText(selectedTopic) {
     const t = selectedTopic || topic;
