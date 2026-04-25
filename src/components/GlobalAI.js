@@ -72,24 +72,80 @@ export default function GlobalAI() {
     const randomPersonal = [
       { id: "mistakes", label: "Hatalarımı çalışalım", prompt: "En son yaptığım hatalı kelimeler üzerinden bana bir pratik yaptırır mısın?" },
       { id: "progress", label: "İlerlememi özetle", prompt: "Şu anki ilerlememi ve eksiklerimi bana bir öğretmen gözüyle özetler misin?" },
-      { id: "word", label: "Yeni bir kelime", prompt: "Seviyeme uygun, sınavda çıkabilecek rastgele bir akademik kelime öğretir misin?" }
+      { id: "word", label: "Yeni bir kelime", prompt: "Seviyeme uygun, sınavda çıkabilecek rastgele bir akademik kelime öğretir misin?" },
+      { id: "special_reading", label: "✨ Sana Özel Metin Üret", action: generateSpecialPassage }
     ];
 
     if (meta?.mistakes?.length > 0) {
+      s.push(randomPersonal[3]); // Special Reading if mistakes exist
       s.push(randomPersonal[0]);
     } else {
-      const rand = randomPersonal[Math.floor(Math.random() * (randomPersonal.length - 1)) + 1];
+      const rand = randomPersonal[Math.floor(Math.random() * (randomPersonal.length - 2)) + 1];
       s.push(rand);
     }
     setSuggestions(s);
   }
 
+  async function generateSpecialPassage() {
+    if (!user || userMetadata?.mistakes?.length === 0) {
+      const msg = { role: "ai", content: "Sana özel metin üretebilmem için önce biraz pratik yapıp birkaç hata yapman gerekiyor. Şimdilik standart metinlerle devam edelim!" };
+      setMessages(prev => [...prev, msg]);
+      if (user) saveAIMessage(user.uid, msg);
+      return;
+    }
+
+    setLoading(true);
+    setMessages(prev => [...prev, { role: "user", content: "Hatalarımdan oluşan özel bir metin üret." }]);
+
+    // Eğer reading sayfasında değilsek oraya yönlendir
+    if (window.location.pathname !== "/reading") {
+      window.location.href = "/reading?generate=special";
+      return;
+    }
+
+    const prompt = `Sen uzman bir İngilizce hocasısın. Kullanıcının hata yaptığı şu kelimeleri (${userMetadata.mistakes.join(", ")}) kullanarak YDT/YDS tarzı akademik bir okuma metni yaz. 
+    Metnin ardından 3 soru ekle. SADECE şu JSON formatında yanıt ver: {"passage": "...", "questions": [{"q": "...", "a": "...", "b": "...", "c": "...", "d": "...", "correct": "a"}]}`;
+
+    try {
+      const response = await fetch("/api/groq", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "llama-3.1-8b-instant", // Using 8b for speed
+          messages: [{ role: "system", content: "Sadece JSON döndüren bir İngilizce hocasısın." }, { role: "user", content: prompt }],
+          temperature: 0.5,
+          response_format: { type: "json_object" }
+        }),
+      });
+      const data = await response.json();
+      const result = JSON.parse(data.choices[0].message.content);
+      
+      const event = new CustomEvent("focus-load-passage", { detail: result });
+      window.dispatchEvent(event);
+
+      setMessages(prev => [...prev, { 
+        role: "ai", 
+        content: `Harika! Hatalı olduğun kelimeleri içeren özel metnini hazırladım ve Reading paneline yükledim. Hadi hemen göz atalım.` 
+      }]);
+    } catch (e) {
+      setMessages(prev => [...prev, { role: "ai", content: "Metni üretirken bir sorun oluştu, lütfen tekrar dener misin?" }]);
+    }
+    setLoading(false);
+  }
+
   // Sayfa içeriği dinleyicisi
   useEffect(() => {
     const handleContext = (e) => setPageContext(e.detail);
+    const handleTriggerSpecial = () => generateSpecialPassage();
+
     window.addEventListener("focus-page-context", handleContext);
-    return () => window.removeEventListener("focus-page-context", handleContext);
-  }, []);
+    window.addEventListener("focus-generate-special", handleTriggerSpecial);
+
+    return () => {
+      window.removeEventListener("focus-page-context", handleContext);
+      window.removeEventListener("focus-generate-special", handleTriggerSpecial);
+    };
+  }, [userMetadata]);
 
   function handleClearChat() {
     if (!user) return;
@@ -290,7 +346,11 @@ export default function GlobalAI() {
             {suggestions.length > 0 && !loading && (
               <div className="ai-suggestions">
                 {suggestions.map(s => (
-                  <button key={s.id} onClick={() => sendMessage(s.prompt)} className="suggestion-chip">
+                  <button 
+                    key={s.id} 
+                    onClick={() => s.action ? s.action() : sendMessage(s.prompt)} 
+                    className="suggestion-chip"
+                  >
                     {s.label}
                   </button>
                 ))}

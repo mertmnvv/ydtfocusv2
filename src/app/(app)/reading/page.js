@@ -104,7 +104,31 @@ export default function ReadingPage() {
       return;
     }
     const unsubscribe = subscribeToUserWords(user.uid, setMyWords);
-    return () => unsubscribe();
+
+    // Focus AI'dan gelen özel metni dinle
+    const handleLoadPassage = (e) => {
+      const { passage, questions } = e.detail;
+      if (passage) {
+        setText(passage);
+        setQuizQuestions(questions || []);
+      }
+    };
+
+    window.addEventListener("focus-load-passage", handleLoadPassage);
+
+    // URL'den gelen özel üretim isteğini kontrol et
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("generate") === "special") {
+      // AI'ya tetikleyici gönder
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("focus-generate-special"));
+      }, 1000);
+    }
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener("focus-load-passage", handleLoadPassage);
+    };
   }, [user]);
 
   // Sayfa içeriğini Focus AI'ya bildir

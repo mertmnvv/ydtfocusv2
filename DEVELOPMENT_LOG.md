@@ -69,6 +69,22 @@ Focus artık çok daha düzenli çalışıyor. Bir okuma metnindeki tüm önemli
 
 ---
 
+## [25 Nisan 2026 — 04:58] Kişiselleştirilmiş Okuma Metni (Sana Özel Metin Üret)
+
+### 📋 Uygulama Planı
+Focus AI'nın kullanıcının hata yaptığı kelimeleri temel alarak ona özel bir YDT/YDS okuma metni ve quizi üretmesini sağlamak; bu metni anlık olarak Reading sayfasına yüklemek.
+
+### ✅ Tamamlanan Görevler
+- **AI Jeneratör Mantığı:** `GlobalAI.js` içerisine `generateSpecialPassage` fonksiyonu eklendi. Bu fonksiyon kullanıcının hatalarını alıp LLM'den JSON formatında (metin + sorular) çıktı alıyor.
+- **Dinamik Yükleme Sistemi:** Reading sayfası, Focus AI'dan gelen `focus-load-passage` event'ini dinleyecek şekilde güncellendi. Metin üretildiğinde sayfa yenilenmeden içerik güncelleniyor.
+- **Sayfalar Arası Entegrasyon:** Kullanıcı başka bir sayfadayken "Metin Üret" derse, sistem onu otomatik olarak Reading sayfasına yönlendiriyor ve metni orada üretmeye başlıyor.
+- **Kullanıcı Arayüzü:** AI paneline "✨ Sana Özel Metin Üret" butonu eklendi.
+
+### 📝 Özet (Walkthrough)
+Artık Focus sadece sorularına cevap vermiyor, senin eksiklerini analiz edip sana özel bir sınav hazırlıyor. Hata yaptığın kelimeleri içeren bir okuma parçası yazıyor, sorularını hazırlıyor ve bunu anlık olarak Reading paneline yansıtıyor. Bu, projenin kişiselleştirilmiş eğitim vizyonundaki en büyük adımlardan biri.
+
+---
+
 ## [25 Nisan 2026 — 04:49] Focus AI Header ve Buton Revizyonu
 
 ### 📋 Uygulama Planı
@@ -81,6 +97,22 @@ AI panelinin üst kısmında (header) oluşan görsel bozulmaları gidermek, kap
 
 ### 📝 Özet (Walkthrough)
 AI panelinin başlık kısmı artık çok daha temiz ve hatasız görünüyor. Kapatma tuşu ve silme tuşu birbirleriyle uyumlu, modern bir etkileşim sunuyor. Görsel kaymalar giderilerek premium his güçlendirildi.
+
+---
+
+## [25 Nisan 2026 — 04:45] Focus Özel Onay Modalı ve UI İyileştirmesi
+
+### 📋 Uygulama Planı
+Sohbet geçmişini silerken çıkan tarayıcı varsayılanı (browser confirm) pop-up'ını kaldırıp, platformun premium tasarım diline uygun özel bir onay modalı eklemek.
+
+### ✅ Tamamlanan Görevler
+- **Özel Onay Modalı (Confirm UI):** Tarayıcı penceresi yerine, AI panelinin içinde açılan, arka planı bulanıklaştıran (glassmorphism) ve şık bir kart tasarımına sahip yeni bir onay mekanizması kuruldu.
+- **Dinamik Durum Yönetimi:** `showConfirm` state'i ile modalın açılış/kapanış animasyonları ve mantığı kontrol altına alındı.
+- **Görsel Tutarlılık:** Modal butonları (Vazgeç/Temizle) ve renk paleti platformun genel estetiğiyle (kırmızı/dark mode) tam uyumlu hale getirildi.
+- **Kullanıcı Deneyimi:** Silme işlemi öncesi verilen uyarı metni daha açıklayıcı ve samimi bir dille güncellendi.
+
+### 📝 Özet (Walkthrough)
+Focus artık seni tarayıcı pencereleriyle uğraştırmıyor. Sohbeti temizlemek istediğinde, panelin içinde şık bir onay kutusu beliriyor. Bu hem görsel bütünlüğü koruyor hem de yanlışlıkla silme işlemlerine karşı daha güvenli ve premium bir deneyim sunuyor.
 
 ---
 
