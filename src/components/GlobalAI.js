@@ -13,6 +13,7 @@ export default function GlobalAI() {
   const [messages, setMessages] = useState([
     { role: "ai", content: "Selam! Ben **Focus**. YDT, YDS veya YÖKDİL sürecinde aklına takılanları bana sorabilirsin. Hem hocan hem de çalışma arkadaşın olarak buradayım! \n\n*Örneğin: 'YDT ne zaman?', 'Present Perfect vs Past Simple' gibi sorular sorabilirsin.*" }
   ]);
+  const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [pageContext, setPageContext] = useState(null);
   const [words, setWords] = useState([]); // Kullanıcının bankasındaki kelimeler
