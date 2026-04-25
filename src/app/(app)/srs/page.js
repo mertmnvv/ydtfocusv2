@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getUserWords, updateUserWord, updateUserStats, refreshUserStreak } from "@/lib/firestore";
 import Link from "next/link";
 import { playSuccessSound, playErrorSound } from "@/lib/sounds";
+import ShareButton from "@/components/ShareButton";
 
 const LEVEL_INTERVALS = { 0: 1, 1: 3, 2: 7, 3: 14, 4: 30 };
 
@@ -134,7 +135,10 @@ export default function SRSPage() {
           {quizWords.map((q, idx) => (
             <div key={idx} className={`quiz-slide ${idx === currentIdx ? "active" : ""}`}>
               <div className="quiz-sim-body">
-                <div className="quiz-sim-word">{q.word}</div>
+                <div className="quiz-sim-header-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, marginBottom: 40 }}>
+                  <div className="quiz-sim-word" style={{ marginBottom: 0 }}>{q.word}</div>
+                  <ShareButton item={{...q, correctMeaning: q.meaning}} type="question" />
+                </div>
                 <div className="quiz-sim-options">
                   {q.options.map((opt, i) => {
                     const isSelected = selectedOption === opt;

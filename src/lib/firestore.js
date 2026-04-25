@@ -1,7 +1,7 @@
 import {
   collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
   query, where, orderBy, limit, startAfter, serverTimestamp,
-  writeBatch, increment, onSnapshot
+  writeBatch, increment, onSnapshot, arrayUnion, addDoc
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -420,4 +420,92 @@ export async function clearAIChat(uid) {
   const batch = writeBatch(db);
   snapshot.docs.forEach(d => batch.delete(d.ref));
   await batch.commit();
+}
+// =============================================
+// SOCIAL & MESSAGING
+// =============================================
+
+export async function searchUsers(queryText) {
+  const q = query(
+    collection(db, "users"),
+    where("displayName", ">=", queryText),
+    where("displayName", "<=", queryText + "\uf8ff"),
+    limit(10)
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+export async function sendFriendRequest(fromUid, toUid) {
+  const requestId = [fromUid, toUid].sort().join("_");
+  const requestRef = doc(db, "friendRequests", requestId);
+  await setDoc(requestRef, {
+    from: fromUid,
+    to: toUid,
+    status: "pending",
+    timestamp: serverTimestamp()
+  });
+}
+
+export async function respondToFriendRequest(requestId, status, fromUid, toUid) {
+  const requestRef = doc(db, "friendRequests", requestId);
+  if (status === "accepted") {
+    // Her iki kullanıcının arkadaş listesini güncelle
+    const fromRef = doc(db, "users", fromUid, "data", "social");
+    const toRef = doc(db, "users", toUid, "data", "social");
+
+    await setDoc(fromRef, { friends: arrayUnion(toUid) }, { merge: true });
+    await setDoc(toRef, { friends: arrayUnion(fromUid) }, { merge: true });
+    await updateDoc(requestRef, { status: "accepted" });
+  } else {
+    await deleteDoc(requestRef);
+  }
+}
+
+export async function getFriends(uid) {
+  const socialRef = doc(db, "users", uid, "data", "social");
+  const snap = await getDoc(socialRef);
+  if (!snap.exists()) return [];
+  const friendIds = snap.data().friends || [];
+  
+  // Arkadaşların profil bilgilerini çek
+  const friends = [];
+  for (const fId of friendIds) {
+    const uDoc = await getDoc(doc(db, "users", fId));
+    if (uDoc.exists()) friends.push({ id: fId, ...uDoc.data() });
+  }
+  return friends;
+}
+
+export async function getOrCreateChat(uid1, uid2) {
+  const chatId = [uid1, uid2].sort().join("_");
+  const chatRef = doc(db, "chats", chatId);
+  const snap = await getDoc(chatRef);
+  
+  if (!snap.exists()) {
+    await setDoc(chatRef, {
+      participants: [uid1, uid2],
+      createdAt: serverTimestamp(),
+      lastMessage: "",
+      lastTimestamp: serverTimestamp()
+    });
+  }
+  return chatId;
+}
+
+export async function sendMessage(chatId, senderUid, text, type = "text", metadata = {}) {
+  const messagesRef = collection(db, "chats", chatId, "messages");
+  await addDoc(messagesRef, {
+    senderId: senderUid,
+    text,
+    type,
+    metadata,
+    timestamp: serverTimestamp()
+  });
+  
+  const chatRef = doc(db, "chats", chatId);
+  await updateDoc(chatRef, {
+    lastMessage: text,
+    lastTimestamp: serverTimestamp()
+  });
 }

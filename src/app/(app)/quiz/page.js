@@ -8,6 +8,7 @@ import {
   updateUserWord, incrementStudyMinutes, updateUserStats
 } from "@/lib/firestore";
 import { playSuccessSound, playErrorSound } from "@/lib/sounds";
+import ShareButton from "@/components/ShareButton";
 
 export default function QuizPage() {
   const { user, requireAuth } = useAuth();
@@ -423,7 +424,10 @@ export default function QuizPage() {
         {questions.map((q, idx) => (
           <div key={idx} className={`quiz-slide ${idx === qIdx ? "active" : ""}`}>
             <div className="quiz-sim-body">
-              <div className="quiz-sim-word">{q.word}</div>
+              <div className="quiz-sim-header-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, marginBottom: 40 }}>
+                <div className="quiz-sim-word" style={{ marginBottom: 0 }}>{q.word}</div>
+                <ShareButton item={q} type="question" />
+              </div>
               <div className="quiz-sim-options">
                 {q.options.map((opt, oi) => {
                   let cls = "quiz-sim-opt";

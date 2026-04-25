@@ -2,15 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { getLeaderboard } from "@/lib/firestore";
+import ProfileModal from "./ProfileModal";
 
 export default function Leaderboard() {
   const [category, setCategory] = useState("streak"); // streak, weeklyMinutes, masteryCount
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedUserId, setSelectedUserId] = useState(null);
 
   useEffect(() => {
     setLoading(true);
-    // category mapping for internal query
     const queryCat = category === "weeklyMinutes" ? "weeklyMinutes" : category;
     getLeaderboard(queryCat, 10).then(data => {
       setUsers(data || []);
@@ -48,7 +49,7 @@ export default function Leaderboard() {
           <div className="empty-msg">Henüz veri yok.</div>
         ) : (
           users.map((u, idx) => (
-            <div key={u.id} className="leader-item glass-card">
+            <div key={u.id} className="leader-item glass-card" onClick={() => setSelectedUserId(u.id)}>
               <div className="leader-rank">{idx + 1}</div>
               <div className="leader-avatar">{u.displayName?.[0] || "?"}</div>
               <div className="leader-info">
@@ -71,6 +72,13 @@ export default function Leaderboard() {
         )}
       </div>
 
+      {selectedUserId && (
+        <ProfileModal 
+          userId={selectedUserId} 
+          onClose={() => setSelectedUserId(null)} 
+        />
+      )}
+
       <style jsx>{`
         .leaderboard-component { margin-top: 32px; }
         .leaderboard-header { margin-bottom: 20px; }
@@ -83,16 +91,17 @@ export default function Leaderboard() {
         .tab-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
         .leader-item {
           display: flex; align-items: center; gap: 16px; padding: 16px; margin-bottom: 12px;
-          border-color: rgba(255, 255, 255, 0.05); transition: transform 0.2s;
+          border-color: rgba(255, 255, 255, 0.05); transition: all 0.2s; cursor: pointer;
         }
-        .leader-item:hover { transform: scale(1.01); border-color: var(--accent-muted); }
+        .leader-item:hover { transform: scale(1.01); border-color: var(--accent-muted); background: var(--glass); }
         .leader-rank { font-size: 1.2rem; font-weight: 900; width: 24px; color: var(--accent); opacity: 0.8; }
         .leader-avatar {
-          width: 40px; height: 40px; border-radius: 12px; background: var(--border);
+          width: 44px; height: 44px; border-radius: 12px; background: var(--bg-elevated);
           display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem;
+          color: var(--text); border: 1px solid var(--border);
         }
         .leader-info { flex: 1; }
-        .leader-name { font-weight: 800; margin-bottom: 4px; font-size: 0.95rem; }
+        .leader-name { font-weight: 800; margin-bottom: 4px; font-size: 0.95rem; color: var(--text); }
         .leader-stats-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
         .test-time { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
         .score-val { font-weight: 900; color: var(--text); font-size: 0.9rem; }

@@ -8,6 +8,7 @@ import FloatingBank from "@/components/FloatingBank";
 import GlobalAI from "@/components/GlobalAI";
 import AuthModal from "@/components/AuthModal";
 import Onboarding from "@/components/Onboarding";
+import ChatHub from "@/components/ChatHub";
 
 const navItems = [
   { id: "dashboard", label: "Level Up", href: "/dashboard" },
@@ -217,6 +218,8 @@ export default function AppLayout({ children }) {
       <main className="app-main">
         {children}
       </main>
+
+      <ChatHub />
 
       {/* Mobile Bottom Pill Nav (Pinned to Bottom) */}
       <nav className="mobile-bottom-nav">

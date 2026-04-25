@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getUserWords, getUserStats, updateLastReminderDate, refreshUserStreak } from "@/lib/firestore";
+import { getUserWords, getUserStats, updateLastReminderDate } from "@/lib/firestore";
 import Link from "next/link";
-import CustomDialog from "@/components/CustomDialog";
 import Leaderboard from "@/components/Leaderboard";
 
 export default function DashboardPage() {
@@ -13,7 +12,6 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({ correct: 0, wrong: 0, streak: 0, studyTime: 0, weeklyMinutes: 0 });
   const [loading, setLoading] = useState(true);
   const [expandedLevel, setExpandedLevel] = useState(null);
-  const [showReminder, setShowReminder] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -33,16 +31,6 @@ export default function DashboardPage() {
         const wordList = w || [];
         setWords(wordList);
         setStats({ ...(s || {}), streak: s?.streak || 0 });
-
-        // Daily Reminder Logic (Optional background check)
-        const lastReminder = userProfile?.lastReminderDate;
-        const today = new Date().toDateString();
-        if (lastReminder !== today) {
-          const dueCount = wordList.filter(w => (w.nextReview || 0) <= Date.now()).length;
-          if (dueCount > 0) {
-            updateLastReminderDate(user.uid);
-          }
-        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -52,7 +40,7 @@ export default function DashboardPage() {
 
     fetchData();
     return () => { isMounted = false; };
-  }, [user, userProfile]);
+  }, [user]);
 
   if (loading) return <div className="page-loading"><div className="spinner-ring"></div></div>;
 
@@ -62,11 +50,11 @@ export default function DashboardPage() {
   const dueCount = words.filter(w => (w.nextReview || 0) <= Date.now()).length;
   
   const levels = [
-    { name: "Yeni", key: "level0", color: "#ff453a", desc: "Henüz öğrenilmeye başlanmadı" },
-    { name: "Adım 1", key: "level1", color: "#ff9f0a", desc: "İlk tekrar yapıldı" },
-    { name: "Adım 2", key: "level2", color: "#ffd60a", desc: "Hafızaya giriyor" },
-    { name: "Adım 3", key: "level3", color: "#30d158", desc: "Pekişmeye başladı" },
-    { name: "Hazine", key: "level4", color: "#0a84ff", desc: "Kalıcı hafızaya alındı" },
+    { name: "Yeni", key: "level0", color: "#ff453a" },
+    { name: "Adım 1", key: "level1", color: "#ff9f0a" },
+    { name: "Adım 2", key: "level2", color: "#ffd60a" },
+    { name: "Adım 3", key: "level3", color: "#30d158" },
+    { name: "Hazine", key: "level4", color: "#0a84ff" },
   ];
 
   const levelWords = {
@@ -96,7 +84,6 @@ export default function DashboardPage() {
 
       <div className="dash-divider"></div>
 
-      {/* AKILLI TEKRAR VURGUSU (NEW) */}
       <div className="daily-focus-container">
         <div className="glass-card daily-focus-card">
           <div className="focus-content">
@@ -151,7 +138,7 @@ export default function DashboardPage() {
 
       <div className="glass-card">
         <h3 className="dash-section-title">Kelime Seviyeleri</h3>
-        <p className="hint-text" style={{ marginBottom: 16 }}>İçerik için seviyeye tıklayın.</p>
+        <p className="hint-text">Seviyeye tıklayıp kelimelerini görüntüle.</p>
         <div className="dash-levels">
           {levels.map(lv => {
             const count = levelWords[lv.key].length;
@@ -213,6 +200,8 @@ export default function DashboardPage() {
           .focus-btn { width: 100%; }
           .focus-desc { margin: 0 auto; }
         }
+        .dash-level-word-item { padding: 12px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .dash-level-word-item:hover { background: rgba(255,255,255,0.05); }
       `}</style>
     </div>
   );

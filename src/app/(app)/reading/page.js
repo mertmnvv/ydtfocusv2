@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
+import { useSearchParams } from "next/navigation";
 import { subscribeToUserWords, addUserWord } from "@/lib/firestore";
+import ShareButton from "@/components/ShareButton";
 
 const TOPICS = [
   { id: "random", label: "Karışık" },
@@ -96,7 +98,25 @@ export default function ReadingPage() {
   const [showResultCard, setShowResultCard] = useState(false);
   
   const [quizQuestions, setQuizQuestions] = useState([]);
+  const searchParams = useSearchParams();
   const [quizLoading, setQuizLoading] = useState(false);
+
+  // URL Parametrelerini Dinle (Paylaşılan Metinler & AI Üretimi)
+  useEffect(() => {
+    const sharedText = searchParams.get("loadText");
+    const generateMode = searchParams.get("generate");
+
+    if (sharedText) {
+      setText(decodeURIComponent(sharedText));
+      setQuizQuestions([]);
+    } else if (generateMode === "special") {
+      // AI'ya tetikleyici gönder (2 sn gecikme asistanın hazır olması için)
+      const timer = setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("focus-generate-special"));
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!user) {
@@ -105,7 +125,7 @@ export default function ReadingPage() {
     }
     const unsubscribe = subscribeToUserWords(user.uid, setMyWords);
 
-    // Focus AI'dan gelen özel metni dinle
+    // Focus AI'dan gelen özel metni dinle (GlobalAI'dan gelen event)
     const handleLoadPassage = (e) => {
       const { passage, questions } = e.detail;
       if (passage) {
@@ -115,15 +135,6 @@ export default function ReadingPage() {
     };
 
     window.addEventListener("focus-load-passage", handleLoadPassage);
-
-    // URL'den gelen özel üretim isteğini kontrol et
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("generate") === "special") {
-      // AI'ya tetikleyici gönder
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent("focus-generate-special"));
-      }, 2000);
-    }
 
     return () => {
       unsubscribe();
@@ -287,8 +298,11 @@ export default function ReadingPage() {
 
   return (
     <div className="reading-page">
-      <div className="header-split">
-        <h2 className="section-title">Metin Analizi</h2>
+      <div className="header-split" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <h2 className="section-title" style={{ margin: 0 }}>Metin Analizi</h2>
+          {text.trim() && <ShareButton item={{ text: text, title: topic }} type="reading" />}
+        </div>
         <div className="reading-controls">
           <select value={level} onChange={e => setLevel(e.target.value)} className="reading-select">
             <option value="A2">A2</option><option value="B1">B1</option>
