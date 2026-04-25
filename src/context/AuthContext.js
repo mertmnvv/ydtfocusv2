@@ -35,6 +35,7 @@ export function AuthProvider({ children }) {
         uid: firebaseUser.uid,
         email: firebaseUser.email,
         displayName: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "Kullanıcı",
+        searchName: (firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "Kullanıcı").toLowerCase(),
         photoURL: firebaseUser.photoURL || null,
         role: "free",
         createdAt: serverTimestamp(),
@@ -48,11 +49,19 @@ export function AuthProvider({ children }) {
       
       // Eğer mevcut isim generic ise ve Firebase Auth'da daha iyi bir isim varsa güncelle
       const currentData = userSnap.data();
+      let dName = currentData.displayName;
+
       if ((!currentData.displayName || currentData.displayName === "Kullanıcı") && firebaseUser.displayName) {
         updates.displayName = firebaseUser.displayName;
+        dName = firebaseUser.displayName;
       }
       if (!currentData.photoURL && firebaseUser.photoURL) {
         updates.photoURL = firebaseUser.photoURL;
+      }
+
+      // Her durumda searchName'i kontrol et/ekle
+      if (!currentData.searchName || updates.displayName) {
+        updates.searchName = (dName || "Kullanıcı").toLowerCase();
       }
 
       await setDoc(userRef, updates, { merge: true });

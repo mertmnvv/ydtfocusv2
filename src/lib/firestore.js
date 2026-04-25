@@ -426,10 +426,18 @@ export async function clearAIChat(uid) {
 // =============================================
 
 export async function searchUsers(queryText) {
+  if (!queryText || queryText.trim() === "") {
+    // Boş aramada en son kayıt olanları getir
+    const q = query(collection(db, "users"), orderBy("createdAt", "desc"), limit(5));
+    const snap = await getDocs(q);
+    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+
+  const term = queryText.toLowerCase().trim();
   const q = query(
     collection(db, "users"),
-    where("displayName", ">=", queryText),
-    where("displayName", "<=", queryText + "\uf8ff"),
+    where("searchName", ">=", term),
+    where("searchName", "<=", term + "\uf8ff"),
     limit(10)
   );
   const snap = await getDocs(q);

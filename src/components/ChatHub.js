@@ -85,11 +85,10 @@ export default function ChatHub() {
   }, [user]);
 
   useEffect(() => {
-    if (searchQuery.length < 1) { setSearchResults([]); return; }
     const delayDebounceFn = setTimeout(async () => {
       const results = await searchUsers(searchQuery);
       setSearchResults(results.filter(r => r.id !== user.uid).slice(0, 5));
-    }, 150);
+    }, searchQuery.length > 0 ? 150 : 0);
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery, user]);
 
@@ -293,6 +292,9 @@ export default function ChatHub() {
                       />
                     </div>
                     <div className="search-results-list">
+                      <div className="search-section-title">
+                        {searchQuery.length > 0 ? "ARAMA SONUÇLARI" : "SON KAYIT OLANLAR"}
+                      </div>
                       {searchResults.length > 0 ? searchResults.map(r => (
                         <div key={r.id} className="chat-item search-item" onClick={() => setSelectedProfileId(r.id)}>
                           <div className="chat-item-avatar search-av">
@@ -468,6 +470,7 @@ export default function ChatHub() {
         .hub-search-bar input { background: none; border: none; color: var(--text); outline: none; flex: 1; font-size: 0.85rem; font-weight: 600; }
         .search-profile-btn { background: var(--glass); border: 1px solid var(--border); color: var(--text-muted); padding: 6px 12px; border-radius: 10px; font-size: 0.7rem; font-weight: 800; transition: 0.2s; }
         .search-profile-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .search-section-title { font-size: 0.65rem; font-weight: 800; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 12px; padding-left: 4px; opacity: 0.8; }
 
         .chat-active-view { display: flex; flex-direction: column; height: 100%; position: relative; background: var(--bg-card); }
         .chat-window-header { padding: 12px 16px; display: flex; align-items: center; gap: 10px; z-index: 10; background: var(--glass); border-bottom: 1px solid var(--border); border-radius: 0; min-height: 64px; }
