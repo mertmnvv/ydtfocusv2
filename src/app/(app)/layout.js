@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import FloatingBank from "@/components/FloatingBank";
+import GlobalAI from "@/components/GlobalAI";
 import AuthModal from "@/components/AuthModal";
 
 const navItems = [
@@ -290,6 +291,8 @@ export default function AppLayout({ children }) {
       </footer>
       {/* Floating Bank */}
       <FloatingBank />
+      {/* Global AI Assistant */}
+      <GlobalAI />
       {/* Global Auth Modal */}
       <AuthModal />
     </div>
