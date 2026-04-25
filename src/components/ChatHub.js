@@ -442,10 +442,12 @@ export default function ChatHub() {
         .hub-tab.active { color: var(--accent); }
         .hub-tab.active::after { content: ''; position: absolute; bottom: 0; left: 20%; right: 20%; height: 3px; background: var(--accent); border-radius: 3px 3px 0 0; }
         
-        .hub-content { flex: 1; overflow-y: auto; padding: 12px; }
+        .hub-main-view { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+        .hub-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
         .scroll-styled::-webkit-scrollbar { width: 4px; }
         .scroll-styled::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 
+        .chat-items { flex: 1; overflow-y: auto; padding: 12px; }
         .chat-item { 
           display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 20px; 
           cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); margin-bottom: 8px; background: var(--glass);
@@ -454,11 +456,12 @@ export default function ChatHub() {
         .chat-item:hover { background: var(--bg-elevated); transform: translateY(-2px); border-color: var(--border); }
         
         .friend-item-indicator { position: absolute; left: 0; top: 20%; bottom: 20%; width: 3px; background: var(--primary); border-radius: 0 4px 4px 0; opacity: 0.6; }
-        .chat-item-avatar { width: 46px; height: 46px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.2rem; flex-shrink: 0; }
+        .chat-item-avatar { width: 46px; height: 46px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.2rem; flex-shrink: 0; overflow: hidden; }
         .msg-av { background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border); }
         .friend-av { background: linear-gradient(135deg, var(--primary), #1a7a3a); color: white; }
         .req-av { background: linear-gradient(135deg, var(--accent), #b38f00); color: #000; }
         .search-av { background: var(--glass); color: var(--accent); border: 1px solid var(--border); }
+        .chat-avatar-img { width: 100%; height: 100%; object-fit: cover; }
         
         .chat-item-info { flex: 1; min-width: 0; }
         .chat-item-name { font-size: 0.95rem; font-weight: 800; color: var(--text); margin-bottom: 2px; }
