@@ -16,6 +16,7 @@ export default function GlobalAI() {
   const [pageContext, setPageContext] = useState(null);
   const [words, setWords] = useState([]); 
   const [userMetadata, setUserMetadata] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
   const scrollRef = useRef(null);
 
   // 1. Veri Senkronizasyonu (Kelime Bankası, İstatistikler, Hatalar)
@@ -36,27 +37,50 @@ export default function GlobalAI() {
       
       const mistakenWordList = mistakes.map(id => words.find(w => w.id === id)?.word).filter(Boolean);
 
-      setUserMetadata({
+      const metadata = {
         name: user.displayName || "Arkadaşım",
         streak: stats.streak || 0,
         minutes: stats.dailyMinutes || 0,
         levels: hero.levels || {},
         mistakes: mistakenWordList
-      });
+      };
+      setUserMetadata(metadata);
 
       if (history.length > 0) {
         setMessages(history.map(m => ({ role: m.role, content: m.content })));
+        setSuggestions([]);
       } else {
         setMessages([{
           role: "ai",
-          content: `Selam **${user.displayName || "çalışma arkadaşım"}**! 👋 Tekrar hoş geldin. Bugün seninle birlikte çalışmak için sabırsızlanıyorum. İlerlemene baktım, harika gidiyorsun! Nereden başlayalım?`
+          content: `Selam **${user.displayName || "çalışma arkadaşım"}**! Tekrar hoş geldin. Bugün seninle birlikte çalışmak için sabırsızlanıyorum. İlerlemene baktım, harika gidiyorsun! Nereden başlayalım?`
         }]);
+        generateSuggestions(metadata);
       }
     };
 
     fetchData();
     return () => unsubscribe();
   }, [user]);
+
+  function generateSuggestions(meta) {
+    const s = [
+      { id: "help", label: "Neler yapabilirsin?", prompt: "Neler yapabilirsin ve senin görevlerin neler? Bana kendini anlatır mısın?" }
+    ];
+
+    const randomPersonal = [
+      { id: "mistakes", label: "Hatalarımı çalışalım", prompt: "En son yaptığım hatalı kelimeler üzerinden bana bir pratik yaptırır mısın?" },
+      { id: "progress", label: "İlerlememi özetle", prompt: "Şu anki ilerlememi ve eksiklerimi bana bir öğretmen gözüyle özetler misin?" },
+      { id: "word", label: "Yeni bir kelime", prompt: "Seviyeme uygun, sınavda çıkabilecek rastgele bir akademik kelime öğretir misin?" }
+    ];
+
+    if (meta?.mistakes?.length > 0) {
+      s.push(randomPersonal[0]);
+    } else {
+      const rand = randomPersonal[Math.floor(Math.random() * (randomPersonal.length - 1)) + 1];
+      s.push(rand);
+    }
+    setSuggestions(s);
+  }
 
   // Sayfa içeriği dinleyicisi
   useEffect(() => {
@@ -71,8 +95,9 @@ export default function GlobalAI() {
       await clearAIChat(user.uid);
       setMessages([{
         role: "ai",
-        content: `Sohbeti temizledim ama seni unutmadım **${userMetadata?.name}**! 😉 Hadi yeni bir başlangıç yapalım. Bugün ne üzerine çalışalım?`
+        content: `Sohbeti temizledim ama seni unutmadım **${userMetadata?.name}**! Hadi yeni bir başlangıç yapalım. Bugün ne üzerine çalışalım?`
       }]);
+      generateSuggestions(userMetadata);
       showNotification("Sohbet geçmişi silindi.", "success");
     } catch (e) {
       showNotification("Hata oluştu.", "error");
@@ -85,11 +110,14 @@ export default function GlobalAI() {
     }
   }, [messages, loading]);
 
-  async function sendMessage() {
-    if (!input.trim() || loading) return;
+  async function sendMessage(overrideText) {
+    const textToSend = typeof overrideText === 'string' ? overrideText : input;
+    if (!textToSend.trim() || loading) return;
 
-    const userMsg = input.trim();
-    setInput("");
+    if (typeof overrideText === 'string') setSuggestions([]);
+    
+    const userMsg = textToSend.trim();
+    if (!overrideText) setInput("");
     
     const newMessage = { role: "user", content: userMsg };
     setMessages(prev => [...prev, newMessage]);
@@ -99,6 +127,12 @@ export default function GlobalAI() {
 
     const systemPrompt = `Senin adın Focus. Mert tarafından geliştirilen, öğrencinin en yakın çalışma arkadaşı ve uzman İngilizce hocasısın.
     
+    KURALLAR:
+    - Mesajlarında ASLA ama ASLA emoji kullanma. Hiçbir şekilde emoji veya gülen yüz sembolü istemiyorum.
+    - Robotik, klişe ve yapay cümlelerden kesinlikle kaçın.
+    - Sanki öğrenciyle yan yana oturmuş, metni birlikte okumuşsunuz gibi doğal ve samimi bir dille konuş. 
+    - Kullanıcıya ismiyle hitap et. Onu motive et, hatalı olduğu kelimelerden örnekler vererek konuyu açıkla.
+    
     KULLANICI BİLGİLERİ:
     - İsim: ${userMetadata?.name || "Arkadaşım"}
     - Streak: ${userMetadata?.streak} gün
@@ -106,15 +140,8 @@ export default function GlobalAI() {
     - Seviye İlerlemesi: ${userMetadata?.levels ? Object.entries(userMetadata.levels).map(([k,v]) => `${k}: %${Math.round((v.completed/v.required)*100)}`).join(", ") : "Bilgi yok"}
     - Hatalı Olduğu Kelimeler: ${userMetadata?.mistakes?.join(", ") || "Henüz hatası yok, harika!"}
     
-    ÜSLUP VE KİŞİLİK KURALLARI:
-    - Robotik, klişe ve yapay cümlelerden (Örn: "Metinde bahsedilmektedir", "Bu kadar, anlattım", "Metin şunu vurgular") kesinlikle kaçın.
-    - Sanki öğrenciyle yan yana oturmuş, metni birlikte okumuşsunuz gibi doğal ve samimi bir dille konuş. 
-    - Kullanıcıya ismiyle hitap et. Onu motive et, hatalı olduğu kelimelerden örnekler vererek konuyu açıkla.
-    - Bir metni anlatırken rapor sunar gibi değil, "Bak burada aslında şunu demek istiyor...", "Şu kısım sınavda çok önemli..." gibi ifadeler kullan.
-    
     ÖNEMLİ KISITLAMALAR:
     - Mert dışında hiçbir ekip/kuruluş isminden bahsetme.
-    - Dil bilgisi konusunda uydurma bilgi verme.
     - Modals: can, must, should, would vb. yardımcı fiillerdir.
     
     YETENEKLER:
@@ -126,11 +153,11 @@ export default function GlobalAI() {
     let finalSystemPrompt = systemPrompt;
 
     if (pageContext) {
-      finalSystemPrompt += `\n\nŞU ANKİ SAYFA BAĞLAMI (Bu metne göre cevap ver): ${JSON.stringify(pageContext)}`;
+      finalSystemPrompt += `\n\nŞU ANKİ SAYFA BAĞLAMI: ${JSON.stringify(pageContext)}`;
     }
 
     if (words.length > 0) {
-      finalSystemPrompt += `\n\nKULLANICININ MEVCUT KELİMELERİ (Bunları ekleme teklif etme): ${words.map(w => w.word).join(", ")}`;
+      finalSystemPrompt += `\n\nKELİME BANKASI (Mevcut): ${words.map(w => w.word).join(", ")}`;
     }
 
     try {
@@ -148,9 +175,8 @@ export default function GlobalAI() {
         }),
       });
       const data = await resp.json();
-      let aiContent = data.choices?.[0]?.message?.content || "Üzgünüm, şu an bağlantı kurulamadı.";
+      let aiContent = data.choices?.[0]?.message?.content || "Şu an cevap veremiyorum, lütfen tekrar dene.";
       
-      // 2. Çoklu Tool/Action Yakalama
       const actionMatches = [...aiContent.matchAll(/\[ACTION: ADD_WORD (\{.*?\})\]/g)];
       
       if (actionMatches.length > 0 && user) {
@@ -158,28 +184,23 @@ export default function GlobalAI() {
         for (const match of actionMatches) {
           try {
             const wordData = JSON.parse(match[1]);
-            // Çift kontrol (Frontend tarafında da kontrol edelim)
             const exists = words.some(w => w.word?.toLowerCase() === wordData.word?.toLowerCase());
             if (!exists) {
               await addUserWord(user.uid, wordData);
               addedCount++;
             }
             aiContent = aiContent.replace(match[0], "");
-          } catch (e) {
-            console.error("Action parsing error:", e);
-          }
+          } catch (e) {}
         }
-        if (addedCount > 0) {
-          showNotification(`${addedCount} yeni kelime bankana eklendi!`, "success");
-        }
+        if (addedCount > 0) showNotification(`${addedCount} yeni kelime eklendi!`, "success");
         aiContent = aiContent.trim();
       }
 
-      const aiMessage = { role: "ai", content: aiContent };
+      const aiMessage = { role: "ai", content: aiContent.trim() };
       setMessages(prev => [...prev, aiMessage]);
       if (user) saveAIMessage(user.uid, aiMessage);
     } catch {
-      setMessages(prev => [...prev, { role: "ai", content: "Bir hata oluştu. Lütfen tekrar dene." }]);
+      setMessages(prev => [...prev, { role: "ai", content: "Bir hata oluştu. Mert'e haber verdim!" }]);
     }
     setLoading(false);
   }
@@ -231,6 +252,17 @@ export default function GlobalAI() {
                 </div>
               </div>
             ))}
+            
+            {suggestions.length > 0 && !loading && (
+              <div className="ai-suggestions">
+                {suggestions.map(s => (
+                  <button key={s.id} onClick={() => sendMessage(s.prompt)} className="suggestion-chip">
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {loading && (
               <div className="ai-bubble-wrapper ai">
                 <div className="ai-bubble loading-dots">
@@ -399,6 +431,33 @@ export default function GlobalAI() {
           color: #000;
           font-weight: 500;
           border-bottom-right-radius: 4px;
+        }
+
+        .ai-suggestions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          padding: 10px 0;
+          margin-top: -8px;
+        }
+
+        .suggestion-chip {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid var(--border);
+          color: var(--text);
+          padding: 8px 14px;
+          border-radius: 12px;
+          font-size: 0.85rem;
+          cursor: pointer;
+          transition: all 0.2s;
+          white-space: nowrap;
+        }
+
+        .suggestion-chip:hover {
+          background: var(--accent);
+          color: #000;
+          border-color: var(--accent);
+          transform: translateY(-2px);
         }
 
         /* Markdown Styling */

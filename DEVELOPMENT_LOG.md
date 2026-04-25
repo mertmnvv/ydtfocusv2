@@ -69,6 +69,23 @@ Focus artık çok daha düzenli çalışıyor. Bir okuma metnindeki tüm önemli
 
 ---
 
+## [25 Nisan 2026 — 04:19] Focus İnteraktif Öneriler ve Hızlı Aksiyonlar
+
+### 📋 Uygulama Planı
+Sohbet başlangıcında kullanıcının ne soracağını bilemediği anları kolaylaştırmak için tıklanabilir hızlı öneri butonları (chips) eklemek.
+
+### ✅ Tamamlanan Görevler
+- **Hızlı Öneri Butonları (Chips):** Sohbet boş olduğunda veya temizlendiğinde iki ana kategoride öneri butonu çıkması sağlandı:
+  1. **Tanıtım:** "Neler yapabilirsin?" butonu ile Focus'un tüm yeteneklerini anlatması.
+  2. **Kişiselleştirilmiş Öneri:** Kullanıcının hataları varsa "Hatalarımı çalışalım", yoksa "İlerlememi özetle" veya "Yeni bir kelime öğret" gibi rastgele kişisel görevler.
+- **Dinamik Tetikleme:** Bir öneriye tıklandığında ilgili komut otomatik olarak Focus'a gönderiliyor ve sohbet başlıyor.
+- **Görsel İyileştirme:** Öneri butonları için premium cam efekti (glassmorphism) ve hover animasyonları içeren yeni bir CSS yapısı kuruldu.
+
+### 📝 Özet (Walkthrough)
+Focus artık sadece beklemiyor, sana yol da gösteriyor. Sohbeti açtığında ne yapacağını düşünmene gerek yok; "Hatalarımı çalışalım" veya "Bana bir kelime öğret" gibi seçeneklere tek tıkla ulaşabilirsin. Bu, asistanla etkileşimi çok daha hızlı ve akıcı hale getirdi.
+
+---
+
 ## [25 Nisan 2026 — 04:14] Focus Kişiselleştirme ve Bellek Yönetimi
 
 ### 📋 Uygulama Planı
