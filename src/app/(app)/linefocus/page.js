@@ -52,11 +52,12 @@ export default function LinefocusPage() {
     const seed = Math.floor(Math.random() * 10000);
     const prompt = `Task: Write a UNIQUE 4-sentence connected story about ${topic}. Seed: ${seed}. Level: A2-B1.
 CRITICAL TURKISH TRANSLATION RULES:
-1. Translate for MEANING, not word-for-word. Use natural Turkish SOV order.
-2. Never start Turkish with a conjunction like "Ve" or "Ama" — restructure the sentence.
-3. Relative clauses (who/which/that) should become Turkish participle forms (-en/-an/-dığı).
-4. Avoid devrik (inverted) sentences. Use standard spoken Turkish.
-5. Each Turkish sentence must be independently understandable.
+1. MANDATORY: Use natural, fluid Turkish SOV (Subject-Object-Verb) order. 
+2. DO NOT translate word-for-word. Capture the MEANING and rephrase as a native Turkish speaker would.
+3. ABSOLUTELY NO DEVRIK (INVERTED) SENTENCES. The verb must always be at the end.
+4. Never start Turkish sentences with "Ve", "Ama", or "Fakat". Use "Bununla birlikte", "Ancak" or restructure.
+5. Relative clauses (who/which/that) MUST become Turkish participle forms (-en/-an/-dığı).
+6. Each Turkish sentence must be grammatically perfect and independently understandable.
 Return ONLY a JSON array: [{"en": "english sentence", "tr": "natural Turkish"}]`;
 
     try {
@@ -131,10 +132,11 @@ STORY HISTORY: "${bookHistory}"
 ### LINGUISTIC CONSTRAINTS: CEFR A2-B1 transition. Include at least 2 Academic Keywords.
 ### STORY RULES: Maintain Sci-Fi Mystery atmosphere. Continue from where history left off.
 ### TURKISH TRANSLATION RULES:
-1. Use natural, spoken Turkish with SOV order. No devrik (inverted) sentences.
-2. Relative clauses (who/which/that) → Turkish participle forms (-en/-an/-dığı).
-3. Never start Turkish with "Ve", "Ama", or "Fakat" — restructure instead.
-4. Each Turkish sentence must be clearly understandable on its own.
+1. MANDATORY: Use natural, fluid Turkish SOV (Subject-Object-Verb) order. Verb MUST be at the end.
+2. DO NOT translate word-for-word. Capture the MEANING and rephrase naturally.
+3. ABSOLUTELY NO DEVRIK (INVERTED) SENTENCES. Standard spoken/written Turkish rules apply.
+4. Relative clauses (who/which/that) → Turkish participle forms (-en/-an/-dığı).
+5. Never start Turkish with "Ve", "Ama", or "Fakat" — restructure instead.
 ### OUTPUT: Return ONLY raw JSON array.
 [{"en": "Sentence 1", "tr": "Doğal Türkçe 1"},{"en": "Sentence 2", "tr": "Doğal Türkçe 2"},{"en": "Sentence 3", "tr": "Doğal Türkçe 3"},{"en": "Sentence 4", "tr": "Doğal Türkçe 4"}]`;
 
@@ -628,12 +630,12 @@ STORY HISTORY: "${bookHistory}"
       {showClearConfirm && (
         <CustomDialog 
           className="lf-dialog"
-          title="Geçmişi Temizle"
-          message="Tüm okuma geçmişini ve daktilo istatistiklerini silmek istediğine emin misin? Bu işlem geri alınamaz."
+          title="Clear History"
+          message="Are you sure you want to delete all reading history and typing statistics? This action cannot be undone."
           onConfirm={handleClearHistory}
           onCancel={() => setShowClearConfirm(false)}
-          confirmText="Evet, Hepsini Sil"
-          cancelText="Vazgeç"
+          confirmText="Yes, Delete All"
+          cancelText="Cancel"
         />
       )}
     </div>
