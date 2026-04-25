@@ -6,64 +6,64 @@ import { useAuth } from "@/context/AuthContext";
 const onboardingSteps = [
   {
     id: "welcome",
-    title: "YDT Focus'a Hoş Geldin!",
-    desc: "Sınav yolculuğunda akademik İngilizceyi en verimli şekilde öğrenmen için yanındayız. Hadi, tüm panelleri ve özelliklerini hızlıca tanıyalım!",
+    title: "Akademik Başarıya Odaklan!",
+    desc: "YDT Focus v2 ile sınav hazırlık sürecini bir üst seviyeye taşıyoruz. Bilimsel metotlar ve yapay zeka desteğiyle hedeflerine ulaşman için buradayız.",
     icon: "fa-rocket",
     color: "var(--accent)"
   },
   {
     id: "dashboard",
-    title: "Level Up (Profil & Dashboard)",
-    desc: "Burası senin ana merkezin. Streak, çalışma süresi ve istatistiklerini gör. Ayrıca 'Akıllı Tekrar' sistemine ve profiline buradan ulaşabilirsin.",
+    title: "Level Up: Performans Merkezi",
+    desc: "Çalışma disiplinini verilerle yönet. Günlük streak, aktif çalışma süresi ve gelişim grafiklerini takip et; 'Akıllı Tekrar' ile unutmaya son ver.",
     icon: "fa-user-astronaut",
     color: "#30d158"
   },
   {
     id: "reading",
-    title: "Reading (Okuma Paneli)",
-    desc: "AI destekli akademik metinleri oku. Bilmediğin kelimelere tıklayarak analizlerini gör ve tek tuşla kelime bankana dahil et.",
+    title: "Reading: Bağlamsal Öğrenme",
+    desc: "Akademik metinleri derinlemesine analiz et. Kelimelerin üzerine dokunarak anlamlarını öğren ve doğrudan kelime bankana aktar.",
     icon: "fa-book-open",
     color: "#0a84ff"
   },
   {
     id: "quiz",
-    title: "Quiz & Flashcards",
-    desc: "Öğrenilen kelimelerinden quiz yap veya Flashcard'lar ile pratik yap. SRS sistemi sayesinde kelimeler asla unutulmaz.",
+    title: "Quiz: Aktif Hatırlama",
+    desc: "Öğrenilen kelimeleri SRS (Aralıklı Tekrar) algoritmasıyla test et. Flashcard'lar ve farklı sınav modlarıyla bilgilerini kalıcı hale getir.",
     icon: "fa-bolt",
     color: "#ff9f0a"
   },
   {
     id: "mistakes",
-    title: "Hatalarım",
-    desc: "Sınavlarda yanlış yaptığın kelimeler burada birikir. Sadece hatalarına odaklanarak eksiklerini hızla kapatabilirsin.",
+    title: "Hatalarım: Analiz ve Gelişim",
+    desc: "Hata yapmak öğrenmenin bir parçasıdır. Yanlış cevapladığın kelimeleri burada biriktir ve zayıf noktalarını güce dönüştür.",
     icon: "fa-circle-xmark",
     color: "#ff453a"
   },
   {
     id: "archive",
-    title: "Sözlük & Arşiv",
-    desc: "Binlerce akademik kelime ve Phrasal Verb içeren dev kütüphane! İstediğin kelimeyi ara, anlamını öğren ve bankana ekle.",
+    title: "Sözlük: Akademik Kütüphane",
+    desc: "Binlerce kelime ve Phrasal Verb içeren devasa veri tabanında keşfe çık. Her kelime bir adım daha başarı demek.",
     icon: "fa-language",
     color: "#5e5ce6"
   },
   {
     id: "hero",
-    title: "Zero to Hero",
-    desc: "A1'den C1'e uzanan oyunlaştırılmış başarı yolun. Seviyeleri tamamla, hedeflerine ulaş ve dil seviyeni adım adım yükselt.",
+    title: "Zero to Hero: Gelişim Yolu",
+    desc: "A1'den C1'e uzanan oyunlaştırılmış müfredat. Seviye atla, hedeflerini tamamla ve akademik dil becerini kanıtla.",
     icon: "fa-arrow-trend-up",
     color: "#bf5af2"
   },
   {
     id: "linefocus",
-    title: "Linefocus",
-    desc: "Mekanik klavye sesleri eşliğinde, sadece metne odaklanarak yazarak çalış. En sürükleyici çalışma deneyimi burada.",
+    title: "Linefocus: Derin Odaklanma",
+    desc: "Mekanik klavye hissiyle sadece metne odaklan. Yazarak çalışma metoduyla dikkati en üst seviyeye çıkar ve akılda kalıcılığı artır.",
     icon: "fa-keyboard",
     color: "#ff375f"
   },
   {
     id: "focus-ai",
-    title: "Focus AI",
-    desc: "Sol alttaki akıllı asistanın! Ona gramer sor, metin analizi iste veya senin eksiklerine özel okuma parçaları üretmesini söyle.",
+    title: "Focus AI: Senin Mentörün",
+    desc: "Sınav uzmanı yapay zeka asistanın! Gramer analizi, metin yorumlama ve kişiselleştirilmiş içerik üretimi için her an seninle.",
     icon: "fa-wand-magic-sparkles",
     color: "var(--accent)"
   }
