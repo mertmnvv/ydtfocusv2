@@ -52,3 +52,19 @@ Focus'un okunan metinleri otomatik olarak bilmesini sağlamak (Bağlamsal Farkı
 Focus artık daha stabil çalışıyor ve en önemlisi "gözleri açıldı". Okuma sayfasındaki metinleri sen sormadan biliyor. Kodlama hatasından kaynaklanan `ReferenceError` giderildi, sayfa şu an sorunsuz çalışıyor.
 
 ---
+
+## [25 Nisan 2026 — 03:56] Focus Akıllı Yetenek Optimizasyonu
+
+### 📋 Uygulama Planı
+Asistanın kelime ekleme yeteneğindeki hataları (tek seferde çoklu ekleme yapamama, mevcut kelimeleri tekrar ekleme) gidermek ve zekasını artırmak.
+
+### ✅ Tamamlanan Görevler
+- **Çoklu İşlem Desteği:** Focus artık tek bir mesajda istediğin kadar kelimeyi (Örn: 10 kelime birden) bankana ekleyebiliyor.
+- **Duplicate (Çift Kayıt) Engelleme:** AI'ya kullanıcının mevcut kelime bankası "bağlam" olarak verildi. Focus artık bankanda olan kelimeleri biliyor ve onları tekrar eklemeyi teklif etmiyor.
+- **Dil Doğruluğu:** AI'nın bazen Türkçe kelimeleri "word" alanına yazma hatası, sistem promptu ile kesin kurallara bağlandı (Her zaman İngilizce kelime kaydediliyor).
+- **Frontend Kontrolü:** AI hata yapsa bile frontend tarafında ikinci bir kontrol mekanizması eklenerek aynı kelimenin iki kez kaydedilmesi tamamen engellendi.
+
+### 📝 Özet (Walkthrough)
+Focus artık çok daha düzenli çalışıyor. Bir okuma metnindeki tüm önemli kelimeleri tek seferde bankana eklemesini isteyebilirsin; o hem bankandaki mevcut kelimeleri ayıklayacak hem de kalanların hepsini tek hamlede kaydedecektir.
+
+---

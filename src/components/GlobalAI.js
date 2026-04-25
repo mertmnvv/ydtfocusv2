@@ -13,16 +13,21 @@ export default function GlobalAI() {
   const [messages, setMessages] = useState([
     { role: "ai", content: "Selam! Ben **Focus**. YDT, YDS veya YÖKDİL sürecinde aklına takılanları bana sorabilirsin. Hem hocan hem de çalışma arkadaşın olarak buradayım! \n\n*Örneğin: 'YDT ne zaman?', 'Present Perfect vs Past Simple' gibi sorular sorabilirsin.*" }
   ]);
-  const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [pageContext, setPageContext] = useState(null);
+  const [words, setWords] = useState([]); // Kullanıcının bankasındaki kelimeler
   const scrollRef = useRef(null);
+
+  // Kelime bankasını dinle (Duplicate engellemek için AI'ya vereceğiz)
+  useEffect(() => {
+    if (!user) return;
+    const unsubscribe = subscribeToUserWords(user.uid, (w) => setWords(w || []));
+    return () => unsubscribe();
+  }, [user]);
 
   // Sayfa içeriği dinleyicisi
   useEffect(() => {
-    const handleContext = (e) => {
-      setPageContext(e.detail);
-    };
+    const handleContext = (e) => setPageContext(e.detail);
     window.addEventListener("focus-page-context", handleContext);
     return () => window.removeEventListener("focus-page-context", handleContext);
   }, []);
@@ -67,15 +72,21 @@ export default function GlobalAI() {
     - YÖKDİL: Yılda 2 kez. 80 soru, 180 dk.`;
 
     if (pageContext) {
-      systemPrompt += `\n\nŞu anki sayfa içeriği/bağlamı: ${JSON.stringify(pageContext)}`;
+      systemPrompt += `\n\nŞU ANKİ SAYFA İÇERİĞİ: ${JSON.stringify(pageContext)}`;
     }
 
-    systemPrompt += `\n\nYETENEKLER:
-    - Kelime ekleme isteği gelirse: [ACTION: ADD_WORD {"word": "...", "meaning": "...", "syn": "..."}] formatını ekle.
+    if (words.length > 0) {
+      systemPrompt += `\n\nKULLANICININ KELİME BANKASI (Bu kelimeleri tekrar ekleme): ${words.map(w => w.word).join(", ")}`;
+    }
+
+    systemPrompt += `\n\nYETENEKLER & KURALLAR:
+    - Kelime ekleme isteği gelirse: [ACTION: ADD_WORD {"word": "ENGLISH_WORD", "meaning": "TURKISH_MEANING", "syn": "SYNONYM"}]
+    - ÖNEMLİ: "word" kısmına MUTLAKA kelimenin İngilizcesini yaz. 
+    - Tek bir mesajda birden fazla kelime ekleyebilirsin. Her biri için ayrı [ACTION: ADD_WORD ...] etiketi kullan.
+    - Zaten bankada olan kelimeleri ekleme teklif etme.
     
     KİŞİLİK:
-    - Sıkıcı bir yapay zeka gibi değil, enerjik bir hoca/arkadaş gibi konuş. 
-    - Arada motivasyon cümleleri kur.`;
+    - Enerjik bir hoca/arkadaş gibi konuş. Motivasyon cümleleri kur.`;
 
     try {
       const resp = await fetch("/api/groq", {
@@ -94,20 +105,29 @@ export default function GlobalAI() {
       const data = await resp.json();
       let aiContent = data.choices?.[0]?.message?.content || "Üzgünüm, şu an bağlantı kurulamadı.";
       
-      // 2. Tool/Action Yakalama
-      if (aiContent.includes("[ACTION: ADD_WORD")) {
-        const match = aiContent.match(/\[ACTION: ADD_WORD (\{.*?\})\]/);
-        if (match && user) {
+      // 2. Çoklu Tool/Action Yakalama
+      const actionMatches = [...aiContent.matchAll(/\[ACTION: ADD_WORD (\{.*?\})\]/g)];
+      
+      if (actionMatches.length > 0 && user) {
+        let addedCount = 0;
+        for (const match of actionMatches) {
           try {
             const wordData = JSON.parse(match[1]);
-            await addUserWord(user.uid, wordData);
-            showNotification(`"${wordData.word}" kelime bankana eklendi!`, "success");
-            // Action tag'ini kullanıcıdan gizle
-            aiContent = aiContent.replace(match[0], "").trim();
+            // Çift kontrol (Frontend tarafında da kontrol edelim)
+            const exists = words.some(w => w.word?.toLowerCase() === wordData.word?.toLowerCase());
+            if (!exists) {
+              await addUserWord(user.uid, wordData);
+              addedCount++;
+            }
+            aiContent = aiContent.replace(match[0], "");
           } catch (e) {
             console.error("Action parsing error:", e);
           }
         }
+        if (addedCount > 0) {
+          showNotification(`${addedCount} yeni kelime bankana eklendi!`, "success");
+        }
+        aiContent = aiContent.trim();
       }
 
       const aiMessage = { role: "ai", content: aiContent };
