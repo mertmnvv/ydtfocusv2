@@ -98,34 +98,49 @@ export default function GlobalAI() {
   }
 
   async function generateSpecialPassage() {
-    if (!user || userMetadata?.mistakes?.length === 0) {
-      const msg = { role: "ai", content: "Sana özel metin üretebilmem için önce biraz pratik yapıp birkaç hata yapman gerekiyor. Şimdilik standart metinlerle devam edelim!" };
+    if (!user) return;
+
+    // Kelime listesini hazırla
+    let sourceWords = mistakeIds
+      .map(id => words.find(w => w.id === id)?.word)
+      .filter(Boolean);
+
+    if (sourceWords.length === 0) {
+      sourceWords = words.slice(-8).map(w => w.word).filter(Boolean);
+    }
+
+    if (sourceWords.length === 0) {
+      const msg = { role: "ai", content: "Sana özel metin üretebilmem için önce kelime bankana birkaç kelime eklemeli veya quizlerde biraz pratik yapmalısın. Şimdilik standart metinlerle devam edelim!" };
       setMessages(prev => [...prev, msg]);
       if (user) saveAIMessage(user.uid, msg);
       return;
     }
 
+    // Hemen geri bildirim ver
+    setMessages(prev => [...prev, { role: "ai", content: "Hemen senin için özel bir metin hazırlamaya başlıyorum, lütfen bekle..." }]);
     setLoading(true);
     
-    // Eğer reading sayfasında değilsek oraya yönlendir
     if (window.location.pathname !== "/reading") {
       window.location.href = "/reading?generate=special";
       return;
     }
 
-    setMessages(prev => [...prev, { role: "user", content: "Hatalarımdan oluşan özel bir metin üret." }]);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 saniye timeout
 
-    const prompt = `Sen uzman bir İngilizce hocasısın. Kullanıcının hata yaptığı şu kelimeleri (${userMetadata.mistakes.join(", ")}) kullanarak YDT/YDS tarzı akademik bir okuma metni yaz. 
-    Metnin ardından 3 soru ekle. SADECE şu JSON formatında yanıt ver: {"passage": "...", "questions": [{"q": "...", "a": "...", "b": "...", "c": "...", "d": "...", "correct": "a"}]}`;
+    const prompt = `Write an academic reading passage (150 words, YDT style) using these words: ${sourceWords.join(", ")}. 
+    Then add 3 multiple choice questions. 
+    RESPONSE MUST BE ONLY JSON: {"passage": "...", "questions": [{"q": "...", "a": "...", "b": "...", "c": "...", "d": "...", "correct": "a"}]}`;
 
     try {
       const response = await fetch("/api/groq", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
+          model: "llama-3.1-8b-instant",
           messages: [
-            { role: "system", content: "Sen sadece JSON döndüren teknik bir asistansın. Metinlerinde emoji kullanma." }, 
+            { role: "system", content: "You are a technical assistant that returns ONLY JSON. No conversation." }, 
             { role: "user", content: prompt }
           ],
           temperature: 0.3,
@@ -133,10 +148,10 @@ export default function GlobalAI() {
         }),
       });
 
+      clearTimeout(timeoutId);
       const data = await response.json();
       const rawContent = data.choices[0].message.content;
       
-      // JSON'u metin içinden ayıklayalım (AI bazen açıklama ekleyebilir)
       const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error("JSON not found");
       
@@ -147,11 +162,14 @@ export default function GlobalAI() {
 
       setMessages(prev => [...prev, { 
         role: "ai", 
-        content: `Harika! Hatalı olduğun kelimeleri içeren özel metnini hazırladım ve Reading paneline yükledim. Hadi hemen göz atalım.` 
+        content: `Özel metnin hazır! Reading paneline yükledim. Hadi soruları çözelim.` 
       }]);
     } catch (e) {
       console.error("Metin üretme hatası:", e);
-      setMessages(prev => [...prev, { role: "ai", content: "Metni üretirken bir sorun oluştu. Teknik bir takılma yaşamış olabilirim, lütfen tekrar dener misin?" }]);
+      const errorMsg = e.name === 'AbortError' 
+        ? "Üzgünüm, metin üretme işlemi çok uzun sürdüğü için iptal edildi. Lütfen tekrar dener misin?"
+        : "Metni üretirken bir sorun oluştu. Teknik bir takılma yaşamış olabilirim, lütfen tekrar dener misin?";
+      setMessages(prev => [...prev, { role: "ai", content: errorMsg }]);
     } finally {
       setLoading(false);
     }
