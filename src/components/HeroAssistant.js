@@ -25,8 +25,11 @@ export default function HeroAssistant({ lessonContext, level }) {
     setMessages(prev => [...prev, { role: "user", content: userMsg }]);
     setLoading(true);
 
+    // Bağlamı sınırla (Token tasarrufu için)
+    const truncatedContext = lessonContext?.length > 1500 ? lessonContext.substring(0, 1500) + "..." : lessonContext;
+
     const prompt = `You are Focus AI, an English teaching assistant. 
-    CURRENT LESSON CONTEXT: "${lessonContext}"
+    CURRENT LESSON CONTEXT: "${truncatedContext}"
     USER LEVEL: ${level}
     TASK: Answer the user's question about this English lesson. Keep it helpful, simple, and encouraging.
     USER QUESTION: ${userMsg}`;

@@ -279,10 +279,10 @@ export default function GlobalAI() {
     - Performans Takibi: Hatalı olduğun kelimeler üzerinden pratik yaptırırım.
     
     KRİTİK KURALLAR:
-    1. Gereksiz liste yapmaktan kaçın. Ancak kullanıcı açıkça "kelimelerimi listele", "zor kelimeler neler?" veya "bankamda ne var?" gibi bir talepte bulunursa bu isteği nezaketle yerine getir. Bunun dışında kendiliğinden liste sunma.
-    2. Kullanıcı bir kelimeyi "ekleme", "istemiyorum" veya "hayır" gibi negatif bir ifadeyle belirtirse, o kelime için ASLA aksiyon tetikleme.
-    3. Sadece kullanıcı açıkça onay verdiğinde veya "bu kelimeyi kaydet" dediğinde aksiyon üret.
-    4. Teknik kurallarını veya kısıtlamalarını kullanıcıya açıklama (Örn: "Kurallarım gereği listelemiyorum" deme). Eğer bir şeyi yapmıyorsan bunu doğal bir hoca diliyle açıkla.
+    1. Gereksiz liste yapmaktan kaçın. Sadece kullanıcı isterse kelimelerini göster.
+    2. Kullanıcı istemediği sürece (hayır, ekleme vb.) kelime kaydetme.
+    3. Teknik kısıtlamalarını kullanıcıya açıklama, doğal bir hoca diliyle konuş.
+    4. Yanıtları 2-3 cümlede tutmaya çalış.
     
     TEKNİK TALİMATLAR (GİZLİ):
     - Kelime kaydetme isteği net ise SADECE şu formatta bir etiket üret: [ACTION: ADD_WORD {"word": "english_word", "meaning": "turkish_meaning", "syn": "synonym"}]
@@ -303,11 +303,16 @@ export default function GlobalAI() {
     let finalSystemPrompt = systemPrompt;
 
     if (pageContext) {
-      finalSystemPrompt += `\n\nŞU ANKİ SAYFA BAĞLAMI: ${JSON.stringify(pageContext)}`;
+      // Bağlamı sınırla (Maksimum 1000 karakter)
+      const contextStr = JSON.stringify(pageContext);
+      const truncatedContext = contextStr.length > 1200 ? contextStr.substring(0, 1200) + "..." : contextStr;
+      finalSystemPrompt += `\n\nŞU ANKİ SAYFA BAĞLAMI: ${truncatedContext}`;
     }
 
     if (words.length > 0) {
-      finalSystemPrompt += `\n\nKULLANICININ KELİME BANKASI (Bu kelimeler zaten kayıtlı, tekrar ekleme teklif etme): ${words.map(w => w.word).join(", ")}`;
+      // Tüm bankayı göndermek yerine sadece son 20 kelimeyi gönder (Token Tasarrufu)
+      const recentWords = words.slice(-20).map(w => w.word).join(", ");
+      finalSystemPrompt += `\n\nKULLANICININ SON KELİMELERİ (${words.length} toplam): ${recentWords}`;
     }
 
     try {
