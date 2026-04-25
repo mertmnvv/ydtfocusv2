@@ -128,7 +128,11 @@ export default function AppLayout({ children }) {
                   <div className="profile-info">
                     <span className="profile-name">
                       {userProfile?.displayName || "Kullanıcı"}
-                      {isPremium && <i className="fa-solid fa-crown" style={{ color: "var(--accent)", marginLeft: 6, fontSize: "0.7rem" }}></i>}
+                      {isAdmin ? (
+                        <i className="fa-solid fa-user-shield" style={{ color: "#ff453a", marginLeft: 6, fontSize: "0.7rem" }} title="Yönetici"></i>
+                      ) : isPremium ? (
+                        <i className="fa-solid fa-crown" style={{ color: "var(--accent)", marginLeft: 6, fontSize: "0.7rem" }} title="Premium Üye"></i>
+                      ) : null}
                     </span>
                     <span className="profile-sub-text">Hesabım <i className="fa-solid fa-chevron-down"></i></span>
                   </div>
@@ -262,11 +266,11 @@ export default function AppLayout({ children }) {
                 <div className="popup-plan-tag" style={{ 
                   fontSize: '0.65rem', 
                   fontWeight: 800, 
-                  color: isPremium ? 'var(--accent)' : 'var(--text-muted)',
+                  color: isAdmin ? '#ff453a' : isPremium ? 'var(--accent)' : 'var(--text-muted)',
                   textTransform: 'uppercase',
                   letterSpacing: '1px'
                 }}>
-                  {isPremium ? 'Premium Plan' : 'Standart Plan'}
+                  {isAdmin ? 'Yönetici Paneli' : isPremium ? 'Premium Plan' : 'Standart Plan'}
                 </div>
               </div>
               <ThemeToggle />

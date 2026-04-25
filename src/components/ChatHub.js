@@ -172,9 +172,18 @@ export default function ChatHub() {
                   <div className="chat-items">
                     {chats.length === 0 ? <div className="empty-state">Henüz mesaj yok.</div> : chats.map(chat => (
                       <div key={chat.id} className="chat-item" onClick={() => setActiveChat(chat)}>
-                        <div className="chat-item-avatar msg-av">{chat.otherUser.displayName?.[0]}</div>
+                        <div className="chat-item-avatar msg-av" onClick={(e) => { e.stopPropagation(); setSelectedProfileId(chat.otherUser.id); }}>
+                          {chat.otherUser.displayName?.[0]}
+                        </div>
                         <div className="chat-item-info">
-                          <div className="chat-item-name">{chat.otherUser.displayName}</div>
+                          <div className="chat-item-name">
+                            {chat.otherUser.displayName}
+                            {chat.otherUser.role === "admin" ? (
+                              <i className="fa-solid fa-user-shield" style={{ color: "#ff453a", marginLeft: 6, fontSize: "0.7rem" }}></i>
+                            ) : chat.otherUser.role === "premium" ? (
+                              <i className="fa-solid fa-crown" style={{ color: "#ffd60a", marginLeft: 6, fontSize: "0.7rem" }}></i>
+                            ) : null}
+                          </div>
                           <div className="chat-item-last truncate">{chat.lastMessage || "Sohbeti başlat..."}</div>
                         </div>
                       </div>
@@ -186,12 +195,21 @@ export default function ChatHub() {
                     {friends.map(f => (
                       <div key={f.id} className="chat-item" onClick={() => { setActiveChat({ id: f.id, otherUser: f }); setActiveTab("chats"); }}>
                         <div className="friend-item-indicator"></div>
-                        <div className="chat-item-avatar friend-av">{f.displayName?.[0]}</div>
+                        <div className="chat-item-avatar friend-av" onClick={(e) => { e.stopPropagation(); setSelectedProfileId(f.id); }}>{f.displayName?.[0]}</div>
                         <div className="chat-item-info">
-                          <div className="chat-item-name">{f.displayName}</div>
+                          <div className="chat-item-name">
+                            {f.displayName}
+                            {f.role === "admin" ? (
+                              <i className="fa-solid fa-user-shield" style={{ color: "#ff453a", marginLeft: 6, fontSize: "0.7rem" }}></i>
+                            ) : f.role === "premium" ? (
+                              <i className="fa-solid fa-crown" style={{ color: "#ffd60a", marginLeft: 6, fontSize: "0.7rem" }}></i>
+                            ) : null}
+                          </div>
                           <div className="chat-item-last">Mesaj göndermek için dokun</div>
                         </div>
-                        <i className="fa-solid fa-chevron-right chat-arrow"></i>
+                        <button className="mini-profile-btn" onClick={(e) => { e.stopPropagation(); setSelectedProfileId(f.id); }}>
+                          <i className="fa-solid fa-user"></i>
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -246,9 +264,21 @@ export default function ChatHub() {
                 <button className="back-btn" onClick={() => setActiveChat(null)}>
                   <i className="fa-solid fa-chevron-left"></i>
                 </button>
-                <div className="header-user-info">
-                  <div className="header-avatar">{activeChat.otherUser.displayName?.[0]}</div>
-                  <span className="header-name">{activeChat.otherUser.displayName}</span>
+                <div className="header-user-info" onClick={() => setSelectedProfileId(activeChat.otherUser.id)} style={{ cursor: 'pointer' }}>
+                  <div className={`header-avatar ${activeChat.otherUser.role === 'admin' ? 'role-admin' : activeChat.otherUser.role === 'premium' ? 'role-premium' : ''}`}>
+                    {activeChat.otherUser.displayName?.[0]}
+                  </div>
+                  <div className="header-name-group">
+                    <span className="header-name">
+                      {activeChat.otherUser.displayName}
+                      {activeChat.otherUser.role === "admin" ? (
+                        <i className="fa-solid fa-user-shield" style={{ color: "#ff453a", marginLeft: 6, fontSize: "0.7rem" }}></i>
+                      ) : activeChat.otherUser.role === "premium" ? (
+                        <i className="fa-solid fa-crown" style={{ color: "#ffd60a", marginLeft: 6, fontSize: "0.7rem" }}></i>
+                      ) : null}
+                    </span>
+                    <span className="header-status">Profili Gör</span>
+                  </div>
                 </div>
               </div>
               
@@ -376,8 +406,14 @@ export default function ChatHub() {
         .chat-active-view { display: flex; flex-direction: column; height: 100%; position: relative; }
         .chat-window-header { padding: 12px 16px; display: flex; align-items: center; gap: 12px; z-index: 10; background: rgba(20,20,20,0.4); border-bottom: 1px solid var(--border); border-radius: 0; }
         .back-btn { width: 34px; height: 34px; border-radius: 12px; background: var(--glass); border: 1px solid var(--border); color: var(--text); cursor: pointer; transition: all 0.2s; }
-        .header-avatar { width: 28px; height: 28px; border-radius: 8px; background: var(--accent); color: #000; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.8rem; }
-        .header-name { font-size: 0.95rem; font-weight: 800; }
+        .header-avatar { width: 34px; height: 34px; border-radius: 10px; background: var(--bg-elevated); color: var(--text); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.9rem; border: 1px solid var(--border); }
+        .header-avatar.role-premium { border-color: #ffd60a; color: #ffd60a; box-shadow: 0 0 10px rgba(255, 214, 10, 0.2); }
+        .header-avatar.role-admin { border-color: #ff453a; color: #ff453a; box-shadow: 0 0 10px rgba(255, 69, 58, 0.2); }
+        .header-name-group { display: flex; flex-direction: column; }
+        .header-name { font-size: 0.9rem; font-weight: 800; color: #fff; }
+        .header-status { font-size: 0.65rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .mini-profile-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 8px; font-size: 0.85rem; opacity: 0.5; transition: 0.2s; }
+        .mini-profile-btn:hover { color: var(--accent); opacity: 1; transform: scale(1.1); }
 
         .chat-messages { flex: 1; overflow-y: auto; padding: 20px 16px; display: flex; flex-direction: column; gap: 16px; }
         .msg-wrapper { display: flex; width: 100%; }

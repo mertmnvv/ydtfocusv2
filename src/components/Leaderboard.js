@@ -51,9 +51,18 @@ export default function Leaderboard() {
           users.map((u, idx) => (
             <div key={u.id} className="leader-item glass-card" onClick={() => setSelectedUserId(u.id)}>
               <div className="leader-rank">{idx + 1}</div>
-              <div className="leader-avatar">{u.displayName?.[0] || "?"}</div>
+              <div className={`leader-avatar ${(u.role === 'premium' || u.role === 'admin') ? 'premium-glow' : ''}`}>
+                {u.displayName?.[0] || "?"}
+              </div>
               <div className="leader-info">
-                <div className="leader-name">{u.displayName || "Gizli Kullanıcı"}</div>
+                <div className="leader-name">
+                  {u.displayName || "Gizli Kullanıcı"}
+                  {u.role === "admin" ? (
+                    <i className="fa-solid fa-user-shield" style={{ color: "#ff453a", marginLeft: 6, fontSize: "0.8rem" }} title="Yönetici"></i>
+                  ) : u.role === "premium" ? (
+                    <i className="fa-solid fa-crown" style={{ color: "#ffd60a", marginLeft: 6, fontSize: "0.8rem" }} title="Premium Üye"></i>
+                  ) : null}
+                </div>
                 <div className="leader-stats-row">
                   {u.publicStats?.lastTestTime > 0 && (
                     <span className="test-time">Son Test: {u.publicStats.lastTestTime}sn</span>
@@ -99,6 +108,11 @@ export default function Leaderboard() {
           width: 44px; height: 44px; border-radius: 12px; background: var(--bg-elevated);
           display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem;
           color: var(--text); border: 1px solid var(--border);
+        }
+        .leader-avatar.premium-glow {
+          border-color: #ffd60a;
+          box-shadow: 0 0 10px rgba(255, 214, 10, 0.3);
+          background: linear-gradient(135deg, rgba(255, 214, 10, 0.1), var(--bg-elevated));
         }
         .leader-info { flex: 1; }
         .leader-name { font-weight: 800; margin-bottom: 4px; font-size: 0.95rem; color: var(--text); }
