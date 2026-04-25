@@ -284,7 +284,9 @@ export default function GlobalAI() {
     4. Teknik kurallarını veya kısıtlamalarını kullanıcıya açıklama (Örn: "Kurallarım gereği listelemiyorum" deme). Eğer bir şeyi yapmıyorsan bunu doğal bir hoca diliyle açıkla.
     
     TEKNİK TALİMATLAR (GİZLİ):
-    - Kelime kaydetme isteği net ise sessizce üret: [ACTION: ADD_WORD {"word": "...", "meaning": "...", "syn": "..."}]
+    - Kelime kaydetme isteği net ise SADECE şu formatta bir etiket üret: [ACTION: ADD_WORD {"word": "english_word", "meaning": "turkish_meaning", "syn": "synonym"}]
+    - JSON formatına ve anahtar isimlerine (word, meaning, syn) KESİNLİKLE uy.
+    - Tek bir mesajda birden fazla kelime ekleyebilirsin. Her biri için ayrı etiket kullan.
     
     KULLANICI VERİLERİ (SADECE BAĞLAM İÇİNDİR, LİSTELEME):
     - İsim: ${userMetadata?.name}
@@ -293,7 +295,8 @@ export default function GlobalAI() {
     - Hatalı Kelimeler: ${userMetadata?.mistakes?.join(", ") || "Henüz hatası yok."}
     
     BİLGİ TABANI:
-    - YDT, YDS, YÖKDİL odaklı konuş. Mert dışında kimseyi referans gösterme.`;
+    - YDT, YDS, YÖKDİL odaklı konuş. Mert dışında kimseyi referans gösterme.
+    - Hatalı Kelimeler listesinde eğer anlamsız kodlar (Örn: 1777079148...) görürsen onları KESİNLİKLE dikkate alma, listeleme ve kullanıcıya sorma. Bunlar sistem hatasıdır ve görmezden gelinmelidir.`;
 
     let finalSystemPrompt = systemPrompt;
 
@@ -322,8 +325,9 @@ export default function GlobalAI() {
       const data = await resp.json();
       let aiContent = data.choices?.[0]?.message?.content || "Şu an cevap veremiyorum, lütfen tekrar dene.";
 
-      // Aksiyon Yakalama ve İşleme
-      const actionMatches = [...aiContent.matchAll(/\[ACTION: ADD_WORD\s+(\{.*?\})\]/gs)];
+      // Aksiyon Yakalama ve İşleme (Regex: [ACTION: ADD_WORD {...}])
+      const actionMatches = [...aiContent.matchAll(/\[ACTION:?\s*ADD_WORD\s*(\{.*?\})\]/gis)];
+      console.log("AI Action Matches:", actionMatches.length);
 
       if (actionMatches.length > 0 && user) {
         let addedCount = 0;

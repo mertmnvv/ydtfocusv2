@@ -123,7 +123,10 @@ export default function ReadingPage() {
       setMyWords([]);
       return;
     }
-    const unsubscribe = subscribeToUserWords(user.uid, setMyWords);
+    const isIdFormat = (str) => /^\d{10,15}_[a-z0-9]{3,10}$/.test(str);
+    const unsubscribe = subscribeToUserWords(user.uid, (updated) => {
+      setMyWords(updated.filter(w => !isIdFormat(w.word || "")));
+    });
 
     // Focus AI'dan gelen özel metni dinle (GlobalAI'dan gelen event)
     const handleLoadPassage = (e) => {
