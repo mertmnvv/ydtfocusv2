@@ -84,7 +84,7 @@ a {
 }
 
 /* Avatar Image Styles */
-.avatar-img, .leader-avatar-img, .p-modal-avatar-img, .chat-avatar-img {
+.avatar-img, .leader-avatar-img, .p-modal-avatar-img, .chat-avatar-img, .chat-header-img {
   width: 100%;
   height: 100%;
   object-fit: cover;

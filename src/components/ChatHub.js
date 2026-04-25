@@ -470,14 +470,16 @@ export default function ChatHub() {
         .search-profile-btn:hover { border-color: var(--accent); color: var(--accent); }
 
         .chat-active-view { display: flex; flex-direction: column; height: 100%; position: relative; background: var(--bg-card); }
-        .chat-window-header { padding: 12px 16px; display: flex; align-items: center; gap: 12px; z-index: 10; background: var(--glass); border-bottom: 1px solid var(--border); border-radius: 0; }
-        .back-btn { width: 34px; height: 34px; border-radius: 12px; background: var(--glass); border: 1px solid var(--border); color: var(--text); cursor: pointer; transition: all 0.2s; }
-        .header-avatar { width: 34px; height: 34px; border-radius: 10px; background: var(--bg-elevated); color: var(--text); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.9rem; border: 1px solid var(--border); }
-        .header-avatar.role-premium { border-color: #ffd60a; color: #ffd60a; box-shadow: 0 0 10px rgba(255, 214, 10, 0.2); }
-        .header-avatar.role-admin { border-color: #ff453a; color: #ff453a; box-shadow: 0 0 10px rgba(255, 69, 58, 0.2); }
-        .header-name-group { display: flex; flex-direction: column; line-height: 1.2; }
-        .header-name { font-size: 0.9rem; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 4px; }
-        .header-status { font-size: 0.65rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .chat-window-header { padding: 12px 16px; display: flex; align-items: center; gap: 10px; z-index: 10; background: var(--glass); border-bottom: 1px solid var(--border); border-radius: 0; min-height: 64px; }
+        .back-btn { width: 34px; height: 34px; border-radius: 12px; background: var(--glass); border: 1px solid var(--border); color: var(--text); cursor: pointer; transition: all 0.2s; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .header-user-info { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; cursor: pointer; }
+        .header-avatar { width: 38px; height: 38px; border-radius: 12px; background: var(--bg-elevated); color: var(--text); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1rem; border: 1px solid var(--border); overflow: hidden; flex-shrink: 0; position: relative; }
+        .header-avatar.role-premium { border-color: #ffd60a; }
+        .header-avatar.role-admin { border-color: #ff453a; }
+        .chat-header-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .header-name-group { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+        .header-name { font-size: 0.9rem; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .header-status { font-size: 0.6rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; }
         .mini-profile-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 8px; font-size: 0.85rem; opacity: 0.5; transition: 0.2s; }
         .mini-profile-btn:hover { color: var(--accent); opacity: 1; transform: scale(1.1); }
         
