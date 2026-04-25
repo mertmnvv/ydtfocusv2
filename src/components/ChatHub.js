@@ -2,14 +2,16 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { collection, query, where, orderBy, onSnapshot, getDoc, doc, updateDoc } from "firebase/firestore";
+import { collection, query, where, orderBy, onSnapshot, getDoc, doc, updateDoc, getDocs, writeBatch } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { sendMessage, respondToFriendRequest, searchUsers, getFriends, getOrCreateChat } from "@/lib/firestore";
 import { useRouter } from "next/navigation";
 import ProfileModal from "./ProfileModal";
+import { useNotification } from "@/context/NotificationContext";
 
 export default function ChatHub() {
   const { user } = useAuth();
+  const { showNotification } = useNotification();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("chats"); 
@@ -137,6 +139,44 @@ export default function ChatHub() {
     }
   };
 
+  const handleClearChat = async () => {
+    if (!activeChat || !window.confirm("Tüm mesaj geçmişi silinecek. Emin misin?")) return;
+    try {
+      const msgsRef = collection(db, "chats", activeChat.id, "messages");
+      // Not: Client-side'da toplu silme (batch delete) sınırı vardır ama bu ölçekte yeterli.
+      // Firebase'de subcollection silmek için her dokümanı tek tek silmek gerekir.
+      const snap = await getDocs(query(msgsRef));
+      const batch = writeBatch(db);
+      snap.docs.forEach(d => batch.delete(d.ref));
+      await batch.commit();
+      
+      // Son mesajı da güncelle
+      const chatRef = doc(db, "chats", activeChat.id);
+      await updateDoc(chatRef, { lastMessage: "Mesaj geçmişi temizlendi." });
+      
+      showNotification("Sohbet temizlendi.", "success");
+    } catch (err) {
+      console.error(err);
+      showNotification("Sohbet temizlenemedi.", "error");
+    }
+  };
+
+  const handleFriendClick = async (friend) => {
+    // Mevcut bir sohbet var mı kontrol et
+    const existing = chats.find(c => c.participants.includes(friend.id));
+    if (existing) {
+      setActiveChat(existing);
+    } else {
+      try {
+        const chatId = await getOrCreateChat(user.uid, friend.id);
+        setActiveChat({ id: chatId, otherUser: friend, participants: [user.uid, friend.id] });
+      } catch (err) {
+        showNotification("Sohbet başlatılamadı.", "error");
+      }
+    }
+    setActiveTab("chats");
+  };
+
   const handleRequest = async (reqId, status, fromUid) => {
     try {
       await respondToFriendRequest(reqId, status, fromUid, user.uid);
@@ -193,7 +233,7 @@ export default function ChatHub() {
                 {activeTab === "friends" && (
                   <div className="chat-items">
                     {friends.map(f => (
-                      <div key={f.id} className="chat-item" onClick={() => { setActiveChat({ id: f.id, otherUser: f }); setActiveTab("chats"); }}>
+                      <div key={f.id} className="chat-item" onClick={() => handleFriendClick(f)}>
                         <div className="friend-item-indicator"></div>
                         <div className="chat-item-avatar friend-av" onClick={(e) => { e.stopPropagation(); setSelectedProfileId(f.id); }}>{f.displayName?.[0]}</div>
                         <div className="chat-item-info">
@@ -280,6 +320,9 @@ export default function ChatHub() {
                     <span className="header-status">Profili Gör</span>
                   </div>
                 </div>
+                <button className="clear-chat-btn" onClick={handleClearChat} title="Sohbeti Temizle">
+                  <i className="fa-regular fa-trash-can"></i>
+                </button>
               </div>
               
               <div className="chat-messages scroll-styled">
@@ -414,6 +457,13 @@ export default function ChatHub() {
         .header-status { font-size: 0.65rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
         .mini-profile-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 8px; font-size: 0.85rem; opacity: 0.5; transition: 0.2s; }
         .mini-profile-btn:hover { color: var(--accent); opacity: 1; transform: scale(1.1); }
+        
+        .clear-chat-btn {
+          margin-left: auto; background: none; border: none; color: var(--text-muted);
+          width: 34px; height: 34px; border-radius: 10px; cursor: pointer;
+          display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+        }
+        .clear-chat-btn:hover { background: rgba(255, 69, 58, 0.1); color: #ff453a; }
 
         .chat-messages { flex: 1; overflow-y: auto; padding: 20px 16px; display: flex; flex-direction: column; gap: 16px; }
         .msg-wrapper { display: flex; width: 100%; }

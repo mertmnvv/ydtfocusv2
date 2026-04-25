@@ -12,6 +12,13 @@ const onboardingSteps = [
     color: "var(--accent)"
   },
   {
+    id: "pwa",
+    title: "Focus'u Uygulama Yap",
+    desc: "YDT Focus bir web uygulamasından fazlasıdır! Tarayıcı ayarlarından 'Uygulama Olarak Yükle' veya 'Ana Ekrana Ekle' diyerek masaüstü veya mobil cihazına tam ekran uygulama olarak kurabilirsin.",
+    icon: "fa-mobile-screen-button",
+    color: "#ff375f"
+  },
+  {
     id: "dashboard",
     title: "Level Up: Performans Merkezi",
     desc: "Çalışma disiplinini verilerle yönet. Günlük streak, aktif çalışma süresi ve gelişim grafiklerini takip et; profiline buradan ulaş.",

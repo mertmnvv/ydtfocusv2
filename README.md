@@ -19,6 +19,19 @@ Platformun ana amacı, akademik kelime dağarcığını geliştirmek, okuduğunu
 
 Proje, modern yazılım mimarisi standartlarına uygun olarak modüler, ölçeklenebilir ve performans odaklı bir yapıda geliştirilmiştir.
 
+---
+
+## Uygulama Olarak Kullanım (PWA)
+
+YDT Focus, bir web uygulamasından daha fazlasıdır. Progressive Web App (PWA) teknolojisi sayesinde platformu cihazlarınıza tam ekran bir uygulama olarak kurabilirsiniz:
+
+*   **Masaüstü (Windows/macOS/Linux):** Chrome veya Edge tarayıcısında adres çubuğundaki "Yükle" ikonuna tıklayarak uygulamayı dock/başlat menüsüne ekleyebilirsiniz.
+*   **Mobil (iOS/Android):** Safari'de "Paylaş" -> "Ana Ekrana Ekle" veya Chrome'da "Ayarlar" -> "Uygulamayı Yükle" seçeneklerini kullanarak YDT Focus'u uygulama çekmecenize taşıyabilirsiniz.
+
+Bu sayede platformu internet tarayıcısından bağımsız, daha hızlı ve tam ekran modunda bir yerel uygulama konforunda kullanabilirsiniz.
+
+---
+
 ### Kullanılan Teknolojiler
 
 *   **Frontend Framework:** Next.js (App Router ve Turbopack entegrasyonu).
