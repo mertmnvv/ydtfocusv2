@@ -100,13 +100,14 @@ export default function GlobalAI() {
     }
 
     setLoading(true);
-    setMessages(prev => [...prev, { role: "user", content: "Hatalarımdan oluşan özel bir metin üret." }]);
-
+    
     // Eğer reading sayfasında değilsek oraya yönlendir
     if (window.location.pathname !== "/reading") {
       window.location.href = "/reading?generate=special";
       return;
     }
+
+    setMessages(prev => [...prev, { role: "user", content: "Hatalarımdan oluşan özel bir metin üret." }]);
 
     const prompt = `Sen uzman bir İngilizce hocasısın. Kullanıcının hata yaptığı şu kelimeleri (${userMetadata.mistakes.join(", ")}) kullanarak YDT/YDS tarzı akademik bir okuma metni yaz. 
     Metnin ardından 3 soru ekle. SADECE şu JSON formatında yanıt ver: {"passage": "...", "questions": [{"q": "...", "a": "...", "b": "...", "c": "...", "d": "...", "correct": "a"}]}`;
@@ -116,26 +117,38 @@ export default function GlobalAI() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant", // Using 8b for speed
-          messages: [{ role: "system", content: "Sadece JSON döndüren bir İngilizce hocasısın." }, { role: "user", content: prompt }],
-          temperature: 0.5,
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            { role: "system", content: "Sen sadece JSON döndüren teknik bir asistansın. Metinlerinde emoji kullanma." }, 
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.3,
           response_format: { type: "json_object" }
         }),
       });
-      const data = await response.json();
-      const result = JSON.parse(data.choices[0].message.content);
 
+      const data = await response.json();
+      const rawContent = data.choices[0].message.content;
+      
+      // JSON'u metin içinden ayıklayalım (AI bazen açıklama ekleyebilir)
+      const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("JSON not found");
+      
+      const result = JSON.parse(jsonMatch[0]);
+      
       const event = new CustomEvent("focus-load-passage", { detail: result });
       window.dispatchEvent(event);
 
-      setMessages(prev => [...prev, {
-        role: "ai",
-        content: `Harika! Hatalı olduğun kelimeleri içeren özel metnini hazırladım ve Reading paneline yükledim. Hadi hemen göz atalım.`
+      setMessages(prev => [...prev, { 
+        role: "ai", 
+        content: `Harika! Hatalı olduğun kelimeleri içeren özel metnini hazırladım ve Reading paneline yükledim. Hadi hemen göz atalım.` 
       }]);
     } catch (e) {
-      setMessages(prev => [...prev, { role: "ai", content: "Metni üretirken bir sorun oluştu, lütfen tekrar dener misin?" }]);
+      console.error("Metin üretme hatası:", e);
+      setMessages(prev => [...prev, { role: "ai", content: "Metni üretirken bir sorun oluştu. Teknik bir takılma yaşamış olabilirim, lütfen tekrar dener misin?" }]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   // Sayfa içeriği dinleyicisi

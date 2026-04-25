@@ -69,6 +69,22 @@ Focus artık çok daha düzenli çalışıyor. Bir okuma metnindeki tüm önemli
 
 ---
 
+## [25 Nisan 2026 — 05:16] Metin Üretme Motoru Güçlendirme ve Hata Giderimi
+
+### 📋 Uygulama Planı
+"Sana Özel Metin Üret" özelliğinde yaşanan takılmaları (donma) gidermek; AI'nın JSON formatındaki yanıtlarını daha güvenli bir şekilde ayrıştırıp Reading paneline iletmek.
+
+### ✅ Tamamlanan Görevler
+- **Model Yükseltmesi:** Metin üretme motoru `llama-3.1-8b`den daha gelişmiş olan **`llama-3.3-70b-versatile`** modeline yükseltildi. Bu model karmaşık JSON yapılarını çok daha hatasız kurabiliyor.
+- **Robust JSON Ayrıştırma:** AI yanıtları içerisinden JSON objesini ayıklayan bir Regex mekanizması eklendi. AI başına veya sonuna metin eklese bile sistem artık sadece veriyi çekip alıyor.
+- **Dirençli Loading Yönetimi:** `finally` bloğu eklenerek, hata oluşsa dahi AI'nın "yükleniyor" modunda takılı kalması (freeze) engellendi.
+- **Zamanlama Ayarı:** Sayfa yönlendirmesi sonrası tetikleme süresi 1 saniyeden 2 saniyeye çıkarıldı. Bu, sistemin yönlendirme sonrası tam olarak hazır olmasını garanti altına alıyor.
+
+### 📝 Özet (Walkthrough)
+Metin üretme motoru artık çok daha zeki ve dayanıklı. AI'nın "kitlenmesi" sorunu, hata yakalama ve loading yönetimi iyileştirmeleriyle çözüldü. Artık çok daha karmaşık ve kaliteli okuma parçaları, sıfır hata payıyla Reading paneline aktarılıyor.
+
+---
+
 ## [25 Nisan 2026 — 04:58] Kişiselleştirilmiş Okuma Metni (Sana Özel Metin Üret)
 
 ### 📋 Uygulama Planı
@@ -81,7 +97,22 @@ Focus AI'nın kullanıcının hata yaptığı kelimeleri temel alarak ona özel 
 - **Kullanıcı Arayüzü:** AI paneline "✨ Sana Özel Metin Üret" butonu eklendi.
 
 ### 📝 Özet (Walkthrough)
-Artık Focus sadece sorularına cevap vermiyor, senin eksiklerini analiz edip sana özel bir sınav hazırlıyor. Hata yaptığın kelimeleri içeren bir okuma parçası yazıyor, sorularını hazırlıyor ve bunu anlık olarak Reading paneline yansıtıyor. Bu, projenin kişiselleştirilmiş eğitim vizyonundaki en büyük adımlardan biri.
+Artık Focus sadece sorularına cevap vermiyor, senin eksiklerini analiz edip sana özel bir sınav hazırlıyor. Hata yaptığın kelimeleri içeren bir okuma parçası yazıyor, sorularını hazırlıyor ve bunu anlık olarak Reading paneline yansıtıyor. Bu, projenin kişiselleştirilmiş eğitim vizyonundaki en büyük adımlarıdan biri.
+
+---
+
+## [25 Nisan 2026 — 04:49] Focus AI Header ve Buton Revizyonu
+
+### 📋 Uygulama Planı
+AI panelinin üst kısmında (header) oluşan görsel bozulmaları gidermek, kapatma tuşunun yerleşimini düzeltmek ve buton etkileşimlerini iyileştirmek.
+
+### ✅ Tamamlanan Görevler
+- **Header CSS Senkronizasyonu:** JSX'te değiştirilen sınıf isimlerinin (`ai-close`) CSS tarafında da güncellenmesi sağlandı. Bu sayede butonun kaybolan veya bozulan stilleri geri getirildi.
+- **Buton Tasarım Güncellemesi:** Kapatma ve çöp kutusu butonlarına dairesel hover efektleri (`background: rgba(...)`) eklendi. Butonlar artık daha belirgin ve etkileşimli hissettiriyor.
+- **Hizalama Düzelmesi:** `flex` yapısı içerisindeki dikey ve yatay hizalamalar (`align-items`, `justify-content`) optimize edilerek header'ın simetrisi korundu.
+
+### 📝 Özet (Walkthrough)
+AI panelinin başlık kısmı artık çok daha temiz ve hatasız görünüyor. Kapatma tuşu ve silme tuşu birbirleriyle uyumlu, modern bir etkileşim sunuyor. Görsel kaymalar giderilerek premium his güçlendirildi.
 
 ---
 

@@ -122,7 +122,7 @@ export default function ReadingPage() {
       // AI'ya tetikleyici gönder
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent("focus-generate-special"));
-      }, 1000);
+      }, 2000);
     }
 
     return () => {
