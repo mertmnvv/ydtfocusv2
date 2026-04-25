@@ -21,20 +21,22 @@
   --error: #ff453a;
   --warning: #ff9f0a;
   --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --glass: rgba(255, 255, 255, 0.05);
 }
 
 [data-theme='light'] {
-  --bg: #f5f5f7;
+  --bg: #f5f7fa;
   --bg-card: #ffffff;
-  --bg-elevated: #fbfbfd;
+  --bg-elevated: #f0f2f5;
   --border: rgba(0, 0, 0, 0.08);
   --text: #1d1d1f;
-  --text-muted: #86868b;
+  --text-muted: #6e6e73;
   --primary: #0071e3;
   --accent: #e2b714;
   --archive: #5e5ce6;
   --error: #d70015;
   --warning: #ff9500;
+  --glass: rgba(0, 0, 0, 0.04);
 }
 
 * {
@@ -136,13 +138,13 @@ a {
 }
 
 .auth-card {
-  background: rgba(28, 28, 30, 0.8);
+  background: var(--bg-card);
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
   border: 1px solid var(--border);
   border-radius: 28px;
   padding: 40px 32px;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.1);
 }
 
 .auth-modal-overlay {
@@ -478,13 +480,13 @@ a {
   top: calc(100% + 12px);
   left: 0;
   width: 240px;
-  background: rgba(18, 18, 20, 0.95);
+  background: var(--bg-card);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--border);
   border-radius: 18px;
   padding: 12px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
   z-index: 1001;
   animation: dropdownIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -652,16 +654,12 @@ a {
   justify-content: center;
 }
 
-.mobile-hamburger:active {
-  background: var(--glass);
-  transform: scale(0.95);
-}
-
 .mobile-menu-overlay {
   display: flex;
   position: fixed;
   inset: 0;
-  background: rgba(11, 11, 12, 0.85);
+  background: var(--bg);
+  opacity: 0.98;
   /* Linefocus dark glass */
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
@@ -2364,7 +2362,7 @@ a {
 }
 
 .quiz-sim-opt {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--glass);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 20px;
@@ -5319,13 +5317,13 @@ a {
   top: calc(100% + 12px);
   right: 0;
   width: 240px;
-  background: rgba(18, 18, 20, 0.95);
+  background: var(--bg-card);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--border);
   border-radius: 18px;
   padding: 12px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
   z-index: 1001;
   animation: dropdownIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }

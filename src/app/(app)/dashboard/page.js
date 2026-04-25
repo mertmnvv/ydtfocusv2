@@ -2,21 +2,21 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getUserWords, getUserStats, updateLastReminderDate } from "@/lib/firestore";
+import { getUserWords, getUserStats, updateLastReminderDate, refreshUserStreak } from "@/lib/firestore";
 import Link from "next/link";
 import CustomDialog from "@/components/CustomDialog";
+import Leaderboard from "@/components/Leaderboard";
 
 export default function DashboardPage() {
   const { user, userProfile, isAdmin } = useAuth();
   const [words, setWords] = useState([]);
-  const [stats, setStats] = useState({ correct: 0, wrong: 0, streak: 0, studyTime: 0 });
+  const [stats, setStats] = useState({ correct: 0, wrong: 0, streak: 0, studyTime: 0, weeklyMinutes: 0 });
   const [loading, setLoading] = useState(true);
   const [expandedLevel, setExpandedLevel] = useState(null);
   const [showReminder, setShowReminder] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
-    
     if (!user) {
       setLoading(false);
       return;
@@ -30,20 +30,16 @@ export default function DashboardPage() {
         ]);
         
         if (!isMounted) return;
-
         const wordList = w || [];
         setWords(wordList);
-        setStats(s || { correct: 0, wrong: 0, streak: 0, studyTime: 0 });
+        setStats({ ...(s || {}), streak: s?.streak || 0 });
 
-        // Daily Reminder Logic
+        // Daily Reminder Logic (Optional background check)
         const lastReminder = userProfile?.lastReminderDate;
         const today = new Date().toDateString();
         if (lastReminder !== today) {
           const dueCount = wordList.filter(w => (w.nextReview || 0) <= Date.now()).length;
           if (dueCount > 0) {
-            setTimeout(() => {
-              if (isMounted) setShowReminder(true);
-            }, 1500);
             updateLastReminderDate(user.uid);
           }
         }
@@ -55,7 +51,6 @@ export default function DashboardPage() {
     };
 
     fetchData();
-
     return () => { isMounted = false; };
   }, [user, userProfile]);
 
@@ -64,6 +59,7 @@ export default function DashboardPage() {
   const total = words.length;
   const masteredCount = words.filter(w => w.level >= 4).length;
   const pct = total > 0 ? Math.round((masteredCount / total) * 100) : 0;
+  const dueCount = words.filter(w => (w.nextReview || 0) <= Date.now()).length;
   
   const levels = [
     { name: "Yeni", key: "level0", color: "#ff453a", desc: "Henüz öğrenilmeye başlanmadı" },
@@ -100,15 +96,50 @@ export default function DashboardPage() {
 
       <div className="dash-divider"></div>
 
+      {/* AKILLI TEKRAR VURGUSU (NEW) */}
+      <div className="daily-focus-container">
+        <div className="glass-card daily-focus-card">
+          <div className="focus-content">
+            <div className="focus-label">BUGÜNÜN HEDEFİ</div>
+            <h2 className="focus-title">
+              {dueCount > 0 ? `${dueCount} Kelime Seni Bekliyor` : "Harika! Bugün her şey taze."}
+            </h2>
+            <p className="focus-desc">
+              {dueCount > 0 
+                ? "Unutma eğrisine yenik düşmeden kelimelerini tekrar etmelisin."
+                : "Tüm kelimelerin şu an güvende. Yeni kelimeler ekleyerek ilerleyebilirsin."}
+            </p>
+          </div>
+          <Link href={dueCount > 0 ? "/srs" : "/archive"} className={`focus-btn ${dueCount > 0 ? "pulse-animation" : ""}`}>
+            {dueCount > 0 ? "Akıllı Tekrarı Başlat" : "Sözlüğe Göz At"}
+          </Link>
+        </div>
+      </div>
+
       <div className="dash-header">
         <h2 className="dash-title">Level Up</h2>
         <p className="dash-subtitle">Kişisel gelişim ve istatistiklerin.</p>
       </div>
 
+      <div className="dash-bento-stats">
+        <div className="dash-bento-card" style={{ background: "linear-gradient(135deg, rgba(255,159,10,0.1), transparent)", borderColor: "rgba(255,159,10,0.2)" }}>
+          <div className="dash-bento-value" style={{ color: "#ff9f0a" }}>{stats.streak || 0} Gün</div>
+          <div className="dash-bento-label">Çalışma Serisi</div>
+        </div>
+        <div className="dash-bento-card" style={{ background: "linear-gradient(135deg, rgba(48,209,88,0.1), transparent)", borderColor: "rgba(48,209,88,0.2)" }}>
+          <div className="dash-bento-value" style={{ color: "var(--primary)" }}>{total}</div>
+          <div className="dash-bento-label">Toplam Kelime</div>
+        </div>
+        <div className="dash-bento-card" style={{ gridColumn: "span 2", background: "linear-gradient(135deg, rgba(191,90,242,0.1), transparent)", borderColor: "rgba(191,90,242,0.2)" }}>
+          <div className="dash-bento-value" style={{ color: "#bf5af2" }}>{stats.weeklyMinutes || 0} dk</div>
+          <div className="dash-bento-label">Haftalık Çalışma Süresi</div>
+        </div>
+      </div>
+
       <div className="glass-card dash-goal-card">
         <div className="dash-goal-top">
-          <span className="dash-goal-label">Öğrenme Oranı (Mastery)</span>
-          <span className="dash-goal-numbers">{masteredCount} / {total} Kelime</span>
+          <span className="dash-goal-label">Bilinen Kelime Sayısı</span>
+          <span className="dash-goal-numbers">{masteredCount} / {total}</span>
         </div>
         <div className="dash-goal-bar">
           <div className="dash-goal-fill" style={{ width: `${Math.min(pct, 100)}%` }}></div>
@@ -118,57 +149,28 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="dash-bento-stats">
-        <div className="dash-bento-card" style={{ background: "linear-gradient(135deg, rgba(48,209,88,0.1), transparent)", borderColor: "rgba(48,209,88,0.2)" }}>
-          <div className="dash-bento-value" style={{ color: "var(--primary)" }}>{total}</div>
-          <div className="dash-bento-label">Bankadaki Kelimeler</div>
-        </div>
-        <div className="dash-bento-card" style={{ background: "linear-gradient(135deg, rgba(255,159,10,0.1), transparent)", borderColor: "rgba(255,159,10,0.2)" }}>
-          <div className="dash-bento-value" style={{ color: "#ff9f0a" }}>{stats.streak || 0}</div>
-          <div className="dash-bento-label">Çalışma Serisi (Gün)</div>
-        </div>
-        <div className="dash-bento-card" style={{ gridColumn: "span 2", background: "linear-gradient(135deg, rgba(191,90,242,0.1), transparent)", borderColor: "rgba(191,90,242,0.2)" }}>
-          <div className="dash-bento-value" style={{ color: "#bf5af2" }}>{stats.dailyMinutes || stats.studyTime || 0} dk</div>
-          <div className="dash-bento-label">Aktif Çalışma Süresi</div>
-        </div>
-      </div>
-
       <div className="glass-card">
         <h3 className="dash-section-title">Kelime Seviyeleri</h3>
-        <p className="hint-text" style={{ marginBottom: 16 }}>İçeriğini görmek için bir seviyeye tıklayın.</p>
+        <p className="hint-text" style={{ marginBottom: 16 }}>İçerik için seviyeye tıklayın.</p>
         <div className="dash-levels">
           {levels.map(lv => {
             const count = levelWords[lv.key].length;
             const isExpanded = expandedLevel === lv.key;
             return (
               <div key={lv.key} className="dash-level-container">
-                <div 
-                  className="dash-level-row" 
-                  onClick={() => setExpandedLevel(isExpanded ? null : lv.key)}
-                  style={{ cursor: "pointer" }}
-                >
+                <div className="dash-level-row" onClick={() => setExpandedLevel(isExpanded ? null : lv.key)} style={{ cursor: "pointer" }}>
                   <span className="dash-level-badge" style={{ background: `${lv.color}22`, color: lv.color }}>{lv.name}</span>
                   <div className="dash-level-bar-bg">
-                    <div className="dash-level-bar-fill" style={{
-                      width: `${(count / maxLevel) * 100}%`,
-                      background: lv.color,
-                    }}></div>
+                    <div className="dash-level-bar-fill" style={{ width: `${(count / maxLevel) * 100}%`, background: lv.color }}></div>
                   </div>
                   <span className="dash-level-count">{count}</span>
                   <span style={{ marginLeft: 8, fontSize: "0.8rem", color: "var(--text-muted)", transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
                 </div>
-                
                 {isExpanded && (
                   <div className="dash-level-words">
-                    {count === 0 ? (
-                      <div className="dash-level-word-empty">Bu seviyede kelime yok.</div>
-                    ) : (
-                      levelWords[lv.key].map((w, i) => (
-                        <div key={i} className="dash-level-word-item">
-                          <b>{w.word}</b> <span style={{ color: "var(--text-muted)" }}>{w.meaning}</span>
-                        </div>
-                      ))
-                    )}
+                    {count === 0 ? <div className="dash-level-word-empty">Henüz kelime yok.</div> : levelWords[lv.key].map((w, i) => (
+                      <div key={i} className="dash-level-word-item"><b>{w.word}</b> <span style={{ color: "var(--text-muted)" }}>{w.meaning}</span></div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -177,28 +179,41 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      <Leaderboard />
+
       <div className="dash-quick-actions">
-        <Link href="/srs" className="dash-action-btn dash-action-primary">
-          Tekrarı Başlat
-        </Link>
-        <Link href="/reading" className="dash-action-btn">
-          Okuma Pratiği
-        </Link>
+        <Link href="/quiz" className="dash-action-btn" style={{ width: '100%' }}>Quiz Paneli</Link>
       </div>
 
-      {showReminder && (
-        <CustomDialog
-          title="Günlük Tekrar"
-          message="Bugün tekrar etmeniz gereken kelimeler var. Hafızanızı tazelemek için akıllı tekrarı tamamlayın."
-          confirmText="Başla"
-          cancelText="Daha Sonra"
-          onConfirm={() => {
-            setShowReminder(false);
-            window.location.href = "/srs";
-          }}
-          onCancel={() => setShowReminder(false)}
-        />
-      )}
+      <style jsx>{`
+        .daily-focus-container { margin-bottom: 32px; }
+        .daily-focus-card {
+          display: flex; align-items: center; justify-content: space-between; gap: 24px;
+          background: linear-gradient(135deg, rgba(226, 183, 20, 0.1), rgba(10, 132, 255, 0.05));
+          border: 1px solid rgba(226, 183, 20, 0.3); padding: 32px; border-radius: 24px;
+        }
+        .focus-content { flex: 1; }
+        .focus-label { font-size: 0.7rem; font-weight: 800; color: var(--accent); letter-spacing: 1.5px; margin-bottom: 8px; }
+        .focus-title { font-size: 1.6rem; font-weight: 900; margin-bottom: 8px; color: var(--text); letter-spacing: -0.5px; }
+        .focus-desc { font-size: 0.95rem; color: var(--text-muted); line-height: 1.5; max-width: 400px; }
+        .focus-btn {
+          background: var(--accent); color: #000; padding: 16px 32px; border-radius: 16px;
+          font-weight: 800; font-size: 1rem; text-decoration: none; transition: all 0.3s;
+          box-shadow: 0 10px 30px rgba(226, 183, 20, 0.3); white-space: nowrap;
+        }
+        .focus-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 40px rgba(226, 183, 20, 0.4); }
+        .pulse-animation { animation: pulse-glow 2s infinite; }
+        @keyframes pulse-glow {
+          0% { transform: scale(1); box-shadow: 0 10px 30px rgba(226, 183, 20, 0.3); }
+          50% { transform: scale(1.05); box-shadow: 0 15px 50px rgba(226, 183, 20, 0.6); }
+          100% { transform: scale(1); box-shadow: 0 10px 30px rgba(226, 183, 20, 0.3); }
+        }
+        @media (max-width: 768px) {
+          .daily-focus-card { flex-direction: column; text-align: center; padding: 24px; }
+          .focus-btn { width: 100%; }
+          .focus-desc { margin: 0 auto; }
+        }
+      `}</style>
     </div>
   );
 }

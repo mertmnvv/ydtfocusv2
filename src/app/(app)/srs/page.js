@@ -1,56 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getUserWords, updateUserWord, updateUserStats } from "@/lib/firestore";
+import { getUserWords, updateUserWord, updateUserStats, refreshUserStreak } from "@/lib/firestore";
 import Link from "next/link";
+import { playSuccessSound, playErrorSound } from "@/lib/sounds";
 
 const LEVEL_INTERVALS = { 0: 1, 1: 3, 2: 7, 3: 14, 4: 30 };
-
-const playAmbientSound = (type) => {
-  try {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return;
-    const ctx = new AudioContext();
-    const osc = ctx.createOscillator();
-    const gainNode = ctx.createGain();
-    const filter = ctx.createBiquadFilter();
-    
-    osc.connect(filter);
-    filter.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    
-    if (type === 'correct') {
-      osc.type = 'sine';
-      filter.type = 'lowpass';
-      filter.frequency.value = 800;
-      
-      osc.frequency.setValueAtTime(220, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.3);
-      
-      gainNode.gain.setValueAtTime(0, ctx.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-      
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.4);
-    } else {
-      osc.type = 'sine';
-      filter.type = 'lowpass';
-      filter.frequency.value = 300;
-      
-      osc.frequency.setValueAtTime(150, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.3);
-      
-      gainNode.gain.setValueAtTime(0, ctx.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.02);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-      
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.3);
-    }
-  } catch (e) {}
-};
 
 export default function SRSPage() {
   const { user } = useAuth();
@@ -60,28 +16,27 @@ export default function SRSPage() {
   const [phase, setPhase] = useState("loading");
   const [loading, setLoading] = useState(true);
   
-  // Detailed Tracking
-  const [answers, setAnswers] = useState([]); // {word, correctMeaning, userAnswer, isCorrect}
+  const [answers, setAnswers] = useState([]); 
   const [correctCount, setCorrectCount] = useState(0);
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
   
-  // Animation states
   const [selectedOption, setSelectedOption] = useState(null);
-  const [isWrongShake, setIsWrongShake] = useState(false);
   const [showNextDelay, setShowNextDelay] = useState(false);
+
+  const scrollRef = useRef(null);
 
   useEffect(() => {
     if (user) {
       getUserWords(user.uid).then(all => {
         const wordList = all || [];
         setWords(wordList);
-        
         const now = Date.now();
         const dueWords = wordList.filter(w => (w.nextReview || 0) <= now);
         
         if (dueWords.length === 0) {
           setPhase("no-due");
+          refreshUserStreak(user.uid).catch(console.error);
           setLoading(false);
         } else {
           const selected = dueWords.sort(() => Math.random() - 0.5);
@@ -106,38 +61,23 @@ export default function SRSPage() {
 
   async function handleAnswer(option) {
     if (showNextDelay) return;
-    
     const target = quizWords[currentIdx];
     const isCorrect = option === target.meaning;
-    
     setSelectedOption(option);
     
     if (isCorrect) {
       setCorrectCount(prev => prev + 1);
-      playAmbientSound('correct');
+      playSuccessSound();
     } else {
-      playAmbientSound('wrong');
-      setIsWrongShake(true);
-      setTimeout(() => setIsWrongShake(false), 500);
+      playErrorSound();
     }
     
-    setAnswers(prev => [...prev, { 
-      word: target.word, 
-      correctMeaning: target.meaning,
-      userAnswer: option,
-      isCorrect 
-    }]);
+    setAnswers(prev => [...prev, { word: target.word, correctMeaning: target.meaning, userAnswer: option, isCorrect }]);
     setShowNextDelay(true);
 
-    // SRS Logic updates - 5 levels (0 to 4)
     let newLevel = target.level || 0;
-    if (isCorrect) {
-      newLevel = Math.min(4, newLevel + 1);
-    } else {
-      newLevel = 0; // Reset to 0 on wrong
-    }
-    const intervalDays = LEVEL_INTERVALS[newLevel] || 1;
-    const nextReview = Date.now() + (intervalDays * 24 * 60 * 60 * 1000);
+    if (isCorrect) newLevel = Math.min(4, newLevel + 1); else newLevel = 0;
+    const nextReview = Date.now() + (LEVEL_INTERVALS[newLevel] * 24 * 60 * 60 * 1000);
 
     await updateUserWord(user.uid, target.id, {
       level: newLevel,
@@ -147,19 +87,20 @@ export default function SRSPage() {
     });
 
     setTimeout(async () => {
-      setSelectedOption(null);
-      setShowNextDelay(false);
-      
       if (currentIdx + 1 < quizWords.length) {
-        setCurrentIdx(prev => prev + 1);
+        const nextIdx = currentIdx + 1;
+        setSelectedOption(null);
+        setShowNextDelay(false);
+        setCurrentIdx(nextIdx);
+        if (scrollRef.current) {
+          scrollRef.current.scrollTo({ top: scrollRef.current.offsetHeight * nextIdx, behavior: "smooth" });
+        }
       } else {
         setEndTime(Date.now());
         setPhase("result");
+        refreshUserStreak(user.uid).catch(console.error);
         const totalCorrects = correctCount + (isCorrect ? 1 : 0);
-        await updateUserStats(user.uid, {
-          correct: totalCorrects,
-          wrong: quizWords.length - totalCorrects
-        });
+        await updateUserStats(user.uid, { correct: totalCorrects, wrong: quizWords.length - totalCorrects });
       }
     }, 1200);
   }
@@ -168,62 +109,63 @@ export default function SRSPage() {
 
   if (phase === "no-due") {
     return (
-      <div className="minimal-setup-container">
-        <div className="minimal-header">
-          <h2 className="minimal-title">Akıllı Tekrar</h2>
-          <Link href="/dashboard" className="minimal-link">Kapat</Link>
-        </div>
-        <div className="minimal-list-group mt-4">
-          <div className="minimal-list-item" style={{justifyContent: 'center', textAlign: 'center', padding: '40px 20px', flexDirection: 'column'}}>
-            <span className="minimal-item-title" style={{color: 'var(--text-muted)'}}>Bugünlük İşlem Yok</span>
-            <span className="minimal-item-desc" style={{marginTop: 8}}>Tekrar etmen gereken kelimeleri tamamladın.</span>
-          </div>
-        </div>
+      <div className="glass-card" style={{ maxWidth: 500, margin: "100px auto", padding: 40, textAlign: "center" }}>
+        <h2 style={{ fontSize: "2rem", fontWeight: 800, marginBottom: 16 }}>Akıllı Tekrar</h2>
+        <p className="hint-text" style={{ fontSize: "1.1rem", marginBottom: 32 }}>Şu an tekrar etmen gereken bir kelime yok. Harika gidiyorsun!</p>
+        <Link href="/dashboard" className="btn-primary" style={{ display: "inline-block", padding: "12px 32px" }}>Merkeze Dön</Link>
       </div>
     );
   }
 
   if (phase === "quiz") {
-    const q = quizWords[currentIdx];
     return (
-      <div className="minimal-quiz-container">
-        <div className="minimal-q-top">
-          <span className="minimal-q-count">{currentIdx + 1} / {quizWords.length}</span>
-          <Link href="/dashboard" className="minimal-link">Sonlandır</Link>
-        </div>
-        
-        <div className="minimal-q-progress">
-          <div className="minimal-q-fill" style={{ width: `${((currentIdx + 1) / quizWords.length) * 100}%` }}></div>
-        </div>
-        
-        <div className={`minimal-q-body ${isWrongShake ? "shake-animation" : ""}`}>
-          <h1 className="minimal-q-word">{q.word}</h1>
-          
-          <div className="minimal-options-col">
-            {q.options.map((opt, i) => {
-              const isSelected = selectedOption === opt;
-              const isCorrectAnswer = opt === q.meaning;
-              
-              let btnClass = "minimal-option-btn";
-              if (showNextDelay) {
-                if (isCorrectAnswer) btnClass += " opt-correct";
-                else if (isSelected && !isCorrectAnswer) btnClass += " opt-wrong";
-                else btnClass += " opt-disabled";
-              }
-
-              return (
-                <button 
-                  key={i} 
-                  className={btnClass} 
-                  onClick={() => handleAnswer(opt)}
-                  disabled={showNextDelay}
-                >
-                  <span className="minimal-opt-text">{opt}</span>
-                </button>
-              );
-            })}
+      <div className="quiz-sim">
+        <div className="quiz-sim-bar">
+          <Link href="/dashboard" className="quiz-exit-icon">
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </Link>
+          <div className="quiz-sim-progress">
+            <div className="quiz-sim-progress-fill" style={{ width: `${((currentIdx + 1) / quizWords.length) * 100}%` }}></div>
           </div>
+          <span className="quiz-sim-counter">{currentIdx + 1} / {quizWords.length}</span>
         </div>
+
+        <div className="quiz-scroll-container" ref={scrollRef}>
+          {quizWords.map((q, idx) => (
+            <div key={idx} className={`quiz-slide ${idx === currentIdx ? "active" : ""}`}>
+              <div className="quiz-sim-body">
+                <div className="quiz-sim-word">{q.word}</div>
+                <div className="quiz-sim-options">
+                  {q.options.map((opt, i) => {
+                    const isSelected = selectedOption === opt;
+                    const isCorrectAnswer = opt === q.meaning;
+                    let cls = "quiz-sim-opt";
+                    if (idx === currentIdx && showNextDelay) {
+                      if (isCorrectAnswer) cls += " correct-ans flash-success";
+                      else if (isSelected && !isCorrectAnswer) cls += " wrong-ans shake-error";
+                    }
+                    return (
+                      <button key={i} className={cls} onClick={() => handleAnswer(opt)} disabled={idx !== currentIdx || showNextDelay}>
+                        <span className="quiz-sim-opt-letter">{String.fromCharCode(65 + i)}</span>
+                        {opt}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <style jsx>{`
+          .quiz-scroll-container { display: flex; flex-direction: column; overflow: hidden; width: 100%; height: calc(100vh - 180px); scroll-snap-type: y mandatory; }
+          .quiz-slide {
+            flex: 0 0 100%; width: 100%; height: 100%; scroll-snap-align: start;
+            display: flex; align-items: center; justify-content: center; pointer-events: none;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0; transform: translateY(40px);
+          }
+          .quiz-slide.active { pointer-events: all; opacity: 1; transform: translateY(0); }
+        `}</style>
       </div>
     );
   }
@@ -233,53 +175,71 @@ export default function SRSPage() {
     const mins = Math.floor(durationMs / 60000);
     const secs = Math.floor((durationMs % 60000) / 1000);
     const timeStr = mins > 0 ? `${mins}dk ${secs}sn` : `${secs}sn`;
-    
-    const total = quizWords.length;
-    const accuracy = Math.round((correctCount / total) * 100);
+    const accuracy = Math.round((correctCount / quizWords.length) * 100);
     const wrongAnswers = answers.filter(a => !a.isCorrect);
 
     return (
-      <div className="minimal-result-container">
-        <h1 className="minimal-result-title">Akıllı Tekrar Raporu</h1>
-        
-        <div className="minimal-result-stats">
-          <div className="minimal-stat-box">
-            <span className="minimal-stat-label">Süre</span>
-            <span className="minimal-stat-val">{timeStr}</span>
+      <div className="result-page">
+        <div className="glass-card result-card">
+          <div className="result-header">
+            <div className="result-icon-circle">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <h2 className="result-title">Tekrar Tamamlandı!</h2>
+            <p className="result-subtitle">{timeStr} sürede zihnini tazeledin</p>
           </div>
-          <div className="minimal-stat-box">
-            <span className="minimal-stat-label">Başarı</span>
-            <span className="minimal-stat-val">% {accuracy}</span>
+
+          <div className="result-stats-grid">
+            <div className="res-stat-card success"><div className="res-stat-val">{correctCount}</div><div className="res-stat-label">Hatırlandı</div></div>
+            <div className="res-stat-card error"><div className="res-stat-val">{quizWords.length - correctCount}</div><div className="res-stat-label">Unutuldu</div></div>
+            <div className="res-stat-card accent"><div className="res-stat-val">%{accuracy}</div><div className="res-stat-label">Başarı</div></div>
           </div>
-          <div className="minimal-stat-box">
-            <span className="minimal-stat-label" style={{color: "#30d158"}}>Doğru</span>
-            <span className="minimal-stat-val">{correctCount}</span>
-          </div>
-          <div className="minimal-stat-box">
-            <span className="minimal-stat-label" style={{color: "#ff375f"}}>Yanlış</span>
-            <span className="minimal-stat-val">{total - correctCount}</span>
+
+          {wrongAnswers.length > 0 && (
+            <div className="result-mistakes">
+              <h4 className="mistakes-title">Zayıf Halkalar</h4>
+              <div className="mistakes-list">
+                {wrongAnswers.slice(0, 5).map((w, i) => (
+                  <div key={i} className="mistake-item">
+                    <span className="mistake-word">{w.word}</span><span className="mistake-arrow">→</span><span className="mistake-meaning">{w.correctMeaning}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="result-actions">
+            <Link href="/dashboard" className="btn-primary" style={{ flex: 1, textAlign: 'center', padding: 16 }}>Merkeze Dön</Link>
           </div>
         </div>
 
-        {wrongAnswers.length > 0 && (
-          <div className="minimal-mistakes-section">
-            <h3 className="minimal-mistakes-title">Seviyesi Düşenler (Hatalar)</h3>
-            <div className="minimal-mistakes-list">
-              {wrongAnswers.map((w, i) => (
-                <div key={i} className="minimal-mistake-item">
-                  <div className="minimal-mistake-word">{w.word}</div>
-                  <div className="minimal-mistake-details">
-                    <span className="mistake-wrong-ans">{w.userAnswer}</span>
-                    <span className="mistake-arrow">→</span>
-                    <span className="mistake-correct-ans">{w.correctMeaning}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <Link href="/dashboard" className="minimal-btn-full mt-4" style={{display: 'block', textAlign: 'center'}}>Merkeze Dön</Link>
+        <style jsx>{`
+          .result-page { max-width: 600px; margin: 0 auto; animation: fadeIn 0.5s ease-out; }
+          .result-card { padding: 40px; text-align: center; }
+          .result-header { margin-bottom: 32px; }
+          .result-icon-circle {
+            width: 80px; height: 80px; background: rgba(48, 209, 88, 0.1); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; color: #30d158;
+            margin: 0 auto 20px; border: 1px solid rgba(48, 209, 88, 0.2);
+          }
+          .result-title { font-size: 2.2rem; font-weight: 900; margin-bottom: 8px; letter-spacing: -1px; }
+          .result-subtitle { color: var(--text-muted); font-size: 1.1rem; }
+          .result-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 40px; }
+          .res-stat-card { background: var(--glass); border: 1px solid var(--border); border-radius: 20px; padding: 20px 10px; }
+          .res-stat-val { font-size: 1.8rem; font-weight: 900; margin-bottom: 4px; }
+          .res-stat-card.success .res-stat-val { color: var(--primary); }
+          .res-stat-card.error .res-stat-val { color: var(--error); }
+          .res-stat-card.accent .res-stat-val { color: var(--accent); }
+          .res-stat-label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+          .result-mistakes { text-align: left; background: var(--bg-elevated); border-radius: 20px; padding: 24px; margin-bottom: 32px; }
+          .mistakes-title { font-weight: 800; margin-bottom: 16px; color: var(--error); font-size: 1rem; }
+          .mistake-item { display: flex; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+          .mistake-word { font-weight: 700; min-width: 100px; color: var(--text); }
+          .mistake-arrow { color: var(--text-muted); }
+          .mistake-meaning { color: var(--primary); font-size: 0.9rem; }
+          .result-actions { display: flex; gap: 16px; }
+          @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        `}</style>
       </div>
     );
   }

@@ -52,8 +52,9 @@ export async function getUserStats(uid) {
   const snap = await getDoc(statsRef);
   if (!snap.exists()) {
     const defaults = {
-      streak: 0, lastDate: "", streakDate: "",
-      dailyMinutes: 0, todayInitialReview: 0,
+      streak: 0, lastDate: "",
+      dailyMinutes: 0, correct: 0, wrong: 0,
+      lastTestTime: 0
     };
     await setDoc(statsRef, defaults);
     return defaults;
@@ -61,19 +62,103 @@ export async function getUserStats(uid) {
   return snap.data();
 }
 
+export async function refreshUserStreak(uid) {
+  const statsRef = doc(db, "users", uid, "data", "stats");
+  const userRef = doc(db, "users", uid);
+  const snap = await getDoc(statsRef);
+  
+  const today = new Date().toLocaleDateString('tr-TR');
+  const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('tr-TR');
+  
+  let currentStats = snap.exists() ? snap.data() : { streak: 0, lastDate: "" };
+  let { streak, lastDate } = currentStats;
+
+  if (lastDate === today) return streak; // Zaten bugün güncellendi
+
+  if (lastDate === yesterday) {
+    streak += 1;
+  } else {
+    streak = 1;
+  }
+
+  await updateDoc(statsRef, { streak, lastDate: today });
+  
+  // Liderlik tablosu için user dökümanına da yansıt (publicStats)
+  await updateDoc(userRef, { 
+    "publicStats.streak": streak,
+    "publicStats.lastSeen": serverTimestamp()
+  });
+
+  return streak;
+}
+
 export async function updateUserStats(uid, stats) {
   const statsRef = doc(db, "users", uid, "data", "stats");
+  const userRef = doc(db, "users", uid);
+  
   const updateData = {};
   if (stats.correct !== undefined) updateData.correct = increment(stats.correct);
   if (stats.wrong !== undefined) updateData.wrong = increment(stats.wrong);
   if (stats.streak !== undefined) updateData.streak = stats.streak; 
+  if (stats.lastTestTime !== undefined) updateData.lastTestTime = stats.lastTestTime;
   
   await setDoc(statsRef, updateData, { merge: true });
+
+  // Public stats güncelleme (Leaderboard için)
+  const newStats = (await getDoc(statsRef)).data();
+  const words = await getUserWords(uid);
+  const totalWords = words.length;
+  const masteryCount = words.filter(w => (w.level || 0) >= 4).length;
+  const level1Count = words.filter(w => w.level === 1).length;
+  const level2Count = words.filter(w => w.level === 2).length;
+  const level3Count = words.filter(w => w.level === 3).length;
+
+  await updateDoc(userRef, {
+    "publicStats.totalWords": totalWords,
+    "publicStats.masteryCount": masteryCount,
+    "publicStats.weeklyMinutes": newStats.weeklyMinutes || 0,
+    "publicStats.streak": newStats.streak || 0,
+    "publicStats.correct": newStats.correct || 0,
+    "publicStats.wrong": newStats.wrong || 0,
+    "publicStats.lastTestTime": stats.lastTestTime || 0
+  });
 }
 
 export async function incrementStudyMinutes(uid, minutes) {
   const statsRef = doc(db, "users", uid, "data", "stats");
-  await updateDoc(statsRef, { dailyMinutes: increment(minutes) });
+  const userRef = doc(db, "users", uid);
+  
+  const now = new Date();
+  const weekNumber = getWeekNumber(now);
+  
+  const snap = await getDoc(statsRef);
+  const data = snap.exists() ? snap.data() : {};
+  
+  let weeklyMinutes = data.weeklyMinutes || 0;
+  if (data.lastWeekNumber !== weekNumber) {
+    weeklyMinutes = minutes;
+  } else {
+    weeklyMinutes += minutes;
+  }
+
+  await updateDoc(statsRef, { 
+    dailyMinutes: increment(minutes),
+    weeklyMinutes: weeklyMinutes,
+    lastWeekNumber: weekNumber
+  });
+
+  await updateDoc(userRef, { 
+    "publicStats.totalMinutes": increment(minutes),
+    "publicStats.weeklyMinutes": weeklyMinutes
+  });
+}
+
+function getWeekNumber(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+  return weekNo;
 }
 
 // ===== KULLANICI HATALARI =====
@@ -218,6 +303,19 @@ export async function deleteArchiveWord(wordId) {
 export async function getAllUsers() {
   const usersRef = collection(db, "users");
   const snapshot = await getDocs(usersRef);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+export async function getLeaderboard(category = "streak", limitCount = 10) {
+  const usersRef = collection(db, "users");
+  const field = `publicStats.${category}`;
+  const q = query(
+    usersRef, 
+    where(field, ">", 0), 
+    orderBy(field, "desc"), 
+    limit(limitCount)
+  );
+  const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 

@@ -1,9 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
-import { getUserWords, getUserMistakes, updateUserMistakes, updateUserWord, incrementStudyMinutes } from "@/lib/firestore";
+import { 
+  getUserWords, getUserMistakes, updateUserMistakes, 
+  updateUserWord, incrementStudyMinutes, updateUserStats
+} from "@/lib/firestore";
+import { playSuccessSound, playErrorSound } from "@/lib/sounds";
 
 export default function QuizPage() {
   const { user, requireAuth } = useAuth();
@@ -11,7 +15,7 @@ export default function QuizPage() {
   const [words, setWords] = useState([]);
   const [mistakes, setMistakes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [mode, setMode] = useState(null); // null=seçim, "smart", "bank", "flash", "mistakes"
+  const [mode, setMode] = useState(null); // null=seçim, "smart", "bank", "flash", "mistakes", "hybrid"
   const [questions, setQuestions] = useState([]);
   const [qIdx, setQIdx] = useState(0);
   const [score, setScore] = useState({ correct: 0, wrong: 0 });
@@ -20,6 +24,10 @@ export default function QuizPage() {
   const [finished, setFinished] = useState(false);
   const [timer, setTimer] = useState(0);
   const [timerInterval, setTimerInterval] = useState(null);
+  const [showAllMistakes, setShowAllMistakes] = useState(false);
+
+  // Swipe UI Ref
+  const scrollRef = useRef(null);
 
   // Flash card state
   const [flashIdx, setFlashIdx] = useState(0);
@@ -30,26 +38,34 @@ export default function QuizPage() {
       setLoading(false);
       return;
     }
-    Promise.all([getUserWords(user.uid), getUserMistakes(user.uid)])
-      .then(([w, m]) => { setWords(w || []); setMistakes(m || []); setLoading(false); })
+    Promise.all([
+      getUserWords(user.uid), 
+      getUserMistakes(user.uid)
+    ])
+      .then(([w, m]) => { 
+        setWords(w || []); 
+        setMistakes(m || []); 
+        setLoading(false); 
+      })
       .catch(console.error);
   }, [user]);
 
-  async function addMistakeToUser(word) {
+  async function addMistakeToUser(wordId) {
     try {
       const ms = await getUserMistakes(user.uid);
-      if (!ms.includes(word)) {
-        await updateUserMistakes(user.uid, [...ms, word]);
-        setMistakes([...ms, word]);
+      if (!ms.includes(wordId)) {
+        const newMs = [...ms, wordId];
+        await updateUserMistakes(user.uid, newMs);
+        setMistakes(newMs);
       }
     } catch (err) { console.error(err); }
   }
 
-  async function removeMistakeFromUser(word) {
+  async function removeMistakeFromUser(wordId) {
     try {
       const ms = await getUserMistakes(user.uid);
-      if (ms.includes(word)) {
-        const newMs = ms.filter(m => m !== word);
+      if (ms.includes(wordId)) {
+        const newMs = ms.filter(m => m !== wordId);
         await updateUserMistakes(user.uid, newMs);
         setMistakes(newMs);
       }
@@ -74,17 +90,38 @@ export default function QuizPage() {
   // Quiz üret
   function startQuiz(selectedMode) {
     requireAuth(() => {
-      // 1. Validation checks BEFORE setting mode
       if (words.length < 4) return showNotification("En az 4 kelime gerekli!", "warning");
       
+      let pool = [];
       if (selectedMode === "mistakes") {
-        const pool = words.filter(w => mistakes.includes(w.word) || mistakes.includes(w.word?.toLowerCase()));
+        // Robust filtering: check ID or word string (for legacy support)
+        pool = words.filter(w => 
+          mistakes.includes(w.id) || 
+          mistakes.includes(w.word) || 
+          mistakes.includes(w.word?.toLowerCase())
+        );
         if (pool.length < 4) {
           return showNotification("Hatalar testini çözmek için en az 4 hata kaydınız olmalı!", "warning");
         }
+        pool = pool.sort(() => Math.random() - 0.5);
+      } else if (selectedMode === "hybrid") {
+        const mistakePool = words.filter(w => 
+          mistakes.includes(w.id) || 
+          mistakes.includes(w.word) || 
+          mistakes.includes(w.word?.toLowerCase())
+        );
+        const learnedPool = words.filter(w => (w.level || 0) > 0 && !mistakePool.find(mp => mp.id === w.id));
+        const combined = [...mistakePool, ...learnedPool].sort(() => Math.random() - 0.5);
+        pool = combined.slice(0, 20);
+
+        if (pool.length < 20) {
+          const others = words.filter(w => !pool.find(p => p.id === w.id)).sort(() => Math.random() - 0.5);
+          pool = [...pool, ...others.slice(0, 20 - pool.length)];
+        }
+      } else {
+        pool = [...words].sort(() => Math.random() - 0.5);
       }
 
-      // 2. Set states
       setMode(selectedMode);
       setQIdx(0);
       setScore({ correct: 0, wrong: 0 });
@@ -92,6 +129,7 @@ export default function QuizPage() {
       setResults([]);
       setFinished(false);
       setTimer(0);
+      setShowAllMistakes(false);
 
       if (selectedMode === "flash") {
         setFlashIdx(0);
@@ -99,16 +137,7 @@ export default function QuizPage() {
         return;
       }
 
-      const count = Math.min(words.length, 20);
-      let pool = [];
-
-      if (selectedMode === "mistakes") {
-        pool = words.filter(w => mistakes.includes(w.word) || mistakes.includes(w.word?.toLowerCase()))
-                    .sort(() => Math.random() - 0.5);
-      } else {
-        pool = [...words].sort(() => Math.random() - 0.5);
-      }
-
+      const count = selectedMode === "hybrid" ? 20 : Math.min(pool.length, 20);
       const qs = [];
       for (let i = 0; i < Math.min(count, pool.length); i++) {
         const correct = pool[i];
@@ -117,12 +146,10 @@ export default function QuizPage() {
           .sort(() => Math.random() - 0.5);
         qs.push({ word: correct.word, correctMeaning: correct.meaning, options, wordId: correct.id });
       }
-
       setQuestions(qs);
     });
   }
 
-  // Cevap ver
   function handleAnswer(optionIdx) {
     if (answered !== null) return;
     const q = questions[qIdx];
@@ -140,65 +167,112 @@ export default function QuizPage() {
 
     if (isCorrect) {
       setScore(prev => ({ ...prev, correct: prev.correct + 1 }));
-      if (mode === "mistakes") {
-        removeMistakeFromUser(q.word);
-      } else if (mode === "smart") {
-        const wordData = words.find(w => w.id === q.wordId);
-        const currentLevel = wordData?.level || 0;
-        const newLevel = Math.min(currentLevel + 1, 4);
-        const intervals = [1, 3, 7, 14, 30]; 
-        const addMs = intervals[newLevel] * 24 * 60 * 60 * 1000;
-        updateUserWord(user.uid, q.wordId, { level: newLevel, nextReview: Date.now() + addMs, correctCount: (wordData?.correctCount||0) + 1 });
-      }
+      playSuccessSound();
+      removeMistakeFromUser(q.wordId);
+      const wordData = words.find(w => w.id === q.wordId);
+      const newLevel = Math.min(4, (wordData?.level || 0) + 1);
+      updateUserWord(user.uid, q.wordId, { 
+        level: newLevel, 
+        nextReview: Date.now() + (newLevel + 1) * 24 * 60 * 60 * 1000, 
+        correctCount: (wordData?.correctCount||0) + 1 
+      });
     } else {
       setScore(prev => ({ ...prev, wrong: prev.wrong + 1 }));
-      addMistakeToUser(q.word);
-      if (mode === "smart") {
-        const wordData = words.find(w => w.id === q.wordId);
-        updateUserWord(user.uid, q.wordId, { level: 0, nextReview: Date.now() + 5 * 60 * 1000, wrongCount: (wordData?.wrongCount||0) + 1 });
-      }
+      playErrorSound();
+      addMistakeToUser(q.wordId);
+      const wordData = words.find(w => w.id === q.wordId);
+      updateUserWord(user.uid, q.wordId, { 
+        level: 0, 
+        nextReview: Date.now() + 5 * 60 * 1000, 
+        wrongCount: (wordData?.wrongCount||0) + 1 
+      });
     }
 
-    // Sonraki soruya geç
     setTimeout(() => {
       if (qIdx + 1 < questions.length) {
-        setQIdx(prev => prev + 1);
+        const nextIdx = qIdx + 1;
         setAnswered(null);
+        setQIdx(nextIdx);
+        if (scrollRef.current) {
+          scrollRef.current.scrollTo({ top: scrollRef.current.offsetHeight * nextIdx, behavior: "smooth" });
+        }
       } else {
         setFinished(true);
         if (timerInterval) clearInterval(timerInterval);
-        // Save study time (increment, not overwrite)
         if (user && timer > 0) {
           const mins = Math.max(1, Math.round(timer / 60));
           incrementStudyMinutes(user.uid, mins).catch(console.error);
+          updateUserStats(user.uid, { 
+            correct: score.correct + (isCorrect ? 1 : 0), 
+            wrong: score.wrong + (isCorrect ? 0 : 1),
+            lastTestTime: timer 
+          });
         }
       }
-    }, 800);
+    }, 1200);
   }
 
   if (loading) return <div className="page-loading"><div className="spinner-ring"></div></div>;
 
   if (!mode) {
     return (
-      <div>
-        <h2 className="section-title">Quiz</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 600, margin: "0 auto" }}>
-            <button className="glass-card quiz-mode-btn" onClick={() => startQuiz("bank")}>
-              <div className="quiz-mode-title">Banka Testi</div>
-              <p className="quiz-mode-desc">Tüm kelime bankandan rastgele sorular</p>
+      <div className="quiz-selection-page">
+        <h2 className="section-title">ydt<span>focus</span> Quiz</h2>
+          <div className="quiz-modes-list">
+            <button className="glass-card quiz-mode-btn hybrid" onClick={() => startQuiz("hybrid")}>
+              <div className="quiz-mode-tag">YENİ</div>
+              <div className="quiz-mode-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
+              </div>
+              <div className="quiz-mode-content">
+                <div className="quiz-mode-title">Karma Kaydırmalı Tur</div>
+                <p className="quiz-mode-desc">Hataların ve öğrendiğin kelimelerden oluşan dinamik dikey seri</p>
+              </div>
             </button>
-          <button className="glass-card quiz-mode-btn" onClick={() => startQuiz("mistakes")}>
-            <div className="quiz-mode-title">Hatalar Testi</div>
-            <p className="quiz-mode-desc">Yanlış bildiklerinizi tekrar edin (Doğru bilirseniz silinir)</p>
-          </button>
-          <button className="glass-card quiz-mode-btn" onClick={() => startQuiz("flash")}>
-            <div className="quiz-mode-title">Flash Cards</div>
-            <p className="quiz-mode-desc">Kartları çevirerek hızlı tekrar</p>
-          </button>
+            <button className="glass-card quiz-mode-btn" onClick={() => startQuiz("mistakes")}>
+              <div className="quiz-mode-icon" style={{ color: "var(--error)" }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              </div>
+              <div className="quiz-mode-content">
+                <div className="quiz-mode-title">Hatalar Testi</div>
+                <p className="quiz-mode-desc">Yanlış bildiklerini tekrar et ve bankadan temizle</p>
+              </div>
+            </button>
+            <button className="glass-card quiz-mode-btn" onClick={() => startQuiz("flash")}>
+              <div className="quiz-mode-icon" style={{ color: "var(--primary)" }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+              </div>
+              <div className="quiz-mode-content">
+                <div className="quiz-mode-title">Flash Cards</div>
+                <p className="quiz-mode-desc">Hızlı görsel ve anlam tekrarı için kartlar</p>
+              </div>
+            </button>
         </div>
-        <p className="hint-text" style={{ textAlign: "center", marginTop: 20 }}>
-          Bankanda {words.length} kelime var
-        </p>
+        <p className="hint-text" style={{ textAlign: "center", marginTop: 20 }}>Bankanda {words.length} kelime var</p>
+
+        <style jsx>{`
+          .quiz-selection-page { max-width: 600px; margin: 0 auto; }
+          .section-title span { color: var(--accent); }
+          .quiz-modes-list { display: flex; flex-direction: column; gap: 16px; }
+          .quiz-mode-btn {
+            display: flex; align-items: center; gap: 20px; text-align: left; width: 100%;
+            padding: 24px; border: 1px solid var(--border); border-radius: 20px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); background: rgba(255, 255, 255, 0.03);
+          }
+          .quiz-mode-btn:hover { transform: translateY(-4px); border-color: rgba(226, 183, 20, 0.4); background: rgba(226, 183, 20, 0.05); }
+          .quiz-mode-btn.hybrid { border: 1px solid rgba(226, 183, 20, 0.3); background: linear-gradient(135deg, rgba(226, 183, 20, 0.1), transparent); position: relative; overflow: hidden; }
+          .quiz-mode-icon {
+            display: flex; align-items: center; justify-content: center; width: 56px; height: 56px;
+            background: rgba(255, 255, 255, 0.05); border-radius: 16px; flex-shrink: 0; color: var(--accent);
+          }
+          .quiz-mode-title { font-size: 1.15rem; font-weight: 800; margin-bottom: 4px; color: var(--text); }
+          .quiz-mode-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.4; }
+          .quiz-mode-tag {
+            position: absolute; top: 12px; right: -30px; background: var(--accent); color: #000;
+            font-size: 0.65rem; font-weight: 900; padding: 4px 35px; transform: rotate(45deg);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+          }
+        `}</style>
       </div>
     );
   }
@@ -230,7 +304,7 @@ export default function QuizPage() {
                 {card.word}
                 <button className="audio-btn" onClick={(e) => playAudio(card.word, e)} title="Dinle">🔊</button>
               </h2>
-              <span className="flash-hint">tap to flip</span>
+              <span className="flash-hint">Tıklayarak çevir</span>
             </div>
             <div className="flash-back">
               <h3>{card.meaning}</h3>
@@ -239,16 +313,8 @@ export default function QuizPage() {
           </div>
         </div>
         <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
-          <button className="btn-ghost" style={{ flex: 1 }}
-            disabled={safeIdx <= 0}
-            onClick={() => { setFlashIdx(Math.max(0, safeIdx - 1)); setFlashFlipped(false); }}>
-            Önceki
-          </button>
-          <button className="btn-primary" style={{ flex: 1 }}
-            disabled={safeIdx >= words.length - 1}
-            onClick={() => { if (safeIdx < words.length - 1) { setFlashIdx(safeIdx + 1); setFlashFlipped(false); } }}>
-            Sonraki
-          </button>
+          <button className="btn-ghost" style={{ flex: 1 }} disabled={safeIdx <= 0} onClick={() => { setFlashIdx(Math.max(0, safeIdx - 1)); setFlashFlipped(false); }}>Önceki</button>
+          <button className="btn-primary" style={{ flex: 1 }} disabled={safeIdx >= words.length - 1} onClick={() => { if (safeIdx < words.length - 1) { setFlashIdx(safeIdx + 1); setFlashFlipped(false); } }}>Sonraki</button>
         </div>
       </div>
     );
@@ -258,67 +324,93 @@ export default function QuizPage() {
   if (finished) {
     const total = score.correct + score.wrong;
     const pct = total > 0 ? Math.round((score.correct / total) * 100) : 0;
-    return (
-      <div style={{ maxWidth: 600, margin: "0 auto" }}>
-        <div className="glass-card" style={{ textAlign: "center", padding: 40 }}>
-          <h2 style={{ fontSize: "2rem", fontWeight: 800, marginBottom: 8 }}>Sonuçlar</h2>
-          <p className="hint-text">{formatTime(timer)} sürdü</p>
+    const wrongAnswers = results.filter(r => !r.isCorrect);
 
-          <div className="dash-stats-grid" style={{ margin: "24px 0" }}>
-            <div className="dash-stat-card">
-              <div className="dash-stat-value" style={{ color: "var(--primary)" }}>{score.correct}</div>
-              <div className="dash-stat-label">Doğru</div>
+    return (
+      <div className="result-page">
+        <div className="glass-card result-card">
+          <div className="result-header">
+            <div className="result-icon-circle">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
             </div>
-            <div className="dash-stat-card">
-              <div className="dash-stat-value" style={{ color: "var(--error)" }}>{score.wrong}</div>
-              <div className="dash-stat-label">Yanlış</div>
-            </div>
-            <div className="dash-stat-card">
-              <div className="dash-stat-value" style={{ color: "var(--accent)" }}>%{pct}</div>
-              <div className="dash-stat-label">Başarı</div>
-            </div>
+            <h2 className="result-title">Tur Tamamlandı!</h2>
+            <p className="result-subtitle">{formatTime(timer)} sürede bitirdin</p>
           </div>
 
-          {/* Hata Listesi */}
-          {results.filter(r => !r.isCorrect).length > 0 && (
-            <div style={{ textAlign: "left", marginTop: 20 }}>
-              <h4 style={{ color: "var(--error)", marginBottom: 12 }}>Hatalar</h4>
-              {results.filter(r => !r.isCorrect).map((r, i) => (
-                <div key={i} style={{
-                  padding: 12, background: "rgba(255,69,58,0.05)", border: "1px solid rgba(255,69,58,0.15)",
-                  borderRadius: 12, marginBottom: 8,
-                }}>
-                  <b>{r.word}</b> → {r.correctMeaning}
-                  <span style={{ color: "var(--error)", marginLeft: 8, fontSize: "0.85rem" }}>
-                    (seçtiğin: {r.selectedMeaning})
-                  </span>
-                </div>
-              ))}
+          <div className="result-stats-grid">
+            <div className="res-stat-card success"><div className="res-stat-val">{score.correct}</div><div className="res-stat-label">Doğru</div></div>
+            <div className="res-stat-card error"><div className="res-stat-val">{score.wrong}</div><div className="res-stat-label">Yanlış</div></div>
+            <div className="res-stat-card accent"><div className="res-stat-val">%{pct}</div><div className="res-stat-label">Başarı</div></div>
+          </div>
+
+          {wrongAnswers.length > 0 && (
+            <div className="result-mistakes">
+              <h4 className="mistakes-title">Gözden Geçir</h4>
+              <div className="mistakes-list">
+                {(showAllMistakes ? wrongAnswers : wrongAnswers.slice(0, 5)).map((r, i) => (
+                  <div key={i} className="mistake-item">
+                    <span className="mistake-word">{r.word}</span>
+                    <span className="mistake-arrow">→</span>
+                    <span className="mistake-meaning">{r.correctMeaning}</span>
+                  </div>
+                ))}
+                {wrongAnswers.length > 5 && !showAllMistakes && (
+                  <button className="btn-show-more" onClick={() => setShowAllMistakes(true)}>
+                    ve {wrongAnswers.length - 5} tane daha göster...
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
-          <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
-            <button className="btn-ghost" style={{ flex: 1 }} onClick={() => setMode(null)}>Geri Dön</button>
-            <button className="btn-primary" style={{ flex: 1 }} onClick={() => startQuiz(mode)}>Tekrar</button>
+          <div className="result-actions">
+            <button className="btn-ghost" onClick={() => setMode(null)}>Ana Menü</button>
+            <button className="btn-primary" onClick={() => startQuiz(mode)}>Yeniden Başlat</button>
           </div>
         </div>
+
+        <style jsx>{`
+          .result-page { max-width: 600px; margin: 0 auto; animation: fadeIn 0.5s ease-out; }
+          .result-card { padding: 40px; text-align: center; }
+          .result-header { margin-bottom: 32px; }
+          .result-icon-circle {
+            width: 80px; height: 80px; background: rgba(226, 183, 20, 0.1); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; color: var(--accent);
+            margin: 0 auto 20px; border: 1px solid rgba(226, 183, 20, 0.2);
+          }
+          .result-title { font-size: 2.2rem; font-weight: 900; margin-bottom: 8px; letter-spacing: -1px; }
+          .result-subtitle { color: var(--text-muted); font-size: 1.1rem; }
+          .result-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 40px; }
+          .res-stat-card { background: var(--glass); border: 1px solid var(--border); border-radius: 20px; padding: 20px 10px; }
+          .res-stat-val { font-size: 1.8rem; font-weight: 900; margin-bottom: 4px; }
+          .res-stat-card.success .res-stat-val { color: var(--primary); }
+          .res-stat-card.error .res-stat-val { color: var(--error); }
+          .res-stat-card.accent .res-stat-val { color: var(--accent); }
+          .res-stat-label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+          .result-mistakes { text-align: left; background: var(--bg-elevated); border-radius: 20px; padding: 24px; margin-bottom: 32px; }
+          .mistakes-title { font-weight: 800; margin-bottom: 16px; color: var(--error); font-size: 1rem; }
+          .mistake-item { display: flex; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+          .mistake-word { font-weight: 700; min-width: 100px; color: var(--text); }
+          .mistake-arrow { color: var(--text-muted); }
+          .mistake-meaning { color: var(--primary); font-size: 0.9rem; }
+          .btn-show-more {
+            background: none; border: none; color: var(--accent); font-size: 0.85rem; font-weight: 700;
+            padding: 12px 0; cursor: pointer; width: 100%; text-align: center; opacity: 0.8;
+          }
+          .btn-show-more:hover { opacity: 1; text-decoration: underline; }
+          .result-actions { display: flex; gap: 16px; }
+          .result-actions button { flex: 1; padding: 16px; font-size: 1rem; }
+          @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        `}</style>
       </div>
     );
   }
 
-  // SİMÜLASYON FORMATI — Tek soru gösterimi
-  const q = questions[qIdx];
-  if (!q) return null;
-
   return (
     <div className="quiz-sim">
-      {/* Üst Bar */}
       <div className="quiz-sim-bar">
-        <button className="quiz-exit-icon" onClick={() => { if (timerInterval) clearInterval(timerInterval); setMode(null); }} title="Çıkış">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
+        <button className="quiz-exit-icon" onClick={() => { if (timerInterval) clearInterval(timerInterval); setMode(null); }}>
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
         <div className="quiz-sim-progress">
           <div className="quiz-sim-progress-fill" style={{ width: `${((qIdx + 1) / questions.length) * 100}%` }}></div>
@@ -327,26 +419,40 @@ export default function QuizPage() {
         <span className="quiz-sim-counter">{qIdx + 1}/{questions.length}</span>
       </div>
 
-      {/* Soru */}
-      <div className="quiz-sim-body">
-        <div className="quiz-sim-word">{q.word}</div>
-
-        <div className="quiz-sim-options">
-          {q.options.map((opt, oi) => {
-            let cls = "quiz-sim-opt";
-            if (answered !== null) {
-              if (opt.correct) cls += " correct-ans flash-success";
-              else if (oi === answered && !opt.correct) cls += " wrong-ans shake-error";
-            }
-            return (
-              <button key={oi} className={cls} onClick={() => handleAnswer(oi)} disabled={answered !== null}>
-                <span className="quiz-sim-opt-letter">{String.fromCharCode(65 + oi)}</span>
-                {opt.text}
-              </button>
-            );
-          })}
-        </div>
+      <div className="quiz-scroll-container" ref={scrollRef}>
+        {questions.map((q, idx) => (
+          <div key={idx} className={`quiz-slide ${idx === qIdx ? "active" : ""}`}>
+            <div className="quiz-sim-body">
+              <div className="quiz-sim-word">{q.word}</div>
+              <div className="quiz-sim-options">
+                {q.options.map((opt, oi) => {
+                  let cls = "quiz-sim-opt";
+                  if (idx === qIdx && answered !== null) {
+                    if (opt.correct) cls += " correct-ans flash-success";
+                    else if (oi === answered && !opt.correct) cls += " wrong-ans shake-error";
+                  }
+                  return (
+                    <button key={oi} className={cls} onClick={() => handleAnswer(oi)} disabled={idx !== qIdx || answered !== null}>
+                      <span className="quiz-sim-opt-letter">{String.fromCharCode(65 + oi)}</span>
+                      {opt.text}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
+
+      <style jsx>{`
+        .quiz-scroll-container { display: flex; flex-direction: column; overflow: hidden; width: 100%; height: calc(100vh - 180px); scroll-snap-type: y mandatory; }
+        .quiz-slide {
+          flex: 0 0 100%; width: 100%; height: 100%; scroll-snap-align: start;
+          display: flex; align-items: center; justify-content: center; pointer-events: none;
+          transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0; transform: translateY(40px);
+        }
+        .quiz-slide.active { pointer-events: all; opacity: 1; transform: translateY(0); }
+      `}</style>
     </div>
   );
 }
