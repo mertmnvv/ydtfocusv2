@@ -2,11 +2,12 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import ReactMarkdown from "react-markdown";
 
 export default function GlobalAI() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: "ai", content: "Selam! Ben Focus AI. YDT, YDS veya YÖKDİL sürecinde aklına takılanları bana sorabilirsin. Dil öğrenimi üzerine her konuda buradayım!" }
+    { role: "ai", content: "Selam! Ben **Focus AI**. YDT, YDS veya YÖKDİL sürecinde aklına takılanları bana sorabilirsin. Dil öğrenimi üzerine her konuda buradayım! \n\n*Örneğin: 'YDT ne zaman?', 'Present Perfect vs Past Simple' gibi sorular sorabilirsin.*" }
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,10 +28,20 @@ export default function GlobalAI() {
     setLoading(true);
 
     const systemPrompt = `Sen YDT Focus platformunun uzman yapay zeka asistanısın. 
-    Görevin SADECE YDT, YDS, YÖKDİL ve genel İngilizce dil öğrenimi (gramer, kelime, okuma, sınav stratejileri) konularında yardımcı olmaktır. 
-    Diğer alakasız konularda (yemek tarifleri, kodlama, spor, siyaset vb.) gelen soruları cevaplamamalısın. 
-    Eğer konu dışı bir soru gelirse: "Üzgünüm, ben sadece YDT, YDS, YÖKDİL ve İngilizce öğrenimi konularında uzmanım. Bu konuda sana yardımcı olamam ama sınavlarla ilgili bir sorun varsa seve seve cevaplarım!" şeklinde bir cevap vermelisin.
-    Cevapların motive edici ve akademik olarak doğru olmalı.`;
+    Görevin SADECE YDT, YDS, YÖKDİL ve İngilizce dil öğrenimi (gramer, kelime, okuma, sınav stratejileri) konularında yardımcı olmaktır. 
+    
+    ÖNEMLİ BİLGİLER (KNOWLEDGE BASE):
+    - YDT (Dil Sınavı): Yılda SADECE 1 kez (Haziran ayında) yapılır. TYT'den sonraki gün girilir. 80 sorudur ve 120 dakika sürer.
+    - YDS: Yılda 2 kez (İlkbahar ve Sonbahar) yapılır. Ayrıca e-YDS'ler neredeyse her ay Ankara, İstanbul ve İzmir'de yapılır. 80 sorudur, 180 dakika sürer.
+    - YÖKDİL: Yılda 2 kez yapılır. Sosyal, Fen ve Sağlık bilimleri olarak 3 alana ayrılır. 80 sorudur, 180 dakika sürer.
+    - Diğer alakasız konularda gelen soruları (yemek tarifi, kodlama vb.) nazikçe reddet.
+    
+    FORMATLAMA KURALLARI:
+    - Cevaplarında Markdown kullanmalısın. 
+    - Başlıkları **Bold** veya ### şeklinde belirginleştir.
+    - Önemli terimleri *İtalik* veya **Bold** yap.
+    - Maddeler için liste kullan.
+    - Cevapların profesyonel, motive edici ve düzenli olmalı.`;
 
     try {
       const resp = await fetch("/api/groq", {
@@ -66,7 +77,7 @@ export default function GlobalAI() {
         {isOpen ? (
           <i className="fa-solid fa-xmark"></i>
         ) : (
-          <i className="fa-solid fa-sparkles"></i>
+          <i className="fa-solid fa-wand-magic-sparkles"></i>
         )}
       </button>
 
@@ -87,7 +98,13 @@ export default function GlobalAI() {
             {messages.map((m, i) => (
               <div key={i} className={`ai-bubble-wrapper ${m.role}`}>
                 <div className="ai-bubble">
-                  {m.content}
+                  {m.role === "ai" ? (
+                    <div className="markdown-content">
+                      <ReactMarkdown>{m.content}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    m.content
+                  )}
                 </div>
               </div>
             ))}
@@ -169,10 +186,10 @@ export default function GlobalAI() {
           position: fixed;
           bottom: 95px;
           left: 24px;
-          width: 360px;
-          height: 500px;
+          width: 380px;
+          height: 550px;
           max-height: calc(100vh - 120px);
-          background: rgba(28, 28, 30, 0.85);
+          background: rgba(28, 28, 30, 0.9);
           backdrop-filter: blur(30px);
           -webkit-backdrop-filter: blur(30px);
           border: 1px solid var(--border);
@@ -230,7 +247,7 @@ export default function GlobalAI() {
         .ai-bubble-wrapper.user { justify-content: flex-end; }
 
         .ai-bubble {
-          max-width: 85%;
+          max-width: 90%;
           padding: 12px 16px;
           border-radius: 18px;
           font-size: 0.95rem;
@@ -241,6 +258,7 @@ export default function GlobalAI() {
           background: rgba(255, 255, 255, 0.05);
           color: var(--text);
           border-bottom-left-radius: 4px;
+          border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .ai-bubble-wrapper.user .ai-bubble {
@@ -250,11 +268,30 @@ export default function GlobalAI() {
           border-bottom-right-radius: 4px;
         }
 
+        /* Markdown Styling */
+        .ai-bubble :global(.markdown-content p) { margin-bottom: 12px; }
+        .ai-bubble :global(.markdown-content p:last-child) { margin-bottom: 0; }
+        .ai-bubble :global(.markdown-content h3), 
+        .ai-bubble :global(.markdown-content strong) { 
+          color: var(--accent); 
+          display: inline-block;
+          margin-top: 8px;
+          margin-bottom: 4px;
+        }
+        .ai-bubble-wrapper.user :global(.markdown-content strong) { color: #000; }
+        .ai-bubble :global(.markdown-content ul), 
+        .ai-bubble :global(.markdown-content ol) { 
+          margin-left: 20px; 
+          margin-bottom: 12px; 
+        }
+        .ai-bubble :global(.markdown-content li) { margin-bottom: 4px; }
+
         .global-ai-input {
           padding: 16px;
           display: flex;
           gap: 10px;
           background: rgba(0, 0, 0, 0.2);
+          border-top: 1px solid var(--border);
         }
 
         .global-ai-input input {
@@ -262,15 +299,15 @@ export default function GlobalAI() {
           background: var(--glass);
           border: 1px solid var(--border);
           border-radius: 14px;
-          padding: 10px 16px;
+          padding: 12px 16px;
           color: var(--text);
           outline: none;
           font-family: inherit;
         }
 
         .global-ai-input button {
-          width: 44px;
-          height: 44px;
+          width: 48px;
+          height: 48px;
           border-radius: 12px;
           background: var(--accent);
           border: none;
@@ -306,6 +343,7 @@ export default function GlobalAI() {
             right: 10px;
             width: auto;
             bottom: 145px;
+            height: 60vh;
           }
           .global-ai-fab {
             left: 20px;

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getUserWords, deleteUserWord } from "@/lib/firestore";
+import { subscribeToUserWords, deleteUserWord } from "@/lib/firestore";
 
 export default function FloatingBank() {
   const { user, requireAuth } = useAuth();
@@ -25,13 +25,19 @@ export default function FloatingBank() {
   }, []);
 
   useEffect(() => {
-    if (!user || !open) return;
+    if (!user) {
+      setWords([]);
+      return;
+    }
+    
     setLoading(true);
-    getUserWords(user.uid)
-      .then(w => setWords(w || []))
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [user, open]);
+    const unsubscribe = subscribeToUserWords(user.uid, (updatedWords) => {
+      setWords(updatedWords);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   // Drag Handlers
   const handleStart = (e) => {

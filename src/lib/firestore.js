@@ -1,7 +1,7 @@
 import {
   collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
   query, where, orderBy, limit, startAfter, serverTimestamp,
-  writeBatch, increment
+  writeBatch, increment, onSnapshot
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -11,6 +11,14 @@ export async function getUserWords(uid) {
   const wordsRef = collection(db, "users", uid, "words");
   const snapshot = await getDocs(wordsRef);
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+export function subscribeToUserWords(uid, callback) {
+  const wordsRef = collection(db, "users", uid, "words");
+  return onSnapshot(wordsRef, (snapshot) => {
+    const words = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    callback(words);
+  });
 }
 
 export async function addUserWord(uid, wordData) {

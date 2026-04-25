@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
-import { getUserWords, addUserWord } from "@/lib/firestore";
+import { subscribeToUserWords, addUserWord } from "@/lib/firestore";
 
 const TOPICS = [
   { id: "random", label: "Karışık" },
@@ -99,8 +99,12 @@ export default function ReadingPage() {
   const [quizLoading, setQuizLoading] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
-    getUserWords(user.uid).then(setMyWords).catch(console.error);
+    if (!user) {
+      setMyWords([]);
+      return;
+    }
+    const unsubscribe = subscribeToUserWords(user.uid, setMyWords);
+    return () => unsubscribe();
   }, [user]);
 
   async function generateAIText(selectedTopic) {
