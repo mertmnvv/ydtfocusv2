@@ -62,6 +62,15 @@ export async function getUserStats(uid) {
   return snap.data();
 }
 
+export function subscribeToUserStats(uid, callback) {
+  const statsRef = doc(db, "users", uid, "data", "stats");
+  return onSnapshot(statsRef, (snap) => {
+    if (snap.exists()) {
+      callback(snap.data());
+    }
+  });
+}
+
 export async function refreshUserStreak(uid) {
   const statsRef = doc(db, "users", uid, "data", "stats");
   const userRef = doc(db, "users", uid);
@@ -518,12 +527,13 @@ export async function sendMessage(chatId, senderUid, text, type = "text", metada
   });
 }
 
-export async function checkAndGrantBadges(uid, stats, wordsCount, heroLevels) {
+export async function checkAndGrantBadges(uid, stats, wordsCount, heroLevels, words = []) {
   const userRef = doc(db, "users", uid);
   const userSnap = await getDoc(userRef);
   if (!userSnap.exists()) return [];
   
-  const currentBadges = userSnap.data().badges || [];
+  const userData = userSnap.data();
+  const currentBadges = userData.badges || [];
   const newBadges = [...currentBadges];
   let changed = false;
 
@@ -534,21 +544,76 @@ export async function checkAndGrantBadges(uid, stats, wordsCount, heroLevels) {
     }
   };
 
-  // 1. Streak Rozetleri
-  if (stats.streak >= 7) grant("STREAK_7");
-  if (stats.streak >= 30) grant("STREAK_30");
+  // 0. Hoşgeldin
+  grant("WELCOME");
 
-  // 2. Kelime Rozetleri
+  // 1. Seriler (Süreklilik)
+  const streak = stats.streak || 0;
+  if (streak >= 7) grant("STREAK_7");
+  if (streak >= 15) grant("STREAK_15");
+  if (streak >= 30) grant("STREAK_30");
+  if (streak >= 50) grant("STREAK_50");
+  if (streak >= 100) grant("STREAK_100");
+  if (streak >= 21) grant("CONSISTENT_STREAK");
+  
+  const day = new Date().getDay(); // 0=Sun, 6=Sat
+  if (day === 0 || day === 6) grant("WEEKEND_WARRIOR");
+
+  // 2. Kelime Bilgisi
   if (wordsCount >= 100) grant("WORDS_100");
   if (wordsCount >= 500) grant("WORDS_500");
+  if (wordsCount >= 1000) grant("WORDS_1000");
+  if (wordsCount >= 2000) grant("WORDS_2000");
 
-  // 3. Zaman Rozetleri
+  const masteryCount = words.filter(w => w.level >= 4).length;
+  if (masteryCount >= 50) grant("MASTERY_STAR");
+  if (masteryCount >= 100) grant("MASTERY_STAR_100");
+
+  const withSynonyms = words.filter(w => w.synonyms && w.synonyms.length > 0).length;
+  if (withSynonyms >= 10) grant("SYNONYM_SEEKER");
+
+  const withExamples = words.filter(w => w.example || w.examples?.length > 0).length;
+  if (withExamples >= 50) grant("EXAMPLE_MASTER");
+
+  // 3. Zaman ve Disiplin
   const hour = new Date().getHours();
   if (hour >= 0 && hour <= 4) grant("NIGHT_OWL");
   if (hour >= 5 && hour <= 8) grant("EARLY_BIRD");
 
-  // 4. Hero Seviyeleri
-  if (heroLevels?.A1?.completed >= 10) grant("HERO_A1");
+  const totalMinutes = stats.studyTime || 0;
+  if (totalMinutes >= 500) grant("MINUTES_500");
+  if (totalMinutes >= 2000) grant("MINUTES_2000");
+  if (totalMinutes >= 5000) grant("MINUTES_5000");
+  if (stats.dailyMinutes >= 60) grant("DAILY_CHAMPION");
+  if (stats.lastSessionMinutes >= 60) grant("ACADEMIC_FOCUS");
+  if (stats.lastSessionMinutes >= 120) grant("MARATHONER");
+
+  // 4. Analiz ve Metinler
+  if (userData.readingsCompleted >= 20) grant("READING_MASTER");
+  if (userData.readingsCompleted >= 50) grant("YDT_ANALYST");
+  if (userData.readingsCompleted >= 100) grant("READING_MASTER_100");
+  if (userData.grammarLessonsCompleted >= 10) grant("GRAMMAR_EXPERT");
+  if (userData.grammarLessonsCompleted >= 20) grant("GRAMMAR_EXPERT_20");
+  if (userData.translationsCount >= 50) grant("TRANSLATOR_PRO");
+  if (stats.fastLearningSession >= 20) grant("QUICK_LEARNER");
+  if (stats.bestReadTime < 120 && stats.bestReadTime > 0) grant("SPEED_READER");
+  if (userData.etymologyChecks >= 10) grant("ETIMOLOG");
+
+  // 5. Quiz ve Sosyal
+  const totalTests = stats.totalQuizzes || 0;
+  if (totalTests >= 50) grant("QUIZ_VETERAN");
+  if (stats.lastQuizScore === 100) grant("PERFECT_QUIZ");
+  if (stats.perfectQuizzesCount >= 10) grant("QUIZ_PERFECT_10");
+
+  const friendsCount = (userData.friends || []).length;
+  if (friendsCount >= 5) grant("SOCIAL_SCHOLAR");
+  if (userData.bestRank <= 3 && userData.bestRank > 0) grant("CHALLENGER");
+
+  // 6. Hata Temizleme ve Efsanevi
+  const cleanedMistakes = stats.cleanedMistakes || 0;
+  if (cleanedMistakes >= 20) grant("MISTAKE_CLEARER");
+
+  if (newBadges.length >= 30) grant("LEGENDARY");
 
   if (changed) {
     await updateDoc(userRef, { badges: newBadges });

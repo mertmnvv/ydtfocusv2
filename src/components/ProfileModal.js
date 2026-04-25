@@ -143,20 +143,32 @@ export default function ProfileModal({ userId, onClose }) {
               </div>
             </div>
 
-            {/* All Badges Section */}
+            {/* Achievements Section - Only Earned */}
             {profile.badges && profile.badges.length > 0 && (
               <div className="p-modal-achievements">
-                <h3 className="ach-title">Başarılar ({profile.badges.length})</h3>
+                <div className="ach-header-flex">
+                  <h3 className="ach-title">Kazanılan Başarılar</h3>
+                  <span className="ach-count-badge">{profile.badges.length} Başarı</span>
+                </div>
+                
                 <div className="ach-grid">
-                  {profile.badges.map(bId => (
-                    <div key={bId} className="ach-card" style={{ "--b-color": BADGES[bId]?.color }}>
-                      <div className="ach-icon"><i className={`fa-solid ${BADGES[bId]?.icon}`}></i></div>
-                      <div className="ach-info">
-                        <span className="ach-name">{BADGES[bId]?.name}</span>
-                        <span className="ach-desc">{BADGES[bId]?.description}</span>
+                  {profile.badges.map(bId => {
+                    const badge = BADGES[bId];
+                    if (!badge) return null;
+                    return (
+                      <div 
+                        key={bId} 
+                        className="ach-card earned" 
+                        style={{ "--b-color": badge.color }}
+                      >
+                        <div className="ach-icon"><i className={`fa-solid ${badge.icon}`}></i></div>
+                        <div className="ach-info">
+                          <span className="ach-name">{badge.name}</span>
+                          <span className="ach-desc">{badge.description}</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -249,19 +261,36 @@ export default function ProfileModal({ userId, onClose }) {
         .mini-badge-plus:hover { color: var(--accent); transform: scale(1.1); }
 
         .p-modal-achievements { margin-bottom: 32px; }
-        .ach-title { font-size: 0.8rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-        .ach-grid { display: grid; grid-template-columns: 1fr; gap: 10px; max-height: 180px; overflow-y: auto; padding-right: 8px; }
+        .ach-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .ach-title { font-size: 0.8rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0; }
+        .ach-count-badge { font-size: 0.7rem; font-weight: 800; color: var(--accent); background: var(--glass); padding: 2px 8px; border-radius: 6px; border: 1px solid var(--border); }
+        
+        .ach-grid { display: grid; grid-template-columns: 1fr; gap: 10px; max-height: 250px; overflow-y: auto; padding-right: 8px; }
         .ach-grid::-webkit-scrollbar { width: 3px; }
         .ach-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
         .ach-card { 
-          display: flex; align-items: center; gap: 12px; padding: 10px 14px; 
+          display: flex; align-items: center; gap: 12px; padding: 12px 14px; 
           background: var(--glass); border: 1px solid var(--border); border-radius: 14px;
-          border-left: 4px solid var(--b-color);
+          transition: all 0.2s;
         }
+        .ach-card.earned { border-left: 4px solid var(--b-color); }
+        .ach-card.locked { opacity: 0.6; filter: grayscale(1); }
+        .ach-card.locked:hover { opacity: 0.8; filter: grayscale(0.5); }
+        
         .ach-icon { font-size: 1.1rem; color: var(--b-color); width: 24px; text-align: center; }
-        .ach-info { display: flex; flex-direction: column; }
+        .ach-lock-small { font-size: 0.8rem; color: var(--text-muted); }
+        .ach-info { display: flex; flex-direction: column; flex: 1; }
+        .ach-name-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
         .ach-name { font-size: 0.85rem; font-weight: 800; color: var(--text); }
+        .ach-status-tag { font-size: 0.6rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
         .ach-desc { font-size: 0.65rem; color: var(--text-muted); font-weight: 600; line-height: 1.3; }
+        .ach-empty { 
+          padding: 24px; background: var(--glass); border: 1px dashed var(--border); 
+          border-radius: 16px; text-align: center; display: flex; flex-direction: column; 
+          align-items: center; gap: 10px; color: var(--text-muted); font-size: 0.75rem; 
+          font-weight: 600;
+        }
+        .ach-lock { font-size: 1.2rem; color: var(--border); }
         .p-modal-streak { display: flex; align-items: center; gap: 8px; color: var(--accent); font-weight: 800; font-size: 0.9rem; }
         .p-modal-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 10px var(--accent); }
         

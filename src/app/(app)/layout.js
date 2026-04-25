@@ -16,6 +16,7 @@ const navItems = [
   { id: "quiz", label: "Quiz", href: "/quiz" },
   { id: "hero", label: "Zero to Hero", href: "/hero" },
   { id: "grammar", label: "Gramer", href: "/grammar" },
+  { id: "achievements", label: "Rozetler", href: "/achievements" },
   { id: "archive", label: "Sözlük", href: "/archive" },
   { id: "mistakes", label: "Hatalar", href: "/mistakes" },
 ];
@@ -148,7 +149,7 @@ export default function AppLayout({ children }) {
                     <div className="profile-dropdown">
                       <Link href="/dashboard" className="profile-drop-item" onClick={() => setProfileOpen(false)}>
                         <i className="fa-solid fa-chart-line"></i>
-                        <span>Level Up (Profil)</span>
+                        <span>Profilim</span>
                       </Link>
                       <Link href="/mistakes" className="profile-drop-item" onClick={() => setProfileOpen(false)}>
                         <i className="fa-solid fa-circle-xmark"></i>
@@ -238,6 +239,7 @@ export default function AppLayout({ children }) {
           { id: "reading", label: "Read", href: "/reading", icon: "fa-book-open" },
           { id: "quiz", label: "Quiz", href: "/quiz", icon: "fa-bolt" },
           { id: "grammar", label: "Grammar", href: "/grammar", icon: "fa-spell-check" },
+          { id: "achievements", label: "Rozetler", href: "/achievements", icon: "fa-trophy" },
           { id: "hero", label: "Hero", href: "/hero", icon: "fa-arrow-trend-up" },
         ].map(item => (
           <Link

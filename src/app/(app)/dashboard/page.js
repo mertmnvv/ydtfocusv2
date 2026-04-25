@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getUserWords, getUserStats, updateLastReminderDate, checkAndGrantBadges, getUserHeroStats } from "@/lib/firestore";
+import { getUserWords, getUserStats, updateLastReminderDate, checkAndGrantBadges, getUserHeroStats, subscribeToUserWords, subscribeToUserStats } from "@/lib/firestore";
 import { BADGES } from "@/constants/badges";
 import Link from "next/link";
 import Leaderboard from "@/components/Leaderboard";
@@ -15,6 +15,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [expandedLevel, setExpandedLevel] = useState(null);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showAllBadgesPop, setShowAllBadgesPop] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -23,31 +24,52 @@ export default function DashboardPage() {
       return;
     }
 
-    const fetchData = async () => {
-      try {
-        const [w, s, h] = await Promise.all([
-          getUserWords(user.uid),
-          getUserStats(user.uid),
-          getUserHeroStats(user.uid)
-        ]);
-        
-        if (!isMounted) return;
-        const wordList = w || [];
-        setWords(wordList);
-        setStats({ ...(s || {}), streak: s?.streak || 0 });
+    let unsubWords = () => {};
+    let unsubStats = () => {};
 
-        // Rozetleri kontrol et ve veritabanına işle
-        await checkAndGrantBadges(user.uid, s, wordList.length, h.levels);
+    const setupListeners = async () => {
+      try {
+        const h = await getUserHeroStats(user.uid);
+        
+        // Real-time Kelime Takibi
+        unsubWords = subscribeToUserWords(user.uid, (wordList) => {
+          if (!isMounted) return;
+          setWords(wordList);
+          setLoading(false);
+          // Rozetleri kontrol et (Stats gelince de yapılacak)
+        });
+
+        // Real-time Stats Takibi
+        unsubStats = subscribeToUserStats(user.uid, (s) => {
+          if (!isMounted) return;
+          setStats({ ...(s || {}), streak: s?.streak || 0 });
+          
+          // İki veri de güncelken rozet kontrolü yap
+          // (words state'inden alabiliriz çünkü subscribe zaten çalışıyor)
+          checkAndGrantBadges(user.uid, s, words.length, h.levels, words);
+        });
       } catch (err) {
         console.error(err);
-      } finally {
-        if (isMounted) setLoading(false);
+        setLoading(false);
       }
     };
 
-    fetchData();
-    return () => { isMounted = false; };
-  }, [user]);
+    setupListeners();
+    return () => { 
+      isMounted = false; 
+      unsubWords();
+      unsubStats();
+    };
+  }, [user]); // words bağımlılığını checkAndGrantBadges için useEffect dışında yönetebiliriz ama şimdilik burada kalsın veya useCallback kullanabiliriz.
+  
+  // Words değiştiğinde de rozeti kontrol etmek için:
+  useEffect(() => {
+    if (user && stats && words.length > 0) {
+      getUserHeroStats(user.uid).then(h => {
+        checkAndGrantBadges(user.uid, stats, words.length, h.levels, words);
+      });
+    }
+  }, [words, stats]);
 
   if (loading) return <div className="page-loading"><div className="spinner-ring"></div></div>;
 
@@ -101,14 +123,49 @@ export default function DashboardPage() {
 
               {/* Dashboard Header Badges */}
               {userProfile?.badges && userProfile.badges.length > 0 && (
-                <div className="dash-mini-badges">
-                  {userProfile.badges.slice(-3).map(bId => (
-                    <div key={bId} className="dash-badge-icon" style={{ color: BADGES[bId]?.color }} title={BADGES[bId]?.name}>
-                      <i className={`fa-solid ${BADGES[bId]?.icon}`}></i>
-                    </div>
-                  ))}
-                  {userProfile.badges.length > 3 && (
-                    <span className="dash-badge-more">+{userProfile.badges.length - 3}</span>
+                <div className="dash-mini-badges-container" style={{ position: 'relative' }}>
+                  <div className="dash-mini-badges">
+                    {userProfile.badges.slice(-3).map(bId => {
+                      const badge = BADGES[bId];
+                      if (!badge) return null;
+                      return (
+                        <div key={bId} className="dash-badge-icon" style={{ color: badge.color }} title={badge.name}>
+                          <i className={`fa-solid ${badge.icon}`}></i>
+                        </div>
+                      );
+                    })}
+                    {userProfile.badges.length > 3 && (
+                      <button 
+                        className="dash-badge-more" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowAllBadgesPop(!showAllBadgesPop);
+                        }}
+                      >
+                        +{userProfile.badges.length - 3}
+                      </button>
+                    )}
+                  </div>
+
+                  {showAllBadgesPop && (
+                    <>
+                      <div className="pop-overlay" onClick={() => setShowAllBadgesPop(false)} />
+                      <div className="badges-full-pop animate-popIn">
+                        <div className="pop-header">Tüm Rozetlerin</div>
+                        <div className="pop-list">
+                          {userProfile.badges.map(bId => {
+                            const badge = BADGES[bId];
+                            if (!badge) return null;
+                            return (
+                              <div key={bId} className="pop-item">
+                                <i className={`fa-solid ${badge.icon}`} style={{ color: badge.color }}></i>
+                                <span>{badge.name}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </>
                   )}
                 </div>
               )}
@@ -242,11 +299,26 @@ export default function DashboardPage() {
         .dash-badge-more { 
           font-size: 0.7rem; font-weight: 900; color: var(--text-muted); background: var(--bg-elevated);
           padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border);
+          cursor: pointer; transition: 0.2s;
         }
+        .dash-badge-more:hover { border-color: var(--accent); color: var(--accent); }
+
+        .badges-full-pop {
+          position: absolute; top: 30px; left: 0; z-index: 100;
+          background: var(--bg-elevated); border: 1px solid var(--border);
+          border-radius: 12px; padding: 12px; min-width: 200px;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+          backdrop-filter: blur(10px);
+        }
+        .pop-overlay { position: fixed; inset: 0; z-index: 99; }
+        .pop-header { font-size: 0.7rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+        .pop-list { display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto; padding-right: 4px; }
+        .pop-item { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 700; color: var(--text); }
+        .pop-item i { width: 18px; text-align: center; font-size: 1rem; }
         .buy-premium-mini-btn {
           background: transparent; border: 1px solid var(--accent); color: var(--accent);
-          padding: 2px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 800;
-          cursor: pointer; transition: all 0.2s;
+          padding: 3px 12px; border-radius: 8px; font-size: 0.7rem; font-weight: 800;
+          cursor: pointer; transition: all 0.2s; margin-left: 8px;
         }
         .buy-premium-mini-btn:hover { background: var(--accent); color: #000; }
         .daily-focus-container { margin-bottom: 32px; }
