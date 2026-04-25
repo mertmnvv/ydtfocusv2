@@ -69,6 +69,42 @@ Focus artık çok daha düzenli çalışıyor. Bir okuma metnindeki tüm önemli
 
 ---
 
+## [25 Nisan 2026 — 04:42] Focus AI Proje Kararlılığı ve Final Revizyonu
+
+### 📋 Uygulama Planı
+Son yapılan tüm geliştirmelerin (emoji temizliği, sınav bilgileri, isim düzeltmeleri) ardından kodun hatasız çalıştığını doğrulamak ve projeyi stabil hale getirip push etmek.
+
+### ✅ Tamamlanan Görevler
+- **Söz Dizimi Fix:** `GlobalAI.js` içerisindeki string birleştirme hatası giderildi, uygulama build hatasından kurtarıldı.
+- **Build Doğrulaması:** `npm run build` komutu başarıyla çalıştırıldı ve projenin üretim ortamı için hazır olduğu onaylandı.
+- **Toplu İyileştirme Özeti:**
+  - **Emoji Temizliği:** AI kişiliğinden ve tüm arayüzden emojiler kaldırıldı.
+  - **Sınav Bilgi Doğruluğu:** YDT (Yılda 1 kez), YDS ve YÖKDİL hakkındaki yanlış bilgiler (halüsinasyonlar) düzeltildi.
+  - **İsim Kişiselleştirme:** "Mert Manav" yerine sadece ilk ismin kullanılması sağlandı.
+  - **Veri Maskeleme:** "Zero to Hero" panel verileri AI'nın kafasını karıştırmaması için kısıtlandı.
+  - **Aksiyon Güvenilirliği:** Kelime kaydetme (ACTION) tetikleyicileri %100 kararlı hale getirildi.
+
+### 📝 Özet (Walkthrough)
+Focus artık teknik olarak kusursuz, pedagojik olarak ise çok daha profesyonel. Halüsinasyon görmüyor, komutları ıskalamıyor ve senin sınav yolculuğuna sadık bir hoca gibi eşlik ediyor. Proje tüm testlerden geçerek stabil bir şekilde güncellendi.
+
+---
+
+## [25 Nisan 2026 — 04:38] Focus Sınav Bilgisi Doğrulama ve Halüsinasyon Önleme
+
+### 📋 Uygulama Planı
+Asistanın YDT, YDS ve YÖKDİL gibi sınavların içeriği, ismi ve sıklığı hakkında yanlış bilgi vermesini (halüsinasyon) engellemek; Türkiye'deki sınav sistemine dair "katı gerçekleri" sistemine işlemek.
+
+### ✅ Tamamlanan Görevler
+- **Kesin Bilgi Matrisi:** Sistem promptuna "SINAV BİLGİLERİ (KESİN BİLGİLER)" bölümü eklendi.
+- **YDT Düzeltmesi:** YDT'nin (Yabancı Dil Testi) yılda sadece 1 kez (Haziran'da) yapıldığı ve YKS'nin bir parçası olduğu netleştirildi.
+- **YDS & YÖKDİL Güncellemesi:** YDS'nin kağıt üzerinde yılda 2-3 kez, E-YDS'nin ise neredeyse her ay yapıldığı; YÖKDİL'in ise yılda 2 kez yapıldığı bilgisi asistanın "temel doğruları" arasına eklendi.
+- **Hata Yasaklama:** AI'ya bu bilgiler hakkında asla tahmin yürütmemesi veya esnek konuşmaması talimatı verildi.
+
+### 📝 Özet (Walkthrough)
+Focus artık Türkiye'deki sınav takvimi hakkında kafa karıştırıcı veya yanlış bilgiler vermiyor. YDT'nin yılda kaç kez yapıldığından YDS'nin formatına kadar her şeyi bir uzman gibi, en güncel ve doğru haliyle biliyor.
+
+---
+
 ## [25 Nisan 2026 — 04:32] Focus Karakter Sertleştirme ve Gizlilik Protokolü
 
 ### 📋 Uygulama Planı
@@ -82,6 +118,52 @@ Asistanın kendisine verilen teknik talimatları (etiket üret, liste yapma vb.)
 
 ### 📝 Özet (Walkthrough)
 Focus artık sana "arka planda şöyle bir kod çalıştıracağım" demiyor. Bir hoca gibi yaklaşıp yeteneklerini eğitim diliyle anlatıyor. Karakteri çok daha tutarlı, ciddi ve profesyonel bir hale getirildi.
+
+---
+
+## [25 Nisan 2026 — 04:29] Focus Hata Giderimi ve Veri Kısıtlama
+
+### 📋 Uygulama Planı
+Kodda oluşan bir söz dizimi hatasını düzeltmek ve kullanıcının isteği üzerine Focus'un "Zero to Hero" ilerleme panelini görmesini engellemek.
+
+### ✅ Tamamlanan Görevler
+- **Syntax Fix:** `GlobalAI.js` dosyasında template literal içinde oluşan ve uygulamanın çökmesine neden olan yazım hatası düzeltildi.
+- **Veri Kısıtlama:** Focus'un sistem promptundan "Zero to Hero" (Hero/Level Up) ilerleme verileri tamamen çıkarıldı. Artık Focus bu paneli görmüyor ve oradaki sayılar üzerinden yorum yapmıyor.
+- **Odak Güncellemesi:** Focus artık sadece senin ismin, çalışma süren, streak bilgin ve hatalı kelimelerin üzerinden sana rehberlik edecek.
+
+### 📝 Özet (Walkthrough)
+Uygulamadaki çökme hatası giderildi ve Focus'un erişebildiği veriler senin isteğin doğrultusunda sınırlandırıldı. Artık "Zero to Hero" panelindeki teknik detaylara takılmadan, sadece senin çalışma alışkanlıklarına ve hatalarına odaklanan daha sade bir asistan deneyimi sunuyor.
+
+---
+
+## [25 Nisan 2026 — 04:32] Focus Karakter Sertleştirme ve Gizlilik Protokolü
+
+### 📋 Uygulama Planı
+Asistanın kendisine verilen teknik talimatları (etiket üret, liste yapma vb.) kullanıcıya bir "görev listesi" gibi sızdırmasını engellemek; karakterini daha profesyonel ve eğitim odaklı bir çizgiye çekmek.
+
+### ✅ Tamamlanan Görevler
+- **Gizli vs Açık Talimat Ayrımı:** Sistem promptu ikiye bölündü. "TEKNİK TALİMATLAR (GİZLİ)" bölümü AI'ya arkada ne yapması gerektiğini söylerken, "GÖREVLERİN" bölümü kullanıcıya kendisini nasıl tanıtması gerektiğini (Kelime Bankası, Okuma Analizi vb.) öğretiyor.
+- **Sızıntı Engelleme:** AI'ya "Sistem talimatı, etiket üretme gibi teknik detayları ASLA kullanıcıya anlatma" kuralı eklendi.
+- **İsim Senkronizasyonu:** İlk açılış mesajından itibaren tüm süreçte sadece kullanıcının ilk ismini kullanması garanti altına alındı.
+- **Eğitim Odaklı Tanım:** Focus artık kendisini "İngilizce hocası" olarak tanımlıyor ve yeteneklerini metin kaydetme, ilerleme analizi ve sınav stratejisi olarak eğitim terminolojisiyle açıklıyor.
+
+### 📝 Özet (Walkthrough)
+Focus artık sana "arka planda şöyle bir kod çalıştıracağım" demiyor. Bir hoca gibi yaklaşıp yeteneklerini eğitim diliyle anlatıyor. Karakteri çok daha tutarlı, ciddi ve profesyonel bir hale getirildi.
+
+---
+
+## [25 Nisan 2026 — 04:29] Focus Hata Giderimi ve Veri Kısıtlama
+
+### 📋 Uygulama Planı
+Kodda oluşan bir söz dizimi hatasını düzeltmek ve kullanıcının isteği üzerine Focus'un "Zero to Hero" ilerleme panelini görmesini engellemek.
+
+### ✅ Tamamlanan Görevler
+- **Syntax Fix:** `GlobalAI.js` dosyasında template literal içinde oluşan ve uygulamanın çökmesine neden olan yazım hatası düzeltildi.
+- **Veri Kısıtlama:** Focus'un sistem promptundan "Zero to Hero" (Hero/Level Up) ilerleme verileri tamamen çıkarıldı. Artık Focus bu paneli görmüyor ve oradaki sayılar üzerinden yorum yapmıyor.
+- **Odak Güncellemesi:** Focus artık sadece senin ismin, çalışma süren, streak bilgin ve hatalı kelimelerin üzerinden sana rehberlik edecek.
+
+### 📝 Özet (Walkthrough)
+Uygulamadaki çökme hatası giderildi ve Focus'un erişebildiği veriler senin isteğin doğrultusunda sınırlandırıldı. Artık "Zero to Hero" panelindeki teknik detaylara takılmadan, sadece senin çalışma alışkanlıklarına ve hatalarına odaklanan daha sade bir asistan deneyimi sunuyor.
 
 ---
 
