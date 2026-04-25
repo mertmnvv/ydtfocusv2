@@ -69,6 +69,22 @@ Focus artık çok daha düzenli çalışıyor. Bir okuma metnindeki tüm önemli
 
 ---
 
+## [25 Nisan 2026 — 05:33] Focus AI: Akış Güvenliği ve Başarı Direktifleri
+
+### 📋 Uygulama Planı
+Metin üretme sürecini daha güvenli hale getirmek; arka arkaya tıklamaları engellemek ve metin üretildikten sonra kullanıcıyı yönlendirmek.
+
+### ✅ Tamamlanan Görevler
+- **5 Saniye Cooldown:** Metin üretme butonuna bir bekleme süresi eklendi. Kullanıcı 5 saniye geçmeden yeni metin isteyemiyor, bu da sistemin kilitlenmesini önlüyor.
+- **Freeze Koruması:** `loading` durumu varken butona tekrar basılmasını engelleyen ekstra bir kontrol katmanı eklendi.
+- **Eğitici Direktifler:** Metin başarıyla Reading paneline yüklendiğinde, Focus artık kullanıcıya "Metindeki kelimeleri sorabilirsin" veya "Gramer analizi isteyebilirsin" gibi proaktif tavsiyelerde bulunuyor.
+- **Alert Mesajı Revizyonu:** Kelime bankası boş olduğunda çıkan uyarı mesajı tam olarak istenen formatta güncellendi.
+
+### 📝 Özet (Walkthrough)
+Focus artık sadece üretmiyor, aynı zamanda seni nasıl çalışman gerektiği konusunda yönlendiriyor. Sistemsel kilitlenmelerin önüne geçilerek çok daha pürüzsüz ve profesyonel bir akış sağlandı.
+
+---
+
 ## [25 Nisan 2026 — 05:16] Metin Üretme Motoru Güçlendirme ve Hata Giderimi
 
 ### 📋 Uygulama Planı
@@ -82,6 +98,22 @@ Focus artık çok daha düzenli çalışıyor. Bir okuma metnindeki tüm önemli
 
 ### 📝 Özet (Walkthrough)
 Metin üretme motoru artık çok daha zeki ve dayanıklı. AI'nın "kitlenmesi" sorunu, hata yakalama ve loading yönetimi iyileştirmeleriyle çözüldü. Artık çok daha karmaşık ve kaliteli okuma parçaları, sıfır hata payıyla Reading paneline aktarılıyor.
+
+---
+
+## [25 Nisan 2026 — 04:58] Kişiselleştirilmiş Okuma Metni (Sana Özel Metin Üret)
+
+### 📋 Uygulama Planı
+Focus AI'nın kullanıcının hata yaptığı kelimeleri temel alarak ona özel bir YDT/YDS okuma metni ve quizi üretmesini sağlamak; bu metni anlık olarak Reading sayfasına yüklemek.
+
+### ✅ Tamamlanan Görevler
+- **AI Jeneratör Mantığı:** `GlobalAI.js` içerisine `generateSpecialPassage` fonksiyonu eklendi. Bu fonksiyon kullanıcının hatalarını alıp LLM'den JSON formatında (metin + sorular) çıktı alıyor.
+- **Dinamik Yükleme Sistemi:** Reading sayfası, Focus AI'dan gelen `focus-load-passage` event'ini dinleyecek şekilde güncellendi. Metin üretildiğinde sayfa yenilenmeden içerik güncelleniyor.
+- **Sayfalar Arası Entegrasyon:** Kullanıcı başka bir sayfadayken "Metin Üret" derse, sistem onu otomatik olarak Reading sayfasına yönlendiriyor ve metni orada üretmeye başlıyor.
+- **Kullanıcı Arayüzü:** AI paneline "✨ Sana Özel Metin Üret" butonu eklendi.
+
+### 📝 Özet (Walkthrough)
+Artık Focus sadece sorularına cevap vermiyor, senin eksiklerini analiz edip sana özel bir sınav hazırlıyor. Hata yaptığın kelimeleri içeren bir okuma parçası yazıyor, sorularını hazırlıyor ve bunu anlık olarak Reading paneline yansıtıyor. Bu, projenin kişiselleştirilmiş eğitim vizyonundaki en büyük adımlarıdan biri.
 
 ---
 
