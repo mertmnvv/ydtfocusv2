@@ -17,6 +17,7 @@ export default function GlobalAI() {
   const [words, setWords] = useState([]); 
   const [userMetadata, setUserMetadata] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
+  const [showConfirm, setShowConfirm] = useState(false);
   const scrollRef = useRef(null);
 
   // 1. Veri Senkronizasyonu (Kelime Bankası, İstatistikler, Hatalar)
@@ -90,13 +91,19 @@ export default function GlobalAI() {
     return () => window.removeEventListener("focus-page-context", handleContext);
   }, []);
 
-  async function handleClearChat() {
-    if (!user || !confirm("Sohbet geçmişini silmek istediğine emin misin? (Bilgilerini hatırlamaya devam edeceğim)")) return;
+  function handleClearChat() {
+    if (!user) return;
+    setShowConfirm(true);
+  }
+
+  async function confirmClearChat() {
+    setShowConfirm(false);
     try {
       await clearAIChat(user.uid);
+      const firstName = (user.displayName || "Arkadaşım").split(" ")[0];
       setMessages([{
         role: "ai",
-        content: `Sohbeti temizledim ama seni unutmadım **${userMetadata?.name}**! Hadi yeni bir başlangıç yapalım. Bugün ne üzerine çalışalım?`
+        content: `Sohbeti temizledim ama seni unutmadım **${firstName}**! Hadi yeni bir başlangıç yapalım. Bugün ne üzerine çalışalım?`
       }]);
       generateSuggestions(userMetadata);
       showNotification("Sohbet geçmişi silindi.", "success");
@@ -246,10 +253,23 @@ export default function GlobalAI() {
               <button className="clear-ai" onClick={handleClearChat} title="Sohbeti Temizle">
                 <i className="fa-solid fa-trash-can"></i>
               </button>
-              <button className="close-ai" onClick={() => setIsOpen(false)}>
-                <i className="fa-solid fa-chevron-down"></i>
+              <button className="ai-close" onClick={() => setIsOpen(false)} title="Kapat">
+                <i className="fas fa-times"></i>
               </button>
             </div>
+
+            {showConfirm && (
+              <div className="ai-confirm-overlay">
+                <div className="ai-confirm-card">
+                  <h4>Sohbeti Temizle</h4>
+                  <p>Tüm geçmiş silinecek ama ilerlemeni hatırlamaya devam edeceğim. Emin misin?</p>
+                  <div className="ai-confirm-buttons">
+                    <button className="btn-cancel" onClick={() => setShowConfirm(false)}>Vazgeç</button>
+                    <button className="btn-confirm" onClick={confirmClearChat}>Temizle</button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="global-ai-messages" ref={scrollRef}>
@@ -454,6 +474,72 @@ export default function GlobalAI() {
           padding: 10px 0;
           margin-top: -8px;
         }
+
+        .ai-confirm-overlay {
+          position: absolute;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.6);
+          backdrop-filter: blur(4px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          padding: 20px;
+          border-radius: 20px;
+        }
+
+        .ai-confirm-card {
+          background: #111;
+          border: 1px solid var(--border);
+          padding: 24px;
+          border-radius: 16px;
+          text-align: center;
+          max-width: 280px;
+          box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        .ai-confirm-card h4 {
+          margin: 0 0 10px 0;
+          font-size: 1.1rem;
+          color: var(--text);
+        }
+
+        .ai-confirm-card p {
+          margin: 0 0 20px 0;
+          font-size: 0.9rem;
+          color: var(--text-secondary);
+          line-height: 1.5;
+        }
+
+        .ai-confirm-buttons {
+          display: flex;
+          gap: 10px;
+        }
+
+        .ai-confirm-buttons button {
+          flex: 1;
+          padding: 10px;
+          border-radius: 10px;
+          font-size: 0.9rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          border: none;
+        }
+
+        .btn-cancel {
+          background: rgba(255,255,255,0.05);
+          color: var(--text);
+          border: 1px solid var(--border) !important;
+        }
+
+        .btn-confirm {
+          background: #ff4444;
+          color: #fff;
+        }
+
+        .btn-cancel:hover { background: rgba(255,255,255,0.1); }
+        .btn-confirm:hover { background: #cc0000; transform: scale(1.02); }
 
         .suggestion-chip {
           background: rgba(255, 255, 255, 0.05);

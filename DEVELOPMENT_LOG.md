@@ -69,6 +69,22 @@ Focus artık çok daha düzenli çalışıyor. Bir okuma metnindeki tüm önemli
 
 ---
 
+## [25 Nisan 2026 — 04:45] Focus Özel Onay Modalı ve UI İyileştirmesi
+
+### 📋 Uygulama Planı
+Sohbet geçmişini silerken çıkan tarayıcı varsayılanı (browser confirm) pop-up'ını kaldırıp, platformun premium tasarım diline uygun özel bir onay modalı eklemek.
+
+### ✅ Tamamlanan Görevler
+- **Özel Onay Modalı (Confirm UI):** Tarayıcı penceresi yerine, AI panelinin içinde açılan, arka planı bulanıklaştıran (glassmorphism) ve şık bir kart tasarımına sahip yeni bir onay mekanizması kuruldu.
+- **Dinamik Durum Yönetimi:** `showConfirm` state'i ile modalın açılış/kapanış animasyonları ve mantığı kontrol altına alındı.
+- **Görsel Tutarlılık:** Modal butonları (Vazgeç/Temizle) ve renk paleti platformun genel estetiğiyle (kırmızı/dark mode) tam uyumlu hale getirildi.
+- **Kullanıcı Deneyimi:** Silme işlemi öncesi verilen uyarı metni daha açıklayıcı ve samimi bir dille güncellendi.
+
+### 📝 Özet (Walkthrough)
+Focus artık seni tarayıcı pencereleriyle uğraştırmıyor. Sohbeti temizlemek istediğinde, panelin içinde şık bir onay kutusu beliriyor. Bu hem görsel bütünlüğü koruyor hem de yanlışlıkla silme işlemlerine karşı daha güvenli ve premium bir deneyim sunuyor.
+
+---
+
 ## [25 Nisan 2026 — 04:42] Focus AI Proje Kararlılığı ve Final Revizyonu
 
 ### 📋 Uygulama Planı
@@ -86,6 +102,22 @@ Son yapılan tüm geliştirmelerin (emoji temizliği, sınav bilgileri, isim dü
 
 ### 📝 Özet (Walkthrough)
 Focus artık teknik olarak kusursuz, pedagojik olarak ise çok daha profesyonel. Halüsinasyon görmüyor, komutları ıskalamıyor ve senin sınav yolculuğuna sadık bir hoca gibi eşlik ediyor. Proje tüm testlerden geçerek stabil bir şekilde güncellendi.
+
+---
+
+## [25 Nisan 2026 — 04:38] Focus Sınav Bilgisi Doğrulama ve Halüsinasyon Önleme
+
+### 📋 Uygulama Planı
+Asistanın YDT, YDS ve YÖKDİL gibi sınavların içeriği, ismi ve sıklığı hakkında yanlış bilgi vermesini (halüsinasyon) engellemek; Türkiye'deki sınav sistemine dair "katı gerçekleri" sistemine işlemek.
+
+### ✅ Tamamlanan Görevler
+- **Kesin Bilgi Matrisi:** Sistem promptuna "SINAV BİLGİLERİ (KESİN BİLGİLER)" bölümü eklendi.
+- **YDT Düzeltmesi:** YDT'nin (Yabancı Dil Testi) yılda sadece 1 kez (Haziran'da) yapıldığı ve YKS'nin bir parçası olduğu netleştirildi.
+- **YDS & YÖKDİL Güncellemesi:** YDS'nin kağıt üzerinde yılda 2-3 kez, E-YDS'nin ise neredeyse her ay yapıldığı; YÖKDİL'in ise yılda 2 kez yapıldığı bilgisi asistanın "temel doğruları" arasına eklendi.
+- **Hata Yasaklama:** AI'ya bu bilgiler hakkında asla tahmin yürütmemesi veya esnek konuşmaması talimatı verildi.
+
+### 📝 Özet (Walkthrough)
+Focus artık Türkiye'deki sınav takvimi hakkında kafa karıştırıcı veya yanlış bilgiler vermiyor. YDT'nin yılda kaç kez yapıldığından YDS'nin formatına kadar her şeyi bir uzman gibi, en güncel ve doğru haliyle biliyor.
 
 ---
 
