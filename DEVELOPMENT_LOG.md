@@ -69,6 +69,22 @@ Focus artık çok daha düzenli çalışıyor. Bir okuma metnindeki tüm önemli
 
 ---
 
+## [25 Nisan 2026 — 04:09] Focus Üslup ve Doğallık Güncellemesi
+
+### 📋 Uygulama Planı
+Asistanın robotik, sıkıcı ve "rapor sunar gibi" konuşmasını engellemek; daha doğal, samimi ve gerçek bir hoca gibi davranmasını sağlamak.
+
+### ✅ Tamamlanan Görevler
+- **Robotik Dil Temizliği:** "Metinde bahsedilmektedir", "Bu kadar, anlattım" gibi klişe ve yapay kalıplar sistem promptu seviyesinde yasaklandı.
+- **Doğal Diyalog Kuralları:** Asistanın sanki öğrenciyle yan yana oturup ders çalışıyormuş gibi bir dil kullanması (Örn: "Bak burada aslında...", "Şu kısma dikkat et...") sağlandı.
+- **Pedagojik Derinlik:** Özet geçmek yerine, metnin akademik önemine ve sınav değerine odaklanan bir anlatım tarzı benimsendi.
+- **Gereksiz Şablonlar Kaldırıldı:** Kendini sürekli tekrar eden özet şablonları yerine her cevabın bağlama göre özgün olması teşvik edildi.
+
+### 📝 Özet (Walkthrough)
+Focus artık seninle "gerçek bir insan" gibi konuşuyor. Robotik ve soğuk cevaplar yerini, seninle birlikte metni analiz eden, önemli yerlerin altını çizen samimi bir hoca/arkadaş diline bıraktı.
+
+---
+
 ## [25 Nisan 2026 — 04:07] Focus Zekâ ve Doğruluk Hardening
 
 ### 📋 Uygulama Planı
