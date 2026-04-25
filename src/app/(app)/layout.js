@@ -7,6 +7,7 @@ import Link from "next/link";
 import FloatingBank from "@/components/FloatingBank";
 import GlobalAI from "@/components/GlobalAI";
 import AuthModal from "@/components/AuthModal";
+import Onboarding from "@/components/Onboarding";
 
 const navItems = [
   { id: "dashboard", label: "Level Up", href: "/dashboard" },
@@ -295,6 +296,8 @@ export default function AppLayout({ children }) {
       <GlobalAI />
       {/* Global Auth Modal */}
       <AuthModal />
+      {/* Onboarding Tour */}
+      <Onboarding />
     </div>
   );
 }
