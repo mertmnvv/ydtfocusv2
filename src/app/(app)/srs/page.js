@@ -7,7 +7,13 @@ import Link from "next/link";
 import { playSuccessSound, playErrorSound } from "@/lib/sounds";
 import ShareButton from "@/components/ShareButton";
 
-const LEVEL_INTERVALS = { 0: 1, 1: 3, 2: 7, 3: 14, 4: 30 };
+const FALLBACK_DISTRACTORS = [
+  "vurgulamak", "anlamına gelmek", "iddia etmek", "kolaylaştırmak", "engellemek",
+  "katkıda bulunmak", "sürdürmek", "meydana gelmek", "farklılık göstermek", "başarmak",
+  "etkilemek", "belirlemek", "ortaya çıkmak", "geliştirmek", "fark etmek",
+  "reddetmek", "kabul etmek", "yönetmek", "incelemek", "oluşturmak",
+  "kaçınmak", "sağlamak", "önlemek", "tanımlamak", "kanıtlamak"
+];
 
 export default function SRSPage() {
   const { user } = useAuth();
@@ -54,9 +60,23 @@ export default function SRSPage() {
   }, [user]);
 
   function generateOptions(target, all) {
-    const others = all.filter(w => w.id !== target.id).sort(() => Math.random() - 0.5).slice(0, 3);
-    const opts = [target.meaning, ...others.map(o => o.meaning)];
-    while(opts.length < 4) opts.push("---");
+    // Bankadaki diğer kelimeleri al
+    const others = all.filter(w => w.id !== target.id && w.meaning !== target.meaning);
+    const selectedOthers = others.sort(() => Math.random() - 0.5).slice(0, 3);
+    
+    let opts = [target.meaning, ...selectedOthers.map(o => o.meaning)];
+    
+    // Eğer bankada 4 kelime yoksa, fallback listesinden çeldirici ekle
+    if (opts.length < 4) {
+      const needed = 4 - opts.length;
+      const filteredFallbacks = FALLBACK_DISTRACTORS.filter(f => !opts.includes(f));
+      const fallbacks = filteredFallbacks.sort(() => Math.random() - 0.5).slice(0, needed);
+      opts = [...opts, ...fallbacks];
+    }
+    
+    // Eğer hala eksik varsa (çok düşük ihtimal), "---" yerine güvenli bir kelime ekle
+    while(opts.length < 4) opts.push("belirlemek"); 
+
     return opts.sort(() => Math.random() - 0.5);
   }
 
@@ -97,11 +117,26 @@ export default function SRSPage() {
           scrollRef.current.scrollTo({ top: scrollRef.current.offsetHeight * nextIdx, behavior: "smooth" });
         }
       } else {
+        // Test Bitti
+        const finalCorrectCount = correctCount + (isCorrect ? 1 : 0);
+        const finalWrongCount = quizWords.length - finalCorrectCount;
+        
+        // State'i hemen güncelle ki UI'da doğru görünsün
+        if (isCorrect) setCorrectCount(finalCorrectCount);
         setEndTime(Date.now());
+        
+        try {
+          // İstatistikleri oturum toplamı kadar artır
+          await updateUserStats(user.uid, { 
+            correct: finalCorrectCount, 
+            wrong: finalWrongCount 
+          });
+          await refreshUserStreak(user.uid);
+        } catch (err) {
+          console.error("Stats update failed:", err);
+        }
+
         setPhase("result");
-        refreshUserStreak(user.uid).catch(console.error);
-        const totalCorrects = correctCount + (isCorrect ? 1 : 0);
-        await updateUserStats(user.uid, { correct: totalCorrects, wrong: quizWords.length - totalCorrects });
       }
     }, 1200);
   }

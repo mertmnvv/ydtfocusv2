@@ -35,6 +35,13 @@ export const BADGES = {
     requirement: "50 günlük çalışma serisi yakala.",
     color: "#ff9f0a", icon: "fa-calendar-day", difficulty: 4, category: "Süreklilik"
   },
+  STREAK_75: {
+    id: "STREAK_75",
+    name: "Disiplin Ustası",
+    description: "75 günlük kesintisiz çalışma ile dil öğreniminde uzmanlaştın.",
+    requirement: "75 günlük çalışma serisi yakala.",
+    color: "#af52de", icon: "fa-medal", difficulty: 5, category: "Süreklilik"
+  },
   STREAK_100: {
     id: "STREAK_100",
     name: "Efsanevi Seri",
@@ -65,12 +72,26 @@ export const BADGES = {
     requirement: "Kelime bankana 100 kelime ekle.",
     color: "#ffd60a", icon: "fa-cubes", difficulty: 1, category: "Kelime Bilgisi"
   },
+  WORDS_250: {
+    id: "WORDS_250",
+    name: "Kelime Gelişimi",
+    description: "250 kelime ile akademik okumalar için ilk büyük adımı attın.",
+    requirement: "Kelime bankana 250 kelime ekle.",
+    color: "#64d2ff", icon: "fa-seedling", difficulty: 2, category: "Kelime Bilgisi"
+  },
   WORDS_500: {
     id: "WORDS_500",
     name: "Kelime Uzmanı",
     description: "500 kelime ile akademik metinleri anlama kapasiteni üst seviyeye taşıdın.",
     requirement: "Kelime bankana 500 kelime ekle.",
     color: "#bf5af2", icon: "fa-medal", difficulty: 2, category: "Kelime Bilgisi"
+  },
+  WORDS_750: {
+    id: "WORDS_750",
+    name: "Kelime Bilgini",
+    description: "750 kelime ile ileri düzey metinler üzerinde hakimiyet kurmaya başladın.",
+    requirement: "Kelime bankana 750 kelime ekle.",
+    color: "#ff9f0a", icon: "fa-graduation-cap", difficulty: 3, category: "Kelime Bilgisi"
   },
   WORDS_1000: {
     id: "WORDS_1000",
@@ -79,12 +100,19 @@ export const BADGES = {
     requirement: "Kelime bankana 1000 kelime ekle.",
     color: "#ff2d55", icon: "fa-crown", difficulty: 5, category: "Kelime Bilgisi"
   },
+  WORDS_1500: {
+    id: "WORDS_1500",
+    name: "Lügat Mimarı",
+    description: "1500 kelime ile dilin en karmaşık yapılarını çözme gücüne eriştin.",
+    requirement: "Kelime bankana 1500 kelime ekle.",
+    color: "#5e5ce6", icon: "fa-monument", difficulty: 5, category: "Kelime Bilgisi"
+  },
   WORDS_2000: {
     id: "WORDS_2000",
     name: "Kelime Hazinesi",
     description: "2000 akademik kelime ile yaşayan bir kütüphaneye dönüştün.",
     requirement: "Kelime bankana 2000 kelime ekle.",
-    color: "#ff375f", icon: "fa-monument", difficulty: 5, category: "Kelime Bilgisi"
+    color: "#ff375f", icon: "fa-gem", difficulty: 5, category: "Kelime Bilgisi"
   },
   MASTERY_STAR: {
     id: "MASTERY_STAR",
@@ -114,13 +142,6 @@ export const BADGES = {
     requirement: "10 kelimeye başarılı bir şekilde eş anlamlı ekle.",
     color: "#64d2ff", icon: "fa-magnifying-glass", difficulty: 2, category: "Kelime Bilgisi"
   },
-  EXAMPLE_MASTER: {
-    id: "EXAMPLE_MASTER",
-    name: "Bağlam Analizi",
-    description: "Kelimeleri cümle içinde kullanarak doğru kullanım alanlarını kavradın.",
-    requirement: "50 farklı kelimeye örnek cümle ekle.",
-    color: "#32d74b", icon: "fa-quote-left", difficulty: 3, category: "Kelime Bilgisi"
-  },
 
   // --- ANALİZ VE METİNLER ---
   READING_MASTER: {
@@ -130,33 +151,33 @@ export const BADGES = {
     requirement: "Reading panelinde 20 okuma parçasını tamamla.",
     color: "#64d2ff", icon: "fa-microscope", difficulty: 3, category: "Dilbilimsel Analiz"
   },
+  READING_PRO: {
+    id: "READING_PRO",
+    name: "Metin Uzmanı",
+    description: "40 okuma parçasını analiz ederek okuma disiplinini geliştirdin.",
+    requirement: "40 okuma parçasını tamamla.",
+    color: "#30d158", icon: "fa-book-open", difficulty: 4, category: "Dilbilimsel Analiz"
+  },
+  READING_MASTER_50: {
+    id: "READING_MASTER_50",
+    name: "YDT Analiz Uzmanı",
+    description: "50 farklı akademik metni çözümleyerek analiz derinliği kazandın.",
+    requirement: "50 okuma parçasını tamamla.",
+    color: "#ff375f", icon: "fa-book-open-reader", difficulty: 5, category: "Dilbilimsel Analiz"
+  },
+  READING_MASTER_75: {
+    id: "READING_MASTER_75",
+    name: "Literatür Kaşifi",
+    description: "75 okuma parçasıyla akademik literatürde dev bir yol kat ettin.",
+    requirement: "75 okuma parçasını tamamla.",
+    color: "#ffd60a", icon: "fa-compass", difficulty: 5, category: "Dilbilimsel Analiz"
+  },
   READING_MASTER_100: {
     id: "READING_MASTER_100",
     name: "Okuma Profesörü",
     description: "100 farklı akademik metin analiziyle okuma süreçlerinde uzmanlaştın.",
     requirement: "100 okuma parçasını başarıyla analiz et.",
     color: "#bf5af2", icon: "fa-book-atlas", difficulty: 5, category: "Dilbilimsel Analiz"
-  },
-  YDT_ANALYST: {
-    id: "YDT_ANALYST",
-    name: "YDT Analiz Uzmanı",
-    description: "YDT tarzı metinler arasındaki bağları kurarak analiz derinliği kazandın.",
-    requirement: "50 farklı akademik metni detaylıca analiz et.",
-    color: "#ff375f", icon: "fa-book-open-reader", difficulty: 5, category: "Dilbilimsel Analiz"
-  },
-  GRAMMAR_EXPERT: {
-    id: "GRAMMAR_EXPERT",
-    name: "Gramer Uzmanı",
-    description: "Dilin yapısal özelliklerini ve gramer kurallarını profesyonelce kavradın.",
-    requirement: "Gramer modunda 10 farklı akademik konuyu bitir.",
-    color: "#32d74b", icon: "fa-pen-nib", difficulty: 3, category: "Dilbilimsel Analiz"
-  },
-  GRAMMAR_EXPERT_20: {
-    id: "GRAMMAR_EXPERT_20",
-    name: "Gramer Üstadı",
-    description: "İleri düzey gramer yapılarını tamamen içselleştirdin.",
-    requirement: "Gramer modunda 20 farklı konuyu bitir.",
-    color: "#ffd60a", icon: "fa-scroll", difficulty: 5, category: "Dilbilimsel Analiz"
   },
   TRANSLATOR_PRO: {
     id: "TRANSLATOR_PRO",
@@ -171,20 +192,6 @@ export const BADGES = {
     description: "Hatalarından ders çıkararak eksikliklerini başarıyla giderdin.",
     requirement: "Hata bankandan 20 kelimeyi başarıyla temizle.",
     color: "#ffcc00", icon: "fa-spell-check", difficulty: 3, category: "Dilbilimsel Analiz"
-  },
-  SPEED_READER: {
-    id: "SPEED_READER",
-    name: "Hızlı Okuma",
-    description: "Akademik metinleri yüksek hızda analiz ederek zaman yönetimi becerini kanıtladın.",
-    requirement: "Bir okuma parçasını 2 dakikanın altında bitir.",
-    color: "#ff375f", icon: "fa-wind", difficulty: 4, category: "Dilbilimsel Analiz"
-  },
-  ETIMOLOG: {
-    id: "ETIMOLOG",
-    name: "Kelime Meraklısı",
-    description: "Kelimelerin kökenlerine inerek dilbilimsel merakını kanıtladın.",
-    requirement: "Kelime detaylarında 10 kez köken araştırması yap.",
-    color: "#af52de", icon: "fa-magnifying-glass-plus", difficulty: 2, category: "Dilbilimsel Analiz"
   },
 
   // --- AKADEMİK DİSİPLİN ---
@@ -223,12 +230,26 @@ export const BADGES = {
     requirement: "Toplam aktif çalışma süreni 500 dakikaya ulaştır.",
     color: "#ff3b30", icon: "fa-hourglass-half", difficulty: 2, category: "Akademik Disiplin"
   },
+  MINUTES_1000: {
+    id: "MINUTES_1000",
+    name: "Zaman Yönetimi",
+    description: "1000 dakikalık çalışma ile disiplinli bir program kurmayı başardın.",
+    requirement: "Toplam aktif çalışma süreni 1000 dakikaya ulaştır.",
+    color: "#007aff", icon: "fa-clock", difficulty: 3, category: "Akademik Disiplin"
+  },
   MINUTES_2000: {
     id: "MINUTES_2000",
     name: "Zamanın Efendisi",
     description: "2000 dakikalık devasa çalışma süresiyle alanında otorite haline geldin.",
     requirement: "Toplam aktif çalışma süreni 2000 dakikaya ulaştır.",
     color: "#ff2d55", icon: "fa-graduation-cap", difficulty: 5, category: "Akademik Disiplin"
+  },
+  MINUTES_3500: {
+    id: "MINUTES_3500",
+    name: "Akademik Maraton",
+    description: "3500 dakikalık çalışma ile dayanıklılığın zirvesine ulaştın.",
+    requirement: "Toplam aktif çalışma süreni 3500 dakikaya ulaştır.",
+    color: "#ffd60a", icon: "fa-person-running", difficulty: 5, category: "Akademik Disiplin"
   },
   MINUTES_5000: {
     id: "MINUTES_5000",
@@ -245,47 +266,61 @@ export const BADGES = {
     color: "#ff375f", icon: "fa-stopwatch", difficulty: 4, category: "Akademik Disiplin"
   },
 
-  // --- DEĞERLENDİRME VE TOPLULUK ---
-  QUIZ_VETERAN: {
-    id: "QUIZ_VETERAN",
-    name: "Sınav Uzmanı",
-    description: "Çok sayıda akademik test tamamlayarak tecrübe kazandın.",
-    requirement: "Toplamda 50 akademik testi başarıyla bitir.",
-    color: "#ff9500", icon: "fa-clipboard-check", difficulty: 4, category: "Değerlendirme ve Topluluk"
-  },
-  PERFECT_QUIZ: {
-    id: "PERFECT_QUIZ",
-    name: "Kusursuz Başarı",
-    description: "Bir testi hatasız tamamlayarak titizliğini kanıtladın.",
-    requirement: "Herhangi bir akademik testi %100 doğrulukla bitir.",
-    color: "#ffd60a", icon: "fa-certificate", difficulty: 3, category: "Değerlendirme ve Topluluk"
-  },
-  QUIZ_PERFECT_10: {
-    id: "QUIZ_PERFECT_10",
-    name: "Hatasız Seri",
-    description: "10 farklı quizi hatasız bitirerek kusursuz bir başarı serisi yakaladın.",
-    requirement: "10 farklı quizi %100 başarıyla tamamla.",
-    color: "#30d158", icon: "fa-medal", difficulty: 5, category: "Değerlendirme ve Topluluk"
+  // --- TOPLULUK ---
+  SOCIAL_NEWBIE: {
+    id: "SOCIAL_NEWBIE",
+    name: "Sosyal Girişim",
+    description: "Toplulukta ilk bağını kurarak akademik yardımlaşma sürecini başlattın.",
+    requirement: "1 farklı kullanıcıyla arkadaşlık kur.",
+    color: "#64d2ff", icon: "fa-user-plus", difficulty: 1, category: "Topluluk"
   },
   SOCIAL_SCHOLAR: {
     id: "SOCIAL_SCHOLAR",
     name: "Akademik Çevre",
-    description: "Topluluk içindeki diğer öğrencilerle etkileşime girerek bağ kurdun.",
+    description: "5 arkadaş edinerek çalışma ağını genişletmeye başladın.",
     requirement: "5 farklı kullanıcıyla arkadaşlık kur.",
-    color: "#5856d6", icon: "fa-user-group", difficulty: 2, category: "Değerlendirme ve Topluluk"
+    color: "#5856d6", icon: "fa-user-group", difficulty: 2, category: "Topluluk"
+  },
+  SOCIAL_EXPERT: {
+    id: "SOCIAL_EXPERT",
+    name: "Bilgi Paylaşımı",
+    description: "Geniş arkadaş çevrenle platformun en sosyal araştırmacılarından biri oldun.",
+    requirement: "10 farklı kullanıcıyla arkadaşlık kur.",
+    color: "#af52de", icon: "fa-users", difficulty: 3, category: "Topluluk"
+  },
+  SOCIAL_LEADER: {
+    id: "SOCIAL_LEADER",
+    name: "Topluluk Lideri",
+    description: "20 arkadaş ile akademik bir topluluğun merkezine yerleştin.",
+    requirement: "20 farklı kullanıcıyla arkadaşlık kur.",
+    color: "#ff9500", icon: "fa-users-viewfinder", difficulty: 4, category: "Topluluk"
+  },
+  RANK_TOP_10: {
+    id: "RANK_TOP_10",
+    name: "Sıralama Adayı",
+    description: "Liderlik tablosunda ilk 10'a girerek rekabetçi gücünü gösterdin.",
+    requirement: "Liderlik tablosunda ilk 10 içerisinde yer al.",
+    color: "#ffd60a", icon: "fa-list-ol", difficulty: 3, category: "Topluluk"
   },
   CHALLENGER: {
     id: "CHALLENGER",
-    name: "Rekabetçi Zihin",
-    description: "Liderlik tablosunda ilk sıralara girerek rekabetçi yönünü kanıtladın.",
-    requirement: "Liderlik tablosunda ilk 3'e gir.",
-    color: "#ff2d55", icon: "fa-trophy", difficulty: 4, category: "Değerlendirme ve Topluluk"
+    name: "Seçkin Öğrenci",
+    description: "Liderlik tablosunda ilk 3'e girerek akademik üstünlüğünü kanıtladın.",
+    requirement: "Liderlik tablosunda ilk 3 içerisinde yer al.",
+    color: "#ff2d55", icon: "fa-award", difficulty: 4, category: "Topluluk"
+  },
+  RANK_NUMBER_ONE: {
+    id: "RANK_NUMBER_ONE",
+    name: "Zirve Sahibi",
+    description: "Liderlik tablosunun 1. sırasına yerleşerek platformun en iyisi oldun.",
+    requirement: "Liderlik tablosunda 1. sıraya ulaş.",
+    color: "#ff375f", icon: "fa-trophy", difficulty: 5, category: "Topluluk"
   },
   LEGENDARY: {
     id: "LEGENDARY",
     name: "Akademik Efsane",
     description: "Platformdaki her alanda gösterdiğin üstün başarı ile efsaneler arasına girdin.",
     requirement: "Toplamda 30 farklı rozet kazan.",
-    color: "#ffd60a", icon: "fa-star-and-crescent", difficulty: 5, category: "Değerlendirme ve Topluluk"
+    color: "#ffd60a", icon: "fa-star-and-crescent", difficulty: 5, category: "Topluluk"
   }
 };

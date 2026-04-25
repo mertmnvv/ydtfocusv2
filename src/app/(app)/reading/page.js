@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { useSearchParams } from "next/navigation";
-import { subscribeToUserWords, addUserWord } from "@/lib/firestore";
+import { subscribeToUserWords, addUserWord, completeReadingPassage } from "@/lib/firestore";
 import ShareButton from "@/components/ShareButton";
 
 const TOPICS = [
@@ -100,6 +100,8 @@ export default function ReadingPage() {
   const [quizQuestions, setQuizQuestions] = useState([]);
   const searchParams = useSearchParams();
   const [quizLoading, setQuizLoading] = useState(false);
+  const [finishing, setFinishing] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
 
   // URL Parametrelerini Dinle (Paylaşılan Metinler & AI Üretimi)
   useEffect(() => {
@@ -160,6 +162,18 @@ export default function ReadingPage() {
     }
   }, [text, topic]);
 
+  // Quiz Sonucunu Dinle ve Başarıyı Tetikle
+  useEffect(() => {
+    if (quizQuestions.length > 0 && !isFinished) {
+      const allAnswered = quizQuestions.every(q => q.userAnswer);
+      const allCorrect = quizQuestions.every(q => q.userAnswer === q.correct);
+      
+      if (allAnswered && allCorrect) {
+        handleCompleteReading();
+      }
+    }
+  }, [quizQuestions]);
+
   async function generateAIText(selectedTopic) {
     const t = selectedTopic || topic;
     setTopic(t);
@@ -184,6 +198,21 @@ export default function ReadingPage() {
       setText("Bağlantı hatası.");
     }
     setGenerating(false);
+    setIsFinished(false);
+  }
+
+  async function handleCompleteReading() {
+    if (!user || finishing || isFinished) return;
+    setFinishing(true);
+    try {
+      await completeReadingPassage(user.uid);
+      showNotification("Analiz başarıyla tamamlandı!", "success");
+      setIsFinished(true);
+      // Reset text after short delay or just stay there? Stay for now.
+    } catch {
+      showNotification("Hata oluştu.", "error");
+    }
+    setFinishing(false);
   }
 
   async function lookupWord(input) {
@@ -362,10 +391,24 @@ export default function ReadingPage() {
               <div className="glass-card reading-display-card">
                 <div className="card-header-minimal">Analiz</div>
                 <div className="reading-display">{renderAnalysis()}</div>
-                <button onClick={generateQuiz} className="btn-ghost w-100 mt-2" disabled={quizLoading}>
-                  {quizLoading ? "Hazırlanıyor..." : "Okuduğunu Anlama Testi"}
-                </button>
+                <div className="analysis-actions" style={{ display: 'flex', gap: 10, marginTop: 15 }}>
+                  <button onClick={generateQuiz} className="btn-ghost flex-1" disabled={quizLoading || isFinished}>
+                    {quizLoading ? "Hazırlanıyor..." : isFinished ? "Test Tamamlandı" : "Okuduğunu Anlama Testi"}
+                  </button>
+                </div>
               </div>
+
+              {isFinished && (
+                <div className="glass-card animate-fadeIn" style={{ border: '1px solid var(--accent)', background: 'rgba(48, 209, 88, 0.1)', marginBottom: 20 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0' }}>
+                    <i className="fa-solid fa-circle-check" style={{ color: 'var(--accent)', fontSize: '1.4rem' }}></i>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 900 }}>Tebrikler!</h4>
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Soruların tamamını doğru yanıtlayarak analizi başarıyla tamamladın.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {quizQuestions.length > 0 && (
                 <div className="quiz-section">

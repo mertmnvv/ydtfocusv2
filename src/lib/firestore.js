@@ -162,6 +162,13 @@ export async function incrementStudyMinutes(uid, minutes) {
   });
 }
 
+export async function completeReadingPassage(uid) {
+  const userRef = doc(db, "users", uid);
+  await updateDoc(userRef, {
+    readingsCompleted: increment(1)
+  });
+}
+
 function getWeekNumber(d) {
   const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
@@ -553,16 +560,20 @@ export async function checkAndGrantBadges(uid, stats, wordsCount, heroLevels, wo
   if (streak >= 15) grant("STREAK_15");
   if (streak >= 30) grant("STREAK_30");
   if (streak >= 50) grant("STREAK_50");
+  if (streak >= 75) grant("STREAK_75");
   if (streak >= 100) grant("STREAK_100");
   if (streak >= 21) grant("CONSISTENT_STREAK");
   
-  const day = new Date().getDay(); // 0=Sun, 6=Sat
+  const day = new Date().getDay();
   if (day === 0 || day === 6) grant("WEEKEND_WARRIOR");
 
   // 2. Kelime Bilgisi
   if (wordsCount >= 100) grant("WORDS_100");
+  if (wordsCount >= 250) grant("WORDS_250");
   if (wordsCount >= 500) grant("WORDS_500");
+  if (wordsCount >= 750) grant("WORDS_750");
   if (wordsCount >= 1000) grant("WORDS_1000");
+  if (wordsCount >= 1500) grant("WORDS_1500");
   if (wordsCount >= 2000) grant("WORDS_2000");
 
   const masteryCount = words.filter(w => w.level >= 4).length;
@@ -572,9 +583,6 @@ export async function checkAndGrantBadges(uid, stats, wordsCount, heroLevels, wo
   const withSynonyms = words.filter(w => w.synonyms && w.synonyms.length > 0).length;
   if (withSynonyms >= 10) grant("SYNONYM_SEEKER");
 
-  const withExamples = words.filter(w => w.example || w.examples?.length > 0).length;
-  if (withExamples >= 50) grant("EXAMPLE_MASTER");
-
   // 3. Zaman ve Disiplin
   const hour = new Date().getHours();
   if (hour >= 0 && hour <= 4) grant("NIGHT_OWL");
@@ -582,32 +590,35 @@ export async function checkAndGrantBadges(uid, stats, wordsCount, heroLevels, wo
 
   const totalMinutes = stats.studyTime || 0;
   if (totalMinutes >= 500) grant("MINUTES_500");
+  if (totalMinutes >= 1000) grant("MINUTES_1000");
   if (totalMinutes >= 2000) grant("MINUTES_2000");
+  if (totalMinutes >= 3500) grant("MINUTES_3500");
   if (totalMinutes >= 5000) grant("MINUTES_5000");
   if (stats.dailyMinutes >= 60) grant("DAILY_CHAMPION");
   if (stats.lastSessionMinutes >= 60) grant("ACADEMIC_FOCUS");
   if (stats.lastSessionMinutes >= 120) grant("MARATHONER");
 
-  // 4. Analiz ve Metinler
-  if (userData.readingsCompleted >= 20) grant("READING_MASTER");
-  if (userData.readingsCompleted >= 50) grant("YDT_ANALYST");
-  if (userData.readingsCompleted >= 100) grant("READING_MASTER_100");
-  if (userData.grammarLessonsCompleted >= 10) grant("GRAMMAR_EXPERT");
-  if (userData.grammarLessonsCompleted >= 20) grant("GRAMMAR_EXPERT_20");
+  // 4. Analiz ve Metinler (Reading)
+  const rd = userData.readingsCompleted || 0;
+  if (rd >= 20) grant("READING_MASTER");
+  if (rd >= 40) grant("READING_PRO");
+  if (rd >= 50) grant("READING_MASTER_50");
+  if (rd >= 75) grant("READING_MASTER_75");
+  if (rd >= 100) grant("READING_MASTER_100");
+  
   if (userData.translationsCount >= 50) grant("TRANSLATOR_PRO");
   if (stats.fastLearningSession >= 20) grant("QUICK_LEARNER");
-  if (stats.bestReadTime < 120 && stats.bestReadTime > 0) grant("SPEED_READER");
-  if (userData.etymologyChecks >= 10) grant("ETIMOLOG");
 
-  // 5. Quiz ve Sosyal
-  const totalTests = stats.totalQuizzes || 0;
-  if (totalTests >= 50) grant("QUIZ_VETERAN");
-  if (stats.lastQuizScore === 100) grant("PERFECT_QUIZ");
-  if (stats.perfectQuizzesCount >= 10) grant("QUIZ_PERFECT_10");
-
+  // 5. Sosyal ve Topluluk
   const friendsCount = (userData.friends || []).length;
+  if (friendsCount >= 1) grant("SOCIAL_NEWBIE");
   if (friendsCount >= 5) grant("SOCIAL_SCHOLAR");
+  if (friendsCount >= 10) grant("SOCIAL_EXPERT");
+  if (friendsCount >= 20) grant("SOCIAL_LEADER");
+  
+  if (userData.bestRank <= 10 && userData.bestRank > 0) grant("RANK_TOP_10");
   if (userData.bestRank <= 3 && userData.bestRank > 0) grant("CHALLENGER");
+  if (userData.bestRank === 1) grant("RANK_NUMBER_ONE");
 
   // 6. Hata Temizleme ve Efsanevi
   const cleanedMistakes = stats.cleanedMistakes || 0;
