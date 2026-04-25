@@ -6,17 +6,24 @@ import { useAuth } from "@/context/AuthContext";
 const onboardingSteps = [
   {
     id: "welcome",
-    title: "Akademik Başarıya Odaklan!",
-    desc: "YDT Focus v2 ile sınav hazırlık sürecini bir üst seviyeye taşıyoruz. Bilimsel metotlar ve yapay zeka desteğiyle hedeflerine ulaşman için buradayız.",
+    title: 'ydt<span>focus</span> v2',
+    desc: "Sınav hazırlık sürecini bir üst seviyeye taşıyoruz. Bilimsel metotlar ve yapay zeka desteğiyle hedeflerine ulaşman için buradayız.",
     icon: "fa-rocket",
     color: "var(--accent)"
   },
   {
     id: "dashboard",
     title: "Level Up: Performans Merkezi",
-    desc: "Çalışma disiplinini verilerle yönet. Günlük streak, aktif çalışma süresi ve gelişim grafiklerini takip et; 'Akıllı Tekrar' ile unutmaya son ver.",
+    desc: "Çalışma disiplinini verilerle yönet. Günlük streak, aktif çalışma süresi ve gelişim grafiklerini takip et; profiline buradan ulaş.",
     icon: "fa-user-astronaut",
     color: "#30d158"
+  },
+  {
+    id: "srs",
+    title: "Akıllı Tekrar (SRS)",
+    desc: "Unutma eğrisini minimize eden özel algoritma! Kelimeleri doğru zamanlarda tekrar ederek kalıcı hafızaya aktar.",
+    icon: "fa-clock-rotate-left",
+    color: "#5856d6"
   },
   {
     id: "reading",
@@ -28,7 +35,7 @@ const onboardingSteps = [
   {
     id: "quiz",
     title: "Quiz: Aktif Hatırlama",
-    desc: "Öğrenilen kelimeleri SRS (Aralıklı Tekrar) algoritmasıyla test et. Flashcard'lar ve farklı sınav modlarıyla bilgilerini kalıcı hale getir.",
+    desc: "Öğrenilen kelimeleri farklı sınav modlarıyla test et. Flashcard'lar ile pratik yaparak bilgilerini pekiştir.",
     icon: "fa-bolt",
     color: "#ff9f0a"
   },
@@ -56,7 +63,7 @@ const onboardingSteps = [
   {
     id: "linefocus",
     title: "Linefocus: Derin Odaklanma",
-    desc: "Mekanik klavye hissiyle sadece metne odaklan. Yazarak çalışma metoduyla dikkati en üst seviyeye çıkar ve akılda kalıcılığı artır.",
+    desc: "Mekanik klavye hissiyle sadece metne odaklan. Yazarak çalışma metoduyla dikkati en üst seviyeye çıkar.",
     icon: "fa-keyboard",
     color: "#ff375f"
   },
@@ -122,7 +129,7 @@ export default function Onboarding() {
           <div className="onboarding-icon" style={{ color: currentStep.color, backgroundColor: `${currentStep.color}15` }}>
             <i className={`fa-solid ${currentStep.icon}`}></i>
           </div>
-          <h2>{currentStep.title}</h2>
+          <h2 dangerouslySetInnerHTML={{ __html: currentStep.title }}></h2>
           <p>{currentStep.desc}</p>
         </div>
 

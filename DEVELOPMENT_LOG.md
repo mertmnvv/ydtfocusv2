@@ -10,10 +10,10 @@ Bu dosya, projede yapılan tüm geliştirmelerin, planların ve tamamlanan göre
 Yeni kullanıcıların platformu hızlıca kavrayabilmesi için tüm modülleri (Dashboard, Reading, Quiz, Hero, Linefocus, Focus AI) açıklayan premium bir onboarding turu eklemek.
 
 ### ✅ Tamamlanan Görevler
-- **Kapsamlı Onboarding:** `src/components/Onboarding.js` güncellendi. Artık Dashboard (Akıllı Tekrar/Profil), Reading, Quiz (Flashcards/Öğrenilen Kelimeler), Hatalarım, Sözlük/Arşiv, Zero to Hero, Linefocus ve Focus AI modüllerini detaylıca açıklıyor.
+- **Modül Ayrımı:** Onboarding turunda Quiz ve Akıllı Tekrar (SRS) bölümleri birbirinden ayrıldı; her birine özel ikon ve açıklamalar eklendi.
+- **Marka Kimliği:** Uygulama ismi onboarding başlığında navbardaki `ydt<span>focus</span>` stiline uygun hale getirildi.
+- **Kapsamlı Onboarding:** Dashboard, Reading, Quiz, SRS, Hatalarım, Sözlük, Zero to Hero, Linefocus ve Focus AI modülleri en güncel haliyle tur içerisine dahil edildi.
 - **Zekâ ve Hafıza:** Kullanıcının turu tamamlayıp tamamlamadığı `localStorage` (UID bazlı) ile takip ediliyor.
-- **Doğrulama:** Focus AI yetenekleri ve panel erişim yolları kullanıcı geri bildirimine göre revize edildi.
-- **Global Entegrasyon:** `AppLayout` içerisine dahil edilerek tüm sayfalarda aktif hale getirildi.
 
 ### 📝 Özet (Walkthrough)
 YDT Focus v2 projesi, bu kapsamlı onboarding sistemiyle birlikte profesyonel bir lansman seviyesine ulaştı. Kullanıcılar artık uygulamanın her köşesindeki özelliği (Hatalarım, Akıllı Tekrar, Flashcardlar vb.) adım adım öğrenerek platformu en verimli şekilde kullanabilecekler. Teknik ve içerik rehberliği açısından proje tam kapasiteyle tamamlandı.
