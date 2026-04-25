@@ -11,7 +11,7 @@ Yeni kullanıcıların platformu hızlıca kavrayabilmesi için tüm modülleri 
 
 ### ✅ Tamamlanan Görevler
 - **Modül Ayrımı:** Onboarding turunda Quiz ve Akıllı Tekrar (SRS) bölümleri birbirinden ayrıldı; her birine özel ikon ve açıklamalar eklendi.
-- **Marka Kimliği:** Uygulama ismi onboarding başlığında navbardaki `ydt<span>focus</span>` stiline uygun hale getirildi.
+- **Marka Kimliği:** Uygulama ismi onboarding başlığında navbardaki `ydt<span>focus</span>` tasarımıyla birebir aynı (font, renk ve ağırlık) hale getirildi. "v2" ibaresi kaldırıldı.
 - **Kapsamlı Onboarding:** Dashboard, Reading, Quiz, SRS, Hatalarım, Sözlük, Zero to Hero, Linefocus ve Focus AI modülleri en güncel haliyle tur içerisine dahil edildi.
 - **Zekâ ve Hafıza:** Kullanıcının turu tamamlayıp tamamlamadığı `localStorage` (UID bazlı) ile takip ediliyor.
 

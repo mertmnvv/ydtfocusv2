@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 const onboardingSteps = [
   {
     id: "welcome",
-    title: 'ydt<span>focus</span> v2',
+    title: 'ydt<span>focus</span>',
     desc: "Sınav hazırlık sürecini bir üst seviyeye taşıyoruz. Bilimsel metotlar ve yapay zeka desteğiyle hedeflerine ulaşman için buradayız.",
     icon: "fa-rocket",
     color: "var(--accent)"
@@ -224,11 +224,15 @@ export default function Onboarding() {
         }
 
         .onboarding-content h2 {
-          font-size: 1.6rem;
-          font-weight: 800;
+          font-size: 2.2rem;
+          font-weight: 900;
           margin: 0;
           color: #fff;
-          letter-spacing: -0.5px;
+          letter-spacing: -1px;
+        }
+
+        .onboarding-content h2 :global(span) {
+          color: var(--accent);
         }
 
         .onboarding-content p {
