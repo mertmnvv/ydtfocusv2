@@ -168,9 +168,7 @@ export default function DashboardPage() {
 
       <Leaderboard />
 
-      <div className="dash-quick-actions">
-        <Link href="/quiz" className="dash-action-btn" style={{ width: '100%' }}>Quiz Paneli</Link>
-      </div>
+
 
       <style jsx>{`
         .daily-focus-container { margin-bottom: 32px; }

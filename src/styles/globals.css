@@ -3195,9 +3195,9 @@ a {
 
 .bank-fab {
   position: fixed;
-  bottom: 24px;
+  top: 120px;
   right: 24px;
-  z-index: 800;
+  z-index: 2001;
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -3404,7 +3404,7 @@ a {
   .bank-fab.dragging { transition: none !important; transform: scale(1.1); box-shadow: 0 12px 30px rgba(0,0,0,0.6); opacity: 0.95; z-index: 10000; }
 
 .bank-fab {
-    bottom: 90px;
+    top: 100px;
     right: 16px;
     width: 44px;
     height: 44px;
