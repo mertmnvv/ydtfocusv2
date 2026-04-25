@@ -47,11 +47,17 @@ export default function GlobalAI() {
       setMistakeIds(mistakes || []);
       const firstName = (user.displayName || "Arkadaşım").split(" ")[0];
 
+      // Hatalı kelime ID'lerini gerçek kelimelere dönüştür
+      const mistakeWords = (mistakes || [])
+        .map(id => (w || []).find(word => word.id === id)?.word)
+        .filter(Boolean);
+
       const metadata = {
         name: firstName,
         streak: stats.streak || 0,
         minutes: stats.dailyMinutes || 0,
-        levels: hero.levels || {}
+        levels: hero.levels || {},
+        mistakes: mistakeWords // Artık ID değil, kelime listesi
       };
       setUserMetadata(metadata);
 
@@ -320,8 +326,11 @@ export default function GlobalAI() {
             const jsonStr = match[1].replace(/[\n\r]/g, "").trim();
             const wordData = JSON.parse(jsonStr);
 
+            // GÜVENLİK KONTROLÜ: Eğer kelime bir ID formatındaysa (timestamp_random) kaydetme
+            const isIdFormat = /^\d{10,15}_[a-z0-9]{3,10}$/.test(wordData.word);
+            
             const exists = words.some(w => w.word?.toLowerCase() === wordData.word?.toLowerCase());
-            if (!exists) {
+            if (!exists && !isIdFormat) {
               await addUserWord(user.uid, wordData);
               addedCount++;
             }

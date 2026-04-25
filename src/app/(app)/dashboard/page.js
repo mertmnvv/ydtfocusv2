@@ -57,12 +57,15 @@ export default function DashboardPage() {
     { name: "Hazine", key: "level4", color: "#0a84ff" },
   ];
 
+  const isIdFormat = (str) => /^\d{10,15}_[a-z0-9]{3,10}$/.test(str);
+  const cleanWords = words.filter(w => !isIdFormat(w.word || ""));
+
   const levelWords = {
-    level0: words.filter(w => !w.level || w.level === 0),
-    level1: words.filter(w => w.level === 1),
-    level2: words.filter(w => w.level === 2),
-    level3: words.filter(w => w.level === 3),
-    level4: words.filter(w => w.level >= 4),
+    level0: cleanWords.filter(w => !w.level || w.level === 0),
+    level1: cleanWords.filter(w => w.level === 1),
+    level2: cleanWords.filter(w => w.level === 2),
+    level3: cleanWords.filter(w => w.level === 3),
+    level4: cleanWords.filter(w => w.level >= 4),
   };
 
   const maxLevel = Math.max(...Object.values(levelWords).map(arr => arr.length), 1);

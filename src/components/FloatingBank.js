@@ -119,10 +119,15 @@ export default function FloatingBank() {
     const term = search.trim().toLowerCase();
     if (!term) return words;
 
-    const results = words.filter(w =>
-      (w.word || "").toLowerCase().includes(term) ||
-      (w.meaning || "").toLowerCase().includes(term)
-    );
+    const isIdFormat = (str) => /^\d{10,15}_[a-z0-9]{3,10}$/.test(str);
+    
+    const results = words.filter(w => {
+      const word = w.word || "";
+      if (isIdFormat(word)) return false; // ID formatındaki hatalı kelimeleri gizle
+
+      return (word.toLowerCase().includes(term) ||
+              (w.meaning || "").toLowerCase().includes(term));
+    });
 
     return results.sort((a, b) => {
       const aWord = (a.word || "").toLowerCase();
