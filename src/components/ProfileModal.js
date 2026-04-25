@@ -6,12 +6,14 @@ import { getDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { sendFriendRequest, getOrCreateChat } from "@/lib/firestore";
 import { useNotification } from "@/context/NotificationContext";
+import { BADGES } from "@/constants/badges";
 
 export default function ProfileModal({ userId, onClose }) {
   const { user } = useAuth();
   const { showNotification } = useNotification();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showAllBadges, setShowAllBadges] = useState(false);
 
   const updatePhoto = async () => {
     const url = window.prompt("Yeni profil resmi URL'sini yapıştırın:");
@@ -96,6 +98,27 @@ export default function ProfileModal({ userId, onClose }) {
                     ) : (
                       <span className="badge-standard">Standart</span>
                     )}
+
+                    {/* Mini Badges Next to Name */}
+                    {profile.badges && profile.badges.length > 0 && (
+                      <div className="p-modal-mini-badges">
+                        {profile.badges.slice(-3).map(bId => (
+                          <div 
+                            key={bId} 
+                            className="mini-badge-icon" 
+                            style={{ color: BADGES[bId]?.color }}
+                            title={BADGES[bId]?.name}
+                          >
+                            <i className={`fa-solid ${BADGES[bId]?.icon}`}></i>
+                          </div>
+                        ))}
+                        {profile.badges.length > 3 && (
+                          <div className="mini-badge-plus" onClick={() => setShowAllBadges(!showAllBadges)}>
+                            +{profile.badges.length - 3}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="p-modal-streak">
@@ -107,18 +130,36 @@ export default function ProfileModal({ userId, onClose }) {
 
             <div className="p-modal-stats">
               <div className="p-m-stat">
+                <div className="p-m-val">{profile.publicStats?.streak || 0}</div>
+                <div className="p-m-label">Seri</div>
+              </div>
+              <div className="p-m-stat">
+                <div className="p-m-val">{profile.publicStats?.totalWords || 0}</div>
+                <div className="p-m-label">Kelime</div>
+              </div>
+              <div className="p-m-stat">
                 <div className="p-m-val">{profile.publicStats?.masteryCount || 0}</div>
-                <div className="p-m-label">BİLİNEN KELİME</div>
-              </div>
-              <div className="p-m-stat">
-                <div className="p-m-val">{profile.publicStats?.weeklyMinutes || 0}dk</div>
-                <div className="p-m-label">HAFTALIK ÇALIŞMA</div>
-              </div>
-              <div className="p-m-stat">
-                <div className="p-m-val">{profile.publicStats?.correct || 0}</div>
-                <div className="p-m-label">TOPLAM DOĞRU</div>
+                <div className="p-m-label">Uzmanlık</div>
               </div>
             </div>
+
+            {/* All Badges Section */}
+            {profile.badges && profile.badges.length > 0 && (
+              <div className="p-modal-achievements">
+                <h3 className="ach-title">Başarılar ({profile.badges.length})</h3>
+                <div className="ach-grid">
+                  {profile.badges.map(bId => (
+                    <div key={bId} className="ach-card" style={{ "--b-color": BADGES[bId]?.color }}>
+                      <div className="ach-icon"><i className={`fa-solid ${BADGES[bId]?.icon}`}></i></div>
+                      <div className="ach-info">
+                        <span className="ach-name">{BADGES[bId]?.name}</span>
+                        <span className="ach-desc">{BADGES[bId]?.description}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {user.uid !== userId && (
               <div className="p-modal-actions">
@@ -198,6 +239,29 @@ export default function ProfileModal({ userId, onClose }) {
           border-radius: 8px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
           border: 1px solid var(--border);
         }
+        .p-modal-mini-badges { display: flex; align-items: center; gap: 8px; margin-left: 12px; }
+        .mini-badge-icon { font-size: 0.85rem; opacity: 0.9; }
+        .mini-badge-plus { 
+          font-size: 0.7rem; font-weight: 900; color: var(--text-muted); 
+          background: var(--bg-elevated); padding: 2px 6px; border-radius: 6px;
+          cursor: pointer; transition: 0.2s;
+        }
+        .mini-badge-plus:hover { color: var(--accent); transform: scale(1.1); }
+
+        .p-modal-achievements { margin-bottom: 32px; }
+        .ach-title { font-size: 0.8rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+        .ach-grid { display: grid; grid-template-columns: 1fr; gap: 10px; max-height: 180px; overflow-y: auto; padding-right: 8px; }
+        .ach-grid::-webkit-scrollbar { width: 3px; }
+        .ach-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+        .ach-card { 
+          display: flex; align-items: center; gap: 12px; padding: 10px 14px; 
+          background: var(--glass); border: 1px solid var(--border); border-radius: 14px;
+          border-left: 4px solid var(--b-color);
+        }
+        .ach-icon { font-size: 1.1rem; color: var(--b-color); width: 24px; text-align: center; }
+        .ach-info { display: flex; flex-direction: column; }
+        .ach-name { font-size: 0.85rem; font-weight: 800; color: var(--text); }
+        .ach-desc { font-size: 0.65rem; color: var(--text-muted); font-weight: 600; line-height: 1.3; }
         .p-modal-streak { display: flex; align-items: center; gap: 8px; color: var(--accent); font-weight: 800; font-size: 0.9rem; }
         .p-modal-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 10px var(--accent); }
         

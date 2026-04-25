@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getUserWords, getUserStats, updateLastReminderDate } from "@/lib/firestore";
+import { getUserWords, getUserStats, updateLastReminderDate, checkAndGrantBadges, getUserHeroStats } from "@/lib/firestore";
+import { BADGES } from "@/constants/badges";
 import Link from "next/link";
 import Leaderboard from "@/components/Leaderboard";
 import CustomDialog from "@/components/CustomDialog";
@@ -24,15 +25,19 @@ export default function DashboardPage() {
 
     const fetchData = async () => {
       try {
-        const [w, s] = await Promise.all([
+        const [w, s, h] = await Promise.all([
           getUserWords(user.uid),
           getUserStats(user.uid),
+          getUserHeroStats(user.uid)
         ]);
         
         if (!isMounted) return;
         const wordList = w || [];
         setWords(wordList);
         setStats({ ...(s || {}), streak: s?.streak || 0 });
+
+        // Rozetleri kontrol et ve veritabanına işle
+        await checkAndGrantBadges(user.uid, s, wordList.length, h.levels);
       } catch (err) {
         console.error(err);
       } finally {
@@ -85,13 +90,27 @@ export default function DashboardPage() {
         <div className="profile-header-info">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <h1 className="profile-name-small" style={{ margin: 0 }}>{userProfile?.displayName || "Kullanıcı"}</h1>
-            <div className="plan-badge-wrapper">
+            <div className="plan-badge-wrapper" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               {isPremium ? (
                 <span className="premium-plan-badge">
                   <i className="fa-solid fa-crown"></i> Premium Üye
                 </span>
               ) : (
                 <span className="standard-plan-badge">Standart Üye</span>
+              )}
+
+              {/* Dashboard Header Badges */}
+              {userProfile?.badges && userProfile.badges.length > 0 && (
+                <div className="dash-mini-badges">
+                  {userProfile.badges.slice(-3).map(bId => (
+                    <div key={bId} className="dash-badge-icon" style={{ color: BADGES[bId]?.color }} title={BADGES[bId]?.name}>
+                      <i className={`fa-solid ${BADGES[bId]?.icon}`}></i>
+                    </div>
+                  ))}
+                  {userProfile.badges.length > 3 && (
+                    <span className="dash-badge-more">+{userProfile.badges.length - 3}</span>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -216,6 +235,13 @@ export default function DashboardPage() {
           background: rgba(255,255,255,0.05); color: var(--text-muted);
           padding: 4px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 700;
           border: 1px solid var(--border);
+        }
+        .dash-mini-badges { display: flex; align-items: center; gap: 6px; margin-left: 6px; }
+        .dash-badge-icon { font-size: 0.9rem; opacity: 0.85; transition: 0.2s; }
+        .dash-badge-icon:hover { transform: scale(1.2); opacity: 1; }
+        .dash-badge-more { 
+          font-size: 0.7rem; font-weight: 900; color: var(--text-muted); background: var(--bg-elevated);
+          padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border);
         }
         .buy-premium-mini-btn {
           background: transparent; border: 1px solid var(--accent); color: var(--accent);

@@ -517,3 +517,42 @@ export async function sendMessage(chatId, senderUid, text, type = "text", metada
     lastTimestamp: serverTimestamp()
   });
 }
+
+export async function checkAndGrantBadges(uid, stats, wordsCount, heroLevels) {
+  const userRef = doc(db, "users", uid);
+  const userSnap = await getDoc(userRef);
+  if (!userSnap.exists()) return [];
+  
+  const currentBadges = userSnap.data().badges || [];
+  const newBadges = [...currentBadges];
+  let changed = false;
+
+  const grant = (badgeId) => {
+    if (!newBadges.includes(badgeId)) {
+      newBadges.push(badgeId);
+      changed = true;
+    }
+  };
+
+  // 1. Streak Rozetleri
+  if (stats.streak >= 7) grant("STREAK_7");
+  if (stats.streak >= 30) grant("STREAK_30");
+
+  // 2. Kelime Rozetleri
+  if (wordsCount >= 100) grant("WORDS_100");
+  if (wordsCount >= 500) grant("WORDS_500");
+
+  // 3. Zaman Rozetleri
+  const hour = new Date().getHours();
+  if (hour >= 0 && hour <= 4) grant("NIGHT_OWL");
+  if (hour >= 5 && hour <= 8) grant("EARLY_BIRD");
+
+  // 4. Hero Seviyeleri
+  if (heroLevels?.A1?.completed >= 10) grant("HERO_A1");
+
+  if (changed) {
+    await updateDoc(userRef, { badges: newBadges });
+    return newBadges;
+  }
+  return currentBadges;
+}
