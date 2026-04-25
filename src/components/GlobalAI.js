@@ -125,30 +125,31 @@ export default function GlobalAI() {
     
     setLoading(true);
 
-    const systemPrompt = `Senin adın Focus. Mert tarafından geliştirilen, öğrencinin en yakın çalışma arkadaşı ve uzman İngilizce hocasısın.
+    const systemPrompt = `Senin adın Focus. Mert tarafından geliştirilen uzman İngilizce hocasısın.
+    
+    KRİTİK TALİMAT (AKSİYONLAR):
+    - Kullanıcı "kaydet", "bankaya ekle", "hepsini ekle" gibi bir istekte bulunursa MUTLAKA her kelime için şu formatta etiket üret: [ACTION: ADD_WORD {"word": "...", "meaning": "...", "syn": "..."}]
+    - "word" alanı İNGİLİZCE, "meaning" alanı TÜRKÇE olmalı.
+    - ÖNEMLİ: Eğer kullanıcı "metindeki zor kelimeleri ekle" diyorsa, metinden seçtiğin TÜM kelimeler için bu etiketleri ÜRET. Etiketleri mesajın en sonuna ekle.
     
     KURALLAR:
     - Mesajlarında ASLA ama ASLA emoji kullanma.
-    - Robotik, klişe ve yapay cümlelerden kesinlikle kaçın.
-    - Sanki öğrenciyle yan yana oturmuş, metni birlikte okumuşsunuz gibi doğal ve samimi bir dille konuş. 
-    - Kullanıcıya sadece ilk ismiyle hitap et. Soyadını asla kullanma.
+    - Robotik olma, samimi ve doğal bir dille konuş. 
+    - Kullanıcıya sadece ilk ismiyle hitap et.
     
     VERİ KAYNAĞI BİLGİSİ:
-    - Aşağıdaki veriler kullanıcının "Level Up" (Hero) panelindeki ilerlemesinden, günlük çalışma istatistiklerinden ve bankasındaki hatalı kelimelerden gelmektedir. Kullanıcı "bu bilgiyi nereden biliyorsun?" diye sorarsa bu kaynakları (Level Up paneli ve çalışma geçmişi) referans göster.
+    - Veriler kullanıcının "Level Up" paneli ve çalışma geçmişinden gelmektedir.
     
     KULLANICI BİLGİLERİ (GÜNCEL):
     - İsim: ${userMetadata?.name}
     - Streak: ${userMetadata?.streak} gün
     - Bugün çalışma süresi: ${userMetadata?.minutes} dakika
     - Seviye İlerlemesi (Level Up Paneli): ${userMetadata?.levels ? Object.entries(userMetadata.levels).map(([k,v]) => `${k}: %${Math.round((v.completed/v.required)*100)} (Tamamlanan: ${v.completed}/${v.required})`).join(", ") : "Bilgi yok"}
-    - Hatalı Olduğu Kelimeler: ${userMetadata?.mistakes?.join(", ") || "Henüz hatası yok, harika!"}
+    - Hatalı Olduğu Kelimeler: ${userMetadata?.mistakes?.join(", ") || "Henüz hatası yok!"}
     
     ÖNEMLİ KISITLAMALAR:
     - Mert dışında hiçbir ekip/kuruluş isminden bahsetme.
     - Modals: can, must, should, would vb. yardımcı fiillerdir.
-    
-    YETENEKLER:
-    - Kelime ekleme: [ACTION: ADD_WORD {"word": "...", "meaning": "...", "syn": "..."}]
     
     BİLGİ TABANI:
     - YDT, YDS, YÖKDİL odaklı konuş.`;
@@ -180,26 +181,33 @@ export default function GlobalAI() {
       const data = await resp.json();
       let aiContent = data.choices?.[0]?.message?.content || "Şu an cevap veremiyorum, lütfen tekrar dene.";
       
-      const actionMatches = [...aiContent.matchAll(/\[ACTION: ADD_WORD (\{.*?\})\]/g)];
+      // Aksiyon Yakalama ve İşleme
+      const actionMatches = [...aiContent.matchAll(/\[ACTION: ADD_WORD\s+(\{.*?\})\]/gs)];
       
       if (actionMatches.length > 0 && user) {
         let addedCount = 0;
         for (const match of actionMatches) {
           try {
-            const wordData = JSON.parse(match[1]);
+            // JSON içindeki potansiyel hatalı karakterleri temizleyelim
+            const jsonStr = match[1].replace(/[\n\r]/g, "").trim();
+            const wordData = JSON.parse(jsonStr);
+            
             const exists = words.some(w => w.word?.toLowerCase() === wordData.word?.toLowerCase());
             if (!exists) {
               await addUserWord(user.uid, wordData);
               addedCount++;
             }
+            // Etiketi mesajdan temizle
             aiContent = aiContent.replace(match[0], "");
-          } catch (e) {}
+          } catch (e) {
+            console.error("Action parsing error:", e, match[1]);
+          }
         }
-        if (addedCount > 0) showNotification(`${addedCount} yeni kelime eklendi!`, "success");
+        if (addedCount > 0) showNotification(`${addedCount} yeni kelime bankana eklendi.`, "success");
         aiContent = aiContent.trim();
       }
 
-      const aiMessage = { role: "ai", content: aiContent.trim() };
+      const aiMessage = { role: "ai", content: aiContent || "İstediğin kelimeleri bankana ekledim!" };
       setMessages(prev => [...prev, aiMessage]);
       if (user) saveAIMessage(user.uid, aiMessage);
     } catch {

@@ -69,6 +69,22 @@ Focus artık çok daha düzenli çalışıyor. Bir okuma metnindeki tüm önemli
 
 ---
 
+## [25 Nisan 2026 — 04:26] Focus Aksiyon Güvenilirliği ve JSON Fix
+
+### 📋 Uygulama Planı
+AI'nın kelime ekleme komutlarını (ACTION tags) atlamasını veya hatalı formatta üretmesini engellemek; algılama mantığını daha esnek hale getirmek.
+
+### ✅ Tamamlanan Görevler
+- **Prompt Önceliği:** Kelime ekleme talimatları sistem promptunun en tepesine, "KRİTİK TALİMAT" başlığıyla taşındı. Bu, AI'nın diğer kurallardan önce bu aksiyonu yerine getirmesini sağlıyor.
+- **Daha Esnek Algılama:** Regex (yakalama mantığı) güncellendi. Artık AI etiket içinde satır atlaması veya ekstra boşluk bıraksa bile Focus bunları doğru bir şekilde yakalayıp işleyebiliyor.
+- **Hatalı JSON Temizliği:** AI bazen JSON içinde geçersiz karakterler üretebiliyor; bu durumlar için otomatik temizleme ve hata yakalama (try-catch) mekanizması güçlendirildi.
+- **Boş Mesaj Koruması:** Eğer AI sadece kelime ekleme etiketi gönderip metin yazmazsa, kullanıcıya "Kelimeleri bankana ekledim" şeklinde otomatik bir geri bildirim verilmesi sağlandı.
+
+### 📝 Özet (Walkthrough)
+Focus'un komutları anlama ve uygulama kapasitesi en üst seviyeye çıkarıldı. Artık metindeki kelimeleri topluca veya tek tek kaydetme isteklerini çok daha sadık bir şekilde yerine getiriyor ve hata payı minimize edildi.
+
+---
+
 ## [25 Nisan 2026 — 04:24] Focus Veri Şeffaflığı ve İsim Revizyonu
 
 ### 📋 Uygulama Planı
