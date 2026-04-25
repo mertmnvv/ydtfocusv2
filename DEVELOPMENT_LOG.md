@@ -12,7 +12,8 @@ Focus'un kullanıcı talimatlarını (ekle/ekleme) yanlış anlamasını engelle
 ### ✅ Tamamlanan Görevler
 - **Kritik Kurallar Seti:** Sistem promptuna "ASLA kelime bankasını liste halinde sunma" ve "Negatif talimatlarda (ekleme, istemiyorum vb.) aksiyon tetikleme" kuralları eklendi.
 - **Bağlam Yönetimi:** Kelime bankası verisi AI'ya "bunlar zaten var, tekrar ekleme teklif etme" uyarısıyla gönderilmeye başlandı.
-- **Üslup Sıkılaştırma:** Yanıtların kısa, öz ve amaca yönelik olması, gereksiz listelerden kaçınılması talimatı verildi.
+- **Esnek Listeleme:** Kullanıcı açıkça "kelimelerimi listele" veya "zor kelimeler neler?" dediğinde bu isteğin yerine getirilmesi sağlandı. Gereksiz (kendiliğinden) listeleme yasağı korunurken, kullanıcı talebi önceliklendirildi.
+- **Doğallaştırma:** AI'nın "kurallarım gereği yapmıyorum" gibi robotik açıklamalar yapması yasaklandı. Teknik kısıtlamaları kullanıcıya sızdırmadan doğal bir hoca dili kullanması sağlandı.
 - **Zekâ Senkronizasyonu:** AI'nın kullanıcı onayını beklemeden veya istemediği kelimeleri kaydetme hatası (mükerrer kayıt kontrolü ile birlikte) prompt seviyesinde çözüldü.
 
 ### 📝 Özet (Walkthrough)
