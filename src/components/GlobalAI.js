@@ -417,17 +417,29 @@ export default function GlobalAI() {
           gap: 15px;
         }
 
-        .clear-ai, .close-ai {
+        .clear-ai, .ai-close {
           background: none;
           border: none;
           color: var(--text-muted);
           cursor: pointer;
           font-size: 1.1rem;
-          transition: color 0.2s;
+          padding: 8px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s;
         }
 
-        .clear-ai:hover { color: #ff453a; }
-        .close-ai:hover { color: var(--text); }
+        .clear-ai:hover { 
+          color: #ff453a; 
+          background: rgba(255, 69, 58, 0.1);
+        }
+        
+        .ai-close:hover { 
+          color: var(--text); 
+          background: rgba(255, 255, 255, 0.05);
+        }
 
         .global-ai-messages {
           flex: 1;
