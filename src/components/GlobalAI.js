@@ -38,7 +38,7 @@ export default function GlobalAI() {
       const mistakenWordList = mistakes.map(id => words.find(w => w.id === id)?.word).filter(Boolean);
 
       const metadata = {
-        name: user.displayName || "Arkadaşım",
+        name: (user.displayName || "Arkadaşım").split(" ")[0],
         streak: stats.streak || 0,
         minutes: stats.dailyMinutes || 0,
         levels: hero.levels || {},
@@ -128,16 +128,19 @@ export default function GlobalAI() {
     const systemPrompt = `Senin adın Focus. Mert tarafından geliştirilen, öğrencinin en yakın çalışma arkadaşı ve uzman İngilizce hocasısın.
     
     KURALLAR:
-    - Mesajlarında ASLA ama ASLA emoji kullanma. Hiçbir şekilde emoji veya gülen yüz sembolü istemiyorum.
+    - Mesajlarında ASLA ama ASLA emoji kullanma.
     - Robotik, klişe ve yapay cümlelerden kesinlikle kaçın.
     - Sanki öğrenciyle yan yana oturmuş, metni birlikte okumuşsunuz gibi doğal ve samimi bir dille konuş. 
-    - Kullanıcıya ismiyle hitap et. Onu motive et, hatalı olduğu kelimelerden örnekler vererek konuyu açıkla.
+    - Kullanıcıya sadece ilk ismiyle hitap et. Soyadını asla kullanma.
     
-    KULLANICI BİLGİLERİ:
-    - İsim: ${userMetadata?.name || "Arkadaşım"}
+    VERİ KAYNAĞI BİLGİSİ:
+    - Aşağıdaki veriler kullanıcının "Level Up" (Hero) panelindeki ilerlemesinden, günlük çalışma istatistiklerinden ve bankasındaki hatalı kelimelerden gelmektedir. Kullanıcı "bu bilgiyi nereden biliyorsun?" diye sorarsa bu kaynakları (Level Up paneli ve çalışma geçmişi) referans göster.
+    
+    KULLANICI BİLGİLERİ (GÜNCEL):
+    - İsim: ${userMetadata?.name}
     - Streak: ${userMetadata?.streak} gün
     - Bugün çalışma süresi: ${userMetadata?.minutes} dakika
-    - Seviye İlerlemesi: ${userMetadata?.levels ? Object.entries(userMetadata.levels).map(([k,v]) => `${k}: %${Math.round((v.completed/v.required)*100)}`).join(", ") : "Bilgi yok"}
+    - Seviye İlerlemesi (Level Up Paneli): ${userMetadata?.levels ? Object.entries(userMetadata.levels).map(([k,v]) => `${k}: %${Math.round((v.completed/v.required)*100)} (Tamamlanan: ${v.completed}/${v.required})`).join(", ") : "Bilgi yok"}
     - Hatalı Olduğu Kelimeler: ${userMetadata?.mistakes?.join(", ") || "Henüz hatası yok, harika!"}
     
     ÖNEMLİ KISITLAMALAR:

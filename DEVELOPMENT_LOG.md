@@ -69,6 +69,21 @@ Focus artık çok daha düzenli çalışıyor. Bir okuma metnindeki tüm önemli
 
 ---
 
+## [25 Nisan 2026 — 04:24] Focus Veri Şeffaflığı ve İsim Revizyonu
+
+### 📋 Uygulama Planı
+Asistanın kullanıcı verilerini (seviyeler, ilerleme) daha doğru yorumlamasını sağlamak, verilerin kaynağını açıklamasını öğretmek ve hitap şeklini resmileşmekten kurtarmak.
+
+### ✅ Tamamlanan Görevler
+- **İsim Revizyonu:** Focus artık kullanıcının tam ismini (ad soyad) değil, sadece **ilk ismini** kullanıyor. Bu, "öğretmen-arkadaş" kimliğiyle daha uyumlu hale getirildi.
+- **Veri Kaynağı Netleştirme:** Focus'a, senin hakkında verdiği bilgileri (seviye ilerlemeleri, hatalar vb.) nereden aldığı öğretildi. Artık "bu bilgiyi nereden biliyorsun?" diye sorduğunda, platformdaki "Level Up" paneli ve çalışma geçmişini kaynak olarak gösterecek.
+- **Seviye Verisi Hassasiyeti:** AI'ya gönderilen seviye verileri (Tamamlanan: X / Gereken: Y) şeklinde detaylandırıldı. Bu sayede "A1'de misin B1'de misin?" kafa karışıklığı giderildi.
+
+### 📝 Özet (Walkthrough)
+Focus artık seninle soyadını kullanmadan, daha samimi bir dille konuşuyor. Seviyen veya ilerlemen hakkında bir şey söylediğinde, bunun platformdaki gerçek verilerine (Level Up paneli) dayandığını biliyor ve bunu sana açıklayabiliyor.
+
+---
+
 ## [25 Nisan 2026 — 04:19] Focus İnteraktif Öneriler ve Hızlı Aksiyonlar
 
 ### 📋 Uygulama Planı
@@ -80,9 +95,10 @@ Sohbet başlangıcında kullanıcının ne soracağını bilemediği anları kol
   2. **Kişiselleştirilmiş Öneri:** Kullanıcının hataları varsa "Hatalarımı çalışalım", yoksa "İlerlememi özetle" veya "Yeni bir kelime öğret" gibi rastgele kişisel görevler.
 - **Dinamik Tetikleme:** Bir öneriye tıklandığında ilgili komut otomatik olarak Focus'a gönderiliyor ve sohbet başlıyor.
 - **Görsel İyileştirme:** Öneri butonları için premium cam efekti (glassmorphism) ve hover animasyonları içeren yeni bir CSS yapısı kuruldu.
+- **Görsel Sadeleştirme:** Tüm arayüzden ve AI cevaplarından emojiler kaldırıldı.
 
 ### 📝 Özet (Walkthrough)
-Focus artık sadece beklemiyor, sana yol da gösteriyor. Sohbeti açtığında ne yapacağını düşünmene gerek yok; "Hatalarımı çalışalım" veya "Bana bir kelime öğret" gibi seçeneklere tek tıkla ulaşabilirsin. Bu, asistanla etkileşimi çok daha hızlı ve akıcı hale getirdi.
+Focus artık sadece beklemiyor, sana yol da gösteriyor. Sohbeti açtığında ne yapacağını düşünmene gerek yok; "Hatalarımı çalışalım" veya "Bana bir kelime öğret" gibi seçeneklere tek tıkla ulaşabilirsin. Ayrıca kullanıcı isteği üzerine tüm emojiler kaldırılarak daha sade ve profesyonel bir görünüme geçildi.
 
 ---
 
