@@ -33,7 +33,12 @@ export default function GlobalAI() {
     }
 
     // Kelime Bankası (Realtime)
-    const unsubscribe = subscribeToUserWords(user.uid, setWords);
+    const isIdFormat = (str) => /^\d{10,15}_[a-z0-9]{3,10}$/.test(str);
+    const unsubscribe = subscribeToUserWords(user.uid, (updatedWords) => {
+      // Hatalı/Bozuk verileri (ID formatındaki kelimeler) yerel state'e almadan temizle
+      const filtered = updatedWords.filter(w => !isIdFormat(w.word || ""));
+      setWords(filtered);
+    });
 
     // Diğer Veriler (Statik/Mount sırasında)
     const fetchData = async () => {
@@ -118,12 +123,14 @@ export default function GlobalAI() {
     setLastGenerateTime(now);
 
     // Kelime listesini hazırla
-    let sourceWords = mistakeIds
-      .map(id => words.find(w => w.id === id)?.word)
-      .filter(Boolean);
+    const isIdFormat = (str) => /^\d{10,15}_[a-z0-9]{3,10}$/.test(str);
+    
+    // Önce kullanıcı meta verisindeki hataları kullan
+    let sourceWords = (userMetadata?.mistakes || []).filter(w => !isIdFormat(w));
 
+    // Eğer hata yoksa bankadaki son kelimeleri kullan
     if (sourceWords.length === 0) {
-      sourceWords = words.slice(-8).map(w => w.word).filter(Boolean);
+      sourceWords = words.slice(-10).map(w => w.word).filter(Boolean);
     }
 
     if (sourceWords.length === 0) {
