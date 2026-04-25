@@ -4,6 +4,22 @@ Bu dosya, projede yapılan tüm geliştirmelerin, planların ve tamamlanan göre
 
 ---
 
+## [25 Nisan 2026 — 05:45] Focus AI Prompt Stabilizasyonu ve Zekâ İyileştirmesi
+
+### 📋 Uygulama Planı
+Focus'un kullanıcı talimatlarını (ekle/ekleme) yanlış anlamasını engellemek, kelime bankasını gereksiz yere listelemesini durdurmak ve yanıtlarını daha profesyonel bir çizgiye çekmek.
+
+### ✅ Tamamlanan Görevler
+- **Kritik Kurallar Seti:** Sistem promptuna "ASLA kelime bankasını liste halinde sunma" ve "Negatif talimatlarda (ekleme, istemiyorum vb.) aksiyon tetikleme" kuralları eklendi.
+- **Bağlam Yönetimi:** Kelime bankası verisi AI'ya "bunlar zaten var, tekrar ekleme teklif etme" uyarısıyla gönderilmeye başlandı.
+- **Üslup Sıkılaştırma:** Yanıtların kısa, öz ve amaca yönelik olması, gereksiz listelerden kaçınılması talimatı verildi.
+- **Zekâ Senkronizasyonu:** AI'nın kullanıcı onayını beklemeden veya istemediği kelimeleri kaydetme hatası (mükerrer kayıt kontrolü ile birlikte) prompt seviyesinde çözüldü.
+
+### 📝 Özet (Walkthrough)
+Focus artık daha "söz dinleyen" bir hale getirildi. Bir kelimeyi ekle dediğinde ekleyecek, ekleme dediğinde ise sessiz kalacak. Kendi kendine kelime bankası dökümü yaparak sohbeti kalabalıklaştırması engellendi. Çok daha temiz ve kararlı bir asistan deneyimi sağlandı.
+
+---
+
 ## [25 Nisan 2026 — 03:40] Modernizasyon, Yapay Zeka Entegrasyonu ve Hata Düzeltmeleri
 
 ### 📋 Uygulama Planı
