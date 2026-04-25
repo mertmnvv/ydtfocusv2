@@ -19,6 +19,7 @@ export default function GlobalAI() {
   const [mistakeIds, setMistakeIds] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [lastGenerateTime, setLastGenerateTime] = useState(0);
   const scrollRef = useRef(null);
 
   // 1. Veri Senkronizasyonu (Kelime Bankası, İstatistikler, Hatalar)
@@ -98,7 +99,17 @@ export default function GlobalAI() {
   }
 
   async function generateSpecialPassage() {
-    if (!user) return;
+    if (!user || loading) return;
+
+    // Cooldown kontrolü (5 saniye)
+    const now = Date.now();
+    if (now - lastGenerateTime < 5000) {
+      const remaining = Math.ceil((5000 - (now - lastGenerateTime)) / 1000);
+      setMessages(prev => [...prev, { role: "ai", content: `Yeni bir metin üretmek için ${remaining} saniye daha beklemelisin.` }]);
+      return;
+    }
+
+    setLastGenerateTime(now);
 
     // Kelime listesini hazırla
     let sourceWords = mistakeIds
@@ -160,10 +171,12 @@ export default function GlobalAI() {
       const event = new CustomEvent("focus-load-passage", { detail: result });
       window.dispatchEvent(event);
 
-      setMessages(prev => [...prev, { 
+      const aiMsg = { 
         role: "ai", 
-        content: `Özel metnin hazır! Reading paneline yükledim. Hadi soruları çözelim.` 
-      }]);
+        content: `Özel metnin hazır! Reading paneline yükledim. Hadi soruları çözelim. İstersen metindeki anlamadığın kelimeleri bana sorabilir veya bu metnin gramer yapısını analiz etmemi isteyebilirsin!` 
+      };
+      setMessages(prev => [...prev, aiMsg]);
+      if (user) saveAIMessage(user.uid, aiMsg);
     } catch (e) {
       console.error("Metin üretme hatası:", e);
       const errorMsg = e.name === 'AbortError' 
