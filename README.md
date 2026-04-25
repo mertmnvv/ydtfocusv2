@@ -1,113 +1,104 @@
-# YDT Focus v2: Akademik Dil Ogrenme ve Sinav Hazirlik Platformu
+# YDT Focus: Akademik Dil Öğrenme ve Sınav Hazırlık Platformu
 
-YDT Focus v2, YDT (Yabanci Dil Testi), YOKDIL ve YDS gibi ileri duzey akademik Ingilizce sinavlarina hazirlanan ogrenciler icin tasarlanmis, yapay zeka destekli ve oyunlastirilmis bir egitim platformudur. Modern web teknolojileri ve bilissel ogrenme prensipleri uzerine insa edilen sistem, kullanicilara yuksek performansli ve odaklanmis bir calisma ortami sunar.
+YDT Focus; YDT (Yabancı Dil Testi), YÖKDİL ve YDS gibi ileri düzey akademik İngilizce sınavlarına hazırlanan öğrenciler için tasarlanmış, yapay zeka destekli ve oyunlaştırılmış bir eğitim ekosistemidir. Modern web teknolojileri ve bilişsel öğrenme prensipleri üzerine inşa edilen sistem, kullanıcılara yüksek performanslı, dikkati dağıtmayan ve premium bir çalışma deneyimi sunar.
 
 ---
 
 ## Proje Vizyonu ve Temel Hedefler
 
-Platformun ana amaci, akademik kelime dagarcigini gelistirmek, okudugunu anlama becerilerini artirmak ve sinav stratejilerini interaktif bir deneyimle pekistirmektir. Bu dogrultuda asagidaki temel hedefler gozetilmistir:
+Platformun ana amacı, akademik kelime dağarcığını geliştirmek, okuduğunu anlama becerilerini artırmak ve sınav stratejilerini interaktif bir deneyimle pekiştirmektir. Bu doğrultuda aşağıdaki temel hedefler gözetilmiştir:
 
-*   Akademik kelimelerin uzun sureli hafizada tutulmasi icin bilimsel tekrar algoritmalarinin kullanilmasi.
-*   Yapay zeka yardimiyla kisisellestirilmis ve sinav formatina uygun icerik uretimi.
-*   Dikkat dagitici unsurlardan arindirilmis, premium bir kullanici deneyimi.
-*   Ogrencilerin gelisimlerini veriye dayali metriklerle anlik olarak takip edebilmesi.
+*   Akademik kelimelerin uzun süreli hafızada tutulması için aralıklı tekrar (SRS) algoritmalarının kullanılması.
+*   Yapay zeka yardımıyla kişiselleştirilmiş ve sınav formatına uygun okuma metni üretimi.
+*   Emoji ve karmaşık unsurlardan arındırılmış, profesyonel ve odaklanmış kullanıcı arayüzü.
+*   Öğrencilerin gelişimlerini veriye dayalı metriklerle ve topluluk sıralamasıyla anlık olarak takip edebilmesi.
 
 ---
 
-## Teknik Altyapi ve Mimari
+## Teknik Altyapı ve Mimari
 
-Proje, modern yazilim mimarisi standartlarina uygun olarak moduler ve olceklenebilir bir yapida gelistirilmistir.
+Proje, modern yazılım mimarisi standartlarına uygun olarak modüler, ölçeklenebilir ve performans odaklı bir yapıda geliştirilmiştir.
 
-### Kullanilan Teknolojiler
+### Kullanılan Teknolojiler
 
-*   **Frontend Framework:** Next.js 16.2.4 (App Router ve Turbopack entegrasyonu).
-*   **Kutuphane:** React 19.2.4 (Concurrent Rendering ve Server Components destegi).
-*   **Backend Servisleri:** Firebase 12 (Authentication, Firestore ve Cloud Messaging).
-*   **Yapay Zeka:** Groq Cloud API (Llama 3.1 8B/70B modelleri) ve Google Translate API proxy katmani.
-*   **Stil Yonetimi:** Vanilla CSS (Custom Design System, Glassmorphism, Responsive Grid).
-*   **Durum Yonetimi:** React Context API ve ozel hook mimarisi.
+*   **Frontend Framework:** Next.js (App Router ve Turbopack entegrasyonu).
+*   **Kütüphane:** React (Concurrent Rendering ve Server Components desteği).
+*   **Backend Servisleri:** Firebase (Authentication, Firestore ve Cloud Messaging).
+*   **Yapay Zeka:** Groq Cloud API (Llama 3.1 modelleri) üzerinden sağlanan Focus AI asistanı.
+*   **Stil Yönetimi:** Vanilla CSS (Özel Tasarım Sistemi, Glassmorphism, Responsive Grid).
+*   **Durum Yönetimi:** React Context API ve özel hook mimarisi.
 
 ### Tasarım Sistemi (Design System)
 
-Platform, "Apple-esque" bir estetik anlayisiyla, glassmorphism (cam efekti) ve derinlik hissi veren katmanli bir tasarim dilini benimser.
+Platform, premium bir estetik anlayışıyla, glassmorphism (cam efekti) ve derinlik hissi veren katmanlı bir tasarım dilini benimser.
 
-*   **Dinamik Tema:** Karanlik (Dark) ve Aydinlik (Light) mod destegi.
-*   **Bento Grid:** Verilerin ve istatistiklerin mobil uyumlu, kutucuklu yapida sunumu.
-*   **Mikro-Animasyonlar:** Yuksek kare hizina sahip CSS transition ve keyframe animasyonlari.
-*   **Tipografi:** Okunabilirligi yuksek akademik odakli Inter font ailesi.
-
----
-
-## Fonksiyonel Moduller
-
-### 1. Akilli Dashboard ve Analitik
-Kullanicinin gunluk kelime hedeflerini, calisma serisini (streak), seviye ilerlemesini ve ogrenilen kelime sayisini anlik olarak gosteren merkezi kontrol paneli.
-
-### 2. Yapay Zeka Destekli Okuma (Reading)
-Llama 3.1 modelleri kullanilarak CEFR seviyelerine gore uretilen akademik metinler. Metin icerisinde gecen akademik kelimelerin otomatik tespiti, uzerine tiklandiginda acilan analiz paneli ve AI tarafindan olusturulan anlama sorulari.
-
-### 3. Aralikli Tekrar Sistemi (SRS)
-Unutma egrisini minimize eden 5 kademeli (Level 0-4) tekrar algoritmasi. Kullanicinin dogru/yanlis yanitlarina gore kelimelerin bir sonraki gosterim zamanini otomatik olarak hesaplar.
-
-### 4. Zero to Hero Kursu
-A1 seviyesinden C1 seviyesine kadar yapilandirilmis, ogrenciyi kademe kademe ileri tasiyan oyunlastirilmis egitim yolu.
-
-### 5. Linefocus (Odakli Okuma)
-Typing (yazim) tabanli, mekanik klavye ses efektleri ve karakter bazli animasyonlarla zenginlestirilmis, metne derinlemesine odaklanmayi saglayan ozel modül.
-
-### 6. Quiz ve Test Merkezi
-Sözlük, Phrasal Verbs, Hatalar ve Akilli Tekrar gibi farkli veri setleri uzerinden calisabilen cok modlu test sistemi.
-
-### 7. Gelismis Admin Paneli
-Icerik yoneticileri icin kelime ekleme/duzenleme (CRUD), gramer konulari yonetimi, kullanici yetkilendirme ve toplu veri yukleme (seeding) araclarini iceren yonetim merkezi.
+*   **Dinamik Tema:** Karanlık (Dark) ve Aydınlık (Light) mod desteği.
+*   **Bento Grid:** Verilerin ve istatistiklerin mobil uyumlu, kutucuklu yapıda sunumu.
+*   **Mikro-Animasyonlar:** Yüksek kare hızına sahip CSS transition ve keyframe animasyonları.
+*   **Tipografi:** Okunabilirliği yüksek, akademik odaklı Inter font ailesi.
 
 ---
 
-## Kurulum ve Yapilandirma
+## Fonksiyonel Modüller
+
+### 1. Akıllı Dashboard ve Analitik
+Kullanıcının günlük kelime hedeflerini, çalışma serisini (streak), seviye ilerlemesini ve öğrenilen kelime sayısını anlık olarak gösteren merkezi kontrol paneli.
+
+### 2. Focus AI (Yapay Zeka Asistanı)
+Öğrencinin tüm süreç boyunca yanında olan uzman bir hoca. Kelime analizi yapar, metinleri açıklar, hatalar üzerinden pratik yaptırır ve kullanıcıya özel çalışma rotası belirler.
+
+### 3. Yapay Zeka Destekli Okuma (Reading)
+Llama 3.1 modelleri kullanılarak CEFR seviyelerine göre üretilen akademik metinler. Metin içerisinde geçen akademik kelimelerin otomatik tespiti ve AI tarafından oluşturulan anlama soruları.
+
+### 4. Aralıklı Tekrar Sistemi (SRS)
+Unutma eğrisini minimize eden 5 kademeli (Level 0-4) tekrar algoritması. Kullanıcının doğru/yanlış yanıtlarına göre kelimelerin bir sonraki gösterim zamanını otomatik olarak hesaplar.
+
+### 5. Linefocus (Odaklı Okuma)
+Yazım (typing) tabanlı, mekanik klavye ses efektleri ve karakter bazlı animasyonlarla zenginleştirilmiş, metne derinlemesine odaklanmayı sağlayan özel çalışma modülü.
+
+### 6. Topluluk ve Sıralama
+Kullanıcıların çalışma performanslarına göre (Seri, Haftalık Vakit, Kelime Sayısı) birbirleriyle yarıştığı, Premium ve Admin rollerinin özel ikonlarla (Taç ve Kalkan) belirtildiği sosyal katman.
+
+### 7. Gelişmiş Mesajlaşma ve Sosyal Paylaşım
+Arkadaşlık sistemi, anlık mesajlaşma ve metin/soru paylaşımını destekleyen ChatHub merkezi. Kullanıcılar birbirlerinin profillerini detaylı olarak inceleyebilir ve soru çözümü için yardımlaşabilir.
+
+---
+
+## Kurulum ve Yapılandırma
 
 ### Gereksinimler
-*   Node.js 18.x veya uzeri
-*   Firebase Projesi (Auth ve Firestore etkinlestirilmis)
+*   Node.js 18.x veya üzeri
+*   Firebase Projesi (Auth ve Firestore etkinleştirilmiş)
 *   Groq Cloud API Key
 
-### Adimlar
+### Adımlar
 
-1.  Proje dizinine gidin ve bagimliliklari yukleyin:
+1.  Bağımlılıkları yükleyin:
     ```bash
     npm install
     ```
 
-2.  Kok dizinde `.env.local` dosyasi olusturarak asagidaki degiskenleri tanimlayin:
-    ```env
-    NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
-    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-    NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-    NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-    GROQ_API_KEY=your_groq_key
-    ```
+2.  `.env.local` dosyası oluşturarak Firebase ve AI API anahtarlarınızı tanımlayın.
 
-3.  Gelistirme sunucusunu baslatin:
+3.  Geliştirme sunucusunu başlatın:
     ```bash
     npm run dev
     ```
 
 ---
 
-## Veri Modeli ve Guvenlik
+## Veri Modeli ve Güvenlik
 
-Firestore uzerinde veriler hiyerarşik bir yapida tutulur:
-*   `users/{uid}`: Kullanici profili ve rol bilgileri.
-*   `users/{uid}/words`: Kullaniciya ozel kelime bankasi ve SRS verileri.
-*   `archive`: Genel akademik sozluk veritabani.
-*   `grammarTopics`: Gramer ve sinav taktikleri icerigi.
+Firestore üzerinde veriler hiyerarşik bir yapıda tutulur:
+*   `users/{uid}`: Kullanıcı profili, rol bilgileri (Standart, Premium, Admin) ve sosyal veriler.
+*   `users/{uid}/words`: Kullanıcıya özel kelime bankası ve SRS verileri.
+*   `archive`: Genel akademik sözlük veritabanı.
+*   `grammarTopics`: Gramer ve sınav taktikleri içeriği.
 
-Guvenlik, Firebase Authentication ve Firestore Security Rules katmanlariyla saglanmaktadir.
+Güvenlik, Firebase Authentication ve Firestore Security Rules katmanlarıyla en üst düzeyde sağlanmaktadır.
 
 ---
 
-## Gelistirici Notu
+## Geliştirici Notu
 
-Bu proje, dil ogrenme surecini daha verimli, olculebilir ve keyifli hale getirmek amaciyla Mert tarafindan gelistirilmistir. Her bir bilesen, ogrenci performansini maksimize etmek icin ozenle optimize edilmistir.
+Bu proje, dil öğrenme sürecini daha verimli, ölçülebilir ve keyifli hale getirmek amacıyla Mert tarafından geliştirilmiştir. Her bir bileşen, öğrenci performansını maksimize etmek için özenle optimize edilmiştir.
