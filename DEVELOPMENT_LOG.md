@@ -36,3 +36,18 @@ Asistanı daha zeki, hafızası olan ve interaktif bir hale getirmek. İsmini "F
 Bu seansta Focus artık sadece bir yapay zeka olmaktan çıkıp gerçek bir çalışma arkadaşına dönüştü. Kullanıcıyı hatırlıyor, onun adına işlem yapabiliyor ve çok daha zeki cevaplar veriyor. Tasarımda ve karşılama mesajlarında yapılan güncellemelerle samimiyet artırıldı.
 
 ---
+
+## [25 Nisan 2026 — 03:52] Bağlamsal Farkındalık ve Stabilizasyon
+
+### 📋 Uygulama Planı
+Focus'un okunan metinleri otomatik olarak bilmesini sağlamak (Bağlamsal Farkındalık) ve yapay zeka modelini en stabil sürüme geri çekmek.
+
+### ✅ Tamamlanan Görevler
+- **Model Stabilizasyonu:** Bağlantı sorunlarını gidermek adına model tekrar `llama-3.1-8b-instant` sürümüne çekildi.
+- **Bağlamsal Farkındalık (Context Awareness):** `CustomEvent` mimarisi kullanılarak asistanın sayfa içeriğinden haberdar olması sağlandı.
+- **Reading Entegrasyonu:** Okuma panelinde bir metin oluşturulduğunda, Focus bu metni otomatik olarak öğreniyor. Artık "bu metni açıkla" dendiğinde metni kopyalamaya gerek kalmıyor.
+
+### 📝 Özet (Walkthrough)
+Focus artık daha stabil çalışıyor ve en önemlisi "gözleri açıldı". Okuma sayfasındaki metinleri sen sormadan biliyor, bu da soru-cevap sürecini inanılmaz hızlandırıyor.
+
+---

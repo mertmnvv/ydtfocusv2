@@ -107,6 +107,21 @@ export default function ReadingPage() {
     return () => unsubscribe();
   }, [user]);
 
+  // Sayfa içeriğini Focus AI'ya bildir
+  useEffect(() => {
+    if (aiText || analysis) {
+      const event = new CustomEvent("focus-page-context", {
+        detail: {
+          type: "reading_passage",
+          topic: selectedTopic,
+          text: aiText,
+          analysis_summary: analysis?.length > 0 ? "Kelimeler analiz edildi" : "Henüz analiz yok"
+        }
+      });
+      window.dispatchEvent(event);
+    }
+  }, [aiText, analysis, selectedTopic]);
+
   async function generateAIText(selectedTopic) {
     const t = selectedTopic || topic;
     setTopic(t);

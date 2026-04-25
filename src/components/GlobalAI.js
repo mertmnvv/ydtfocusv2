@@ -15,14 +15,23 @@ export default function GlobalAI() {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pageContext, setPageContext] = useState(null);
   const scrollRef = useRef(null);
+
+  // Sayfa içeriği dinleyicisi
+  useEffect(() => {
+    const handleContext = (e) => {
+      setPageContext(e.detail);
+    };
+    window.addEventListener("focus-page-context", handleContext);
+    return () => window.removeEventListener("focus-page-context", handleContext);
+  }, []);
 
   // 1. Hafıza: Geçmiş mesajları yükle
   useEffect(() => {
     if (!user) return;
     getAIMessages(user.uid).then(history => {
       if (history.length > 0) {
-        // Timestamp nesnesini temizle (JSON serileştirme için gerekebilir)
         const formatted = history.map(m => ({ role: m.role, content: m.content }));
         setMessages(formatted);
       }
@@ -47,7 +56,7 @@ export default function GlobalAI() {
     
     setLoading(true);
 
-    const systemPrompt = `Selam! Senin adın Focus. YDT Focus platformunun hem uzman öğretmeni hem de en yakın çalışma arkadaşısın. 
+    let systemPrompt = `Selam! Senin adın Focus. YDT Focus platformunun hem uzman öğretmeni hem de en yakın çalışma arkadaşısın. 
     Kullanıcıya karşı samimi, destekleyici, motive edici ve bir dost gibi yaklaşmalısın. "Siz" yerine "Sen" dilini kullan.
     
     Görevin SADECE YDT, YDS, YÖKDİL ve İngilizce dil öğrenimi konularında yardımcı olmaktır. 
@@ -55,22 +64,25 @@ export default function GlobalAI() {
     BİLGİ TABANI:
     - YDT: Yılda 1 kez (Haziran). 80 soru, 120 dk.
     - YDS: Yılda 2 kez + aylık e-YDS. 80 soru, 180 dk.
-    - YÖKDİL: Yılda 2 kez. 80 soru, 180 dk.
-    
-    YETENEKLER:
+    - YÖKDİL: Yılda 2 kez. 80 soru, 180 dk.`;
+
+    if (pageContext) {
+      systemPrompt += `\n\nŞu anki sayfa içeriği/bağlamı: ${JSON.stringify(pageContext)}`;
+    }
+
+    systemPrompt += `\n\nYETENEKLER:
     - Kelime ekleme isteği gelirse: [ACTION: ADD_WORD {"word": "...", "meaning": "...", "syn": "..."}] formatını ekle.
     
     KİŞİLİK:
     - Sıkıcı bir yapay zeka gibi değil, enerjik bir hoca/arkadaş gibi konuş. 
-    - Karmaşık konuları basitleştirerek anlat. 
-    - Arada "Hadi başarabilirsin!", "Harika gidiyorsun!" gibi motivasyon cümleleri kur.`;
+    - Arada motivasyon cümleleri kur.`;
 
     try {
       const resp = await fetch("/api/groq", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.1-70b-versatile",
+          model: "llama-3.1-8b-instant",
           messages: [
             { role: "system", content: systemPrompt },
             ...messages.slice(-10).map(m => ({ role: m.role === "ai" ? "assistant" : "user", content: m.content })),
