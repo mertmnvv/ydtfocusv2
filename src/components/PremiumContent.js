@@ -36,8 +36,10 @@ export default function PremiumContent({ children, fallback = null }) {
           flex-direction: column;
           align-items: center;
           gap: 15px;
-          border: 1px solid var(--accent);
+          border: 1px solid var(--border);
+          border-radius: 24px;
           background: linear-gradient(135deg, rgba(226, 183, 20, 0.05), transparent);
+          margin: 20px 0;
         }
         .premium-lock-icon {
           font-size: 2.5rem;
@@ -47,7 +49,7 @@ export default function PremiumContent({ children, fallback = null }) {
         }
         h3 { font-size: 1.5rem; font-weight: 800; color: #fff; margin: 0; }
         p { color: var(--text-muted); max-width: 300px; line-height: 1.5; margin-bottom: 10px; }
-      `}</script>
+      `}</style>
     </div>
   );
 }

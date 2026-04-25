@@ -246,7 +246,13 @@ a {
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
 .form-group {
@@ -262,6 +268,7 @@ a {
 }
 
 .form-group input {
+  width: 100%;
   background: var(--glass);
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -271,6 +278,14 @@ a {
   font-family: var(--font);
   transition: all 0.3s;
   outline: none;
+}
+
+.form-group input:-webkit-autofill,
+.form-group input:-webkit-autofill:hover,
+.form-group input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text);
+  -webkit-box-shadow: 0 0 0px 1000px #1c1c1e inset;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 .form-group input:focus {

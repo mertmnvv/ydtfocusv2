@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function RegisterPage() {
-  const [displayName, setDisplayName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -19,20 +20,34 @@ export default function RegisterPage() {
     e.preventDefault();
     setError("");
 
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return setError("Lütfen geçerli bir e-posta adresi girin.");
+    }
+
+    // Name validation
+    if (!firstName.trim() || !lastName.trim()) {
+      return setError("Ad ve soyad alanları zorunludur.");
+    }
+
+    // Password validation
+    if (password.length < 8) {
+      return setError("Şifre en az 8 karakter olmalıdır.");
+    }
     if (password !== confirmPassword) {
       return setError("Şifreler eşleşmiyor.");
-    }
-    if (password.length < 6) {
-      return setError("Şifre en az 6 karakter olmalıdır.");
     }
 
     setLoading(true);
     try {
-      await register(email, password, displayName);
+      const fullDisplayName = `${firstName.trim()} ${lastName.trim()}`;
+      await register(email, password, fullDisplayName);
       router.push("/dashboard");
     } catch (err) {
       if (err.code === "auth/email-already-in-use") setError("Bu e-posta zaten kullanılıyor.");
       else if (err.code === "auth/weak-password") setError("Şifre çok zayıf.");
+      else if (err.code === "auth/invalid-email") setError("Geçersiz e-posta adresi.");
       else setError("Kayıt oluşturulamadı. Lütfen tekrar deneyin.");
     }
     setLoading(false);
@@ -64,16 +79,29 @@ export default function RegisterPage() {
           {error && <div className="auth-error">{error}</div>}
 
           <form onSubmit={handleRegister} className="auth-form">
-            <div className="form-group">
-              <label htmlFor="displayName">İsim</label>
-              <input
-                id="displayName"
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Adınız"
-                required
-              />
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="firstName">Ad</label>
+                <input
+                  id="firstName"
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="Adınız"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="lastName">Soyad</label>
+                <input
+                  id="lastName"
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Soyadınız"
+                  required
+                />
+              </div>
             </div>
 
             <div className="form-group">
@@ -95,7 +123,7 @@ export default function RegisterPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="En az 6 karakter"
+                placeholder="En az 8 karakter"
                 required
               />
             </div>

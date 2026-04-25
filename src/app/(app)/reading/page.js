@@ -7,7 +7,9 @@ import { getUserWords, addUserWord } from "@/lib/firestore";
 
 const TOPICS = [
   { id: "random", label: "Karışık" },
-  { id: "exam", label: "YDT/YDS Format" },
+  { id: "literature", label: "Edebiyat" },
+  { id: "politics", label: "Siyaset" },
+  { id: "daily", label: "Günlük Yaşam" },
   { id: "history", label: "Tarih" },
   { id: "science", label: "Bilim" },
   { id: "psychology", label: "Psikoloji" },
