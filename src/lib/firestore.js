@@ -442,22 +442,33 @@ export async function clearAIChat(uid) {
 // =============================================
 
 export async function searchUsers(queryText) {
-  if (!queryText || queryText.trim() === "") {
-    // Boş aramada en son kayıt olanları getir
-    const q = query(collection(db, "users"), orderBy("createdAt", "desc"), limit(5));
-    const snap = await getDocs(q);
-    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  }
+  const usersRef = collection(db, "users");
+  
+  // Küçük ve orta ölçekli projeler için en güvenilir arama yöntemi: 
+  // Tüm kullanıcıları çekip client-side'da filtrelemek.
+  // Bu sayede hem 'searchName' alanı olmayan eski kullanıcılar bulunur,
+  // hem de ismin ortasından arama (substring match) yapılabilir.
+  try {
+    const snap = await getDocs(usersRef);
+    const allUsers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    if (!queryText || queryText.trim() === "") {
+      // Boş aramada en son kayıt olanları getir
+      return allUsers
+        .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0))
+        .slice(0, 10);
+    }
 
-  const term = queryText.toLowerCase().trim();
-  const q = query(
-    collection(db, "users"),
-    where("searchName", ">=", term),
-    where("searchName", "<=", term + "\uf8ff"),
-    limit(50)
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const term = queryText.toLowerCase().trim();
+    return allUsers.filter(u => 
+      (u.displayName || "").toLowerCase().includes(term) ||
+      (u.email || "").toLowerCase().includes(term) ||
+      (u.searchName || "").includes(term)
+    ).slice(0, 25);
+  } catch (err) {
+    console.error("Search users error:", err);
+    return [];
+  }
 }
 
 export async function sendFriendRequest(fromUid, toUid) {
