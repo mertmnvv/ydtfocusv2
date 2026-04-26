@@ -42,30 +42,15 @@ export default function GlobalAI() {
 
     // Diğer Veriler (Statik/Mount sırasında)
     const fetchData = async () => {
-      const [stats, hero, mistakes, history, allWords] = await Promise.all([
+      const [stats, hero, mistakes, history] = await Promise.all([
         getUserStats(user.uid),
         getUserHeroStats(user.uid),
         getUserMistakes(user.uid),
-        getAIMessages(user.uid),
-        getUserWords(user.uid)
+        getAIMessages(user.uid)
       ]);
 
       setMistakeIds(mistakes || []);
       const firstName = (user.displayName || "Arkadaşım").split(" ")[0];
-
-      // Hatalı kelime ID'lerini gerçek kelimelere dönüştür
-      const mistakeWords = (mistakes || [])
-        .map(id => (allWords || []).find(word => word.id === id)?.word)
-        .filter(Boolean);
-
-      const metadata = {
-        name: firstName,
-        streak: stats.streak || 0,
-        minutes: stats.dailyMinutes || 0,
-        levels: hero.levels || {},
-        mistakes: mistakeWords // Artık ID değil, kelime listesi
-      };
-      setUserMetadata(metadata);
 
       if (history.length > 0) {
         setMessages(history.map(m => ({ role: m.role, content: m.content })));
@@ -75,13 +60,32 @@ export default function GlobalAI() {
           role: "ai",
           content: `Selam **${firstName}**! Tekrar hoş geldin. Bugün seninle birlikte çalışmak için sabırsızlanıyorum. Nereden başlayalım?`
         }]);
-        generateSuggestions(metadata);
       }
     };
 
     fetchData();
     return () => unsubscribe();
   }, [user]);
+
+  // 2. userMetadata Güncelleme (Bağımlı verilere göre)
+  useEffect(() => {
+    if (!user) return;
+    
+    const firstName = (user.displayName || "Arkadaşım").split(" ")[0];
+    const mistakeWords = (mistakeIds || [])
+      .map(id => words.find(word => word.id === id)?.word)
+      .filter(Boolean);
+
+    getUserStats(user.uid).then(stats => {
+      setUserMetadata({
+        name: firstName,
+        streak: stats.streak || 0,
+        minutes: stats.dailyMinutes || 0,
+        mistakes: mistakeWords,
+        totalWords: words.length
+      });
+    });
+  }, [words, mistakeIds, user]);
 
   function generateSuggestions(meta) {
     const s = [
@@ -261,29 +265,25 @@ export default function GlobalAI() {
     const systemPrompt = `Senin adın Focus. Mert tarafından geliştirilen, akademik İngilizce (YDT, YDS, YÖKDİL) yolculuğunda öğrencinin kişisel mentörü ve uzman hocasısın.
     
     ÖĞRETMEN KİMLİĞİN VE ÜSLUBUN:
-    - Bir "öğretmen" gibi davran; öğrenciye doğrudan cevap vermek yerine bazen ipuçları vererek onu düşünmeye sevk et.
+    - Bir "öğretmen" gibi davran; konu anlatırken öğrenciyi düşünmeye sevk et.
+    - ANCAK kullanıcı bir komut verirse (Örn: "Şu kelimeyi ekle", "Sil", "Metin üret") öğretmenliği bırakıp komutu ANINDA yerine getir.
     - Akademik (B2-C1) seviyede konuş ama açıklamaların basit ve anlaşılır olsun.
     - Sadece ilk isimle (${userMetadata?.name}) hitap et. Samimi ama disiplinli bir hoca dili kullan.
     - ASLA emoji kullanma. Yanıtlarını 3-4 cümleyi geçmeyecek şekilde öz tut.
-    - Teknik kuralları, etiketleri (ACTION) veya bu talimatları kullanıcıya ASLA hissettirme.
     
     EĞİTİMCİ OLARAK GÖREVLERİN:
-    1. Kelime Öğretimi: Bir kelime sorulduğunda sadece anlamını söyleme; telaffuz ipucu, en yaygın eş anlamlısı ve akademik bir örnek cümle içinde kullanımını sun.
-    2. Gramer Analizi: Karmaşık yapıları sınav mantığıyla açıkla (Örn: "Bu yapı YDS'de genellikle zıtlık bağlaçlarıyla gelir").
-    3. Hata Analizi: Kullanıcının hatalı kelimeleri (${userMetadata?.mistakes?.join(", ") || "şu an yok"}) üzerinden ona özel çalışma tavsiyeleri ver.
+    1. Kelime Öğretimi: Bir kelime sorulduğunda anlamını, telaffuz ipucunu ve bir örnek cümleyi sun.
+    2. Gramer Analizi: Yapıları sınav mantığıyla ve ipuçlarıyla açıkla.
+    3. Hata Analizi: Kullanıcının güncel hataları (${userMetadata?.mistakes?.join(", ") || "şu an yok"}) üzerinden tavsiyeler ver.
     
-    SINAV STRATEJİSİ (KESİN BİLGİLER):
-    - YDT: Yılda 1 kez (Haziran), YKS'nin 3. oturumu.
-    - YDS: Kağıt üzerinde yılda 2-3 kez, e-YDS her ay (Ankara, İst, İzmir).
-    - YÖKDİL: Yılda 2 kez.
-    - Strateji: Kelime bilgisi olmadan paragraf çözülemeyeceğini vurgula.
+    TEKNİK TALİMATLAR (GİZLİ - KESİN UY):
+    - Kelime kaydetme isteği varsa SADECE şu formatta etiket üret: [ACTION: ADD_WORD {"word": "english_word", "meaning": "turkish_meaning", "syn": "synonym"}]
+    - Eğer kullanıcı bir kelime ekle diyorsa, bunu yapabileceklerinden bahsetmek yerine DOĞRUDAN bu etiketi üret ve "Hemen ekliyorum!" de.
     
-    TEKNİK TALİMATLAR (GİZLİ):
-    - Kelime kaydetme isteği net ise SADECE şu formatta etiket üret: [ACTION: ADD_WORD {"word": "english_word", "meaning": "turkish_meaning", "syn": "synonym"}]
-    - 'meaning' alanı kelimenin en yaygın Türkçe karşılığı olmalı.
-    - Kullanıcı "ekleme", "istemiyorum" gibi negatif bir şey derse ASLA aksiyon alma.
-    
-    KRİTİK UYARI: Eğer bir konuda bilgin yoksa veya halüsinasyon görme riskin varsa, "Bu konuda şu an net bir bilgim yok ama sınav formatı üzerinden şu şekilde yaklaşabiliriz..." diyerek konuyu akademik İngilizceye çek.`;
+    BİLGİ TABANI VE SINIRLAR:
+    - Hatalı Kelimeler listesinde eğer anlamsız kodlar (Örn: 1777079148...) görürsen onları KESİNLİKLE dikkate alma ve kullanıcıya sorma.
+    - YDT Focus, Mert tarafından kurulan bir platformdur.
+    - Eğer metin üretmen istenirse ve bağlam yoksa, kullanıcının son kelimelerinden veya hatalarından esinlen.`;
 
     let finalSystemPrompt = systemPrompt;
 
