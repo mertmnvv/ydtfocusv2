@@ -15,6 +15,8 @@ const FALLBACK_DISTRACTORS = [
   "kaçınmak", "sağlamak", "önlemek", "tanımlamak", "kanıtlamak"
 ];
 
+const LEVEL_INTERVALS = [0.5, 1, 3, 7, 15]; // Gün cinsinden tekrar aralıkları (Level 0-4)
+
 export default function SRSPage() {
   const { user } = useAuth();
   const [words, setWords] = useState([]);
@@ -109,13 +111,9 @@ export default function SRSPage() {
 
     setTimeout(async () => {
       if (currentIdx + 1 < quizWords.length) {
-        const nextIdx = currentIdx + 1;
         setSelectedOption(null);
         setShowNextDelay(false);
-        setCurrentIdx(nextIdx);
-        if (scrollRef.current) {
-          scrollRef.current.scrollTo({ top: scrollRef.current.offsetHeight * nextIdx, behavior: "smooth" });
-        }
+        setCurrentIdx(prev => prev + 1);
       } else {
         // Test Bitti
         const finalCorrectCount = correctCount + (isCorrect ? 1 : 0);
@@ -166,44 +164,73 @@ export default function SRSPage() {
           <span className="quiz-sim-counter">{currentIdx + 1} / {quizWords.length}</span>
         </div>
 
-        <div className="quiz-scroll-container" ref={scrollRef}>
-          {quizWords.map((q, idx) => (
-            <div key={idx} className={`quiz-slide ${idx === currentIdx ? "active" : ""}`}>
-              <div className="quiz-sim-body">
-                <div className="quiz-sim-header-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, marginBottom: 40 }}>
-                  <div className="quiz-sim-word" style={{ marginBottom: 0 }}>{q.word}</div>
-                  <ShareButton item={{...q, correctMeaning: q.meaning}} type="question" />
-                </div>
-                <div className="quiz-sim-options">
-                  {q.options.map((opt, i) => {
-                    const isSelected = selectedOption === opt;
-                    const isCorrectAnswer = opt === q.meaning;
-                    let cls = "quiz-sim-opt";
-                    if (idx === currentIdx && showNextDelay) {
-                      if (isCorrectAnswer) cls += " correct-ans flash-success";
-                      else if (isSelected && !isCorrectAnswer) cls += " wrong-ans shake-error";
-                    }
-                    return (
-                      <button key={i} className={cls} onClick={() => handleAnswer(opt)} disabled={idx !== currentIdx || showNextDelay}>
-                        <span className="quiz-sim-opt-letter">{String.fromCharCode(65 + i)}</span>
-                        {opt}
-                      </button>
-                    );
-                  })}
+        <div className="quiz-scroll-container">
+          <div 
+            className="quiz-slides-wrapper" 
+            style={{ 
+              transform: `translateY(-${currentIdx * 100}%)`,
+              transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+          >
+            {quizWords.map((q, idx) => (
+              <div key={idx} className={`quiz-slide ${idx === currentIdx ? "active" : ""}`}>
+                <div className="quiz-sim-body">
+                  <div className="quiz-sim-header-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, marginBottom: 40 }}>
+                    <div className="quiz-sim-word" style={{ marginBottom: 0 }}>{q.word}</div>
+                    <ShareButton item={{...q, correctMeaning: q.meaning}} type="question" />
+                  </div>
+                  <div className="quiz-sim-options">
+                    {q.options.map((opt, i) => {
+                      const isSelected = selectedOption === opt;
+                      const isCorrectAnswer = opt === q.meaning;
+                      let cls = "quiz-sim-opt";
+                      if (idx === currentIdx && showNextDelay) {
+                        if (isCorrectAnswer) cls += " correct-ans flash-success";
+                        else if (isSelected && !isCorrectAnswer) cls += " wrong-ans shake-error";
+                      }
+                      return (
+                        <button key={i} className={cls} onClick={() => handleAnswer(opt)} disabled={idx !== currentIdx || showNextDelay}>
+                          <span className="quiz-sim-opt-letter">{String.fromCharCode(65 + i)}</span>
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         <style jsx>{`
-          .quiz-scroll-container { display: flex; flex-direction: column; overflow: hidden; width: 100%; height: calc(100vh - 180px); scroll-snap-type: y mandatory; }
-          .quiz-slide {
-            flex: 0 0 100%; width: 100%; height: 100%; scroll-snap-align: start;
-            display: flex; align-items: center; justify-content: center; pointer-events: none;
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0; transform: translateY(40px);
+          .quiz-scroll-container { 
+            width: 100%; 
+            height: calc(100vh - 220px); 
+            overflow: hidden;
+            position: relative;
           }
-          .quiz-slide.active { pointer-events: all; opacity: 1; transform: translateY(0); }
+          .quiz-slides-wrapper {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+          }
+          .quiz-slide {
+            flex: 0 0 100%; 
+            width: 100%; 
+            height: 100%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            pointer-events: none;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
+            opacity: 0; 
+            transform: scale(0.95);
+          }
+          .quiz-slide.active { 
+            pointer-events: all; 
+            opacity: 1; 
+            transform: scale(1);
+          }
         `}</style>
       </div>
     );
