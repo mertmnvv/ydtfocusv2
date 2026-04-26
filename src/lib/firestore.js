@@ -454,7 +454,7 @@ export async function searchUsers(queryText) {
     collection(db, "users"),
     where("searchName", ">=", term),
     where("searchName", "<=", term + "\uf8ff"),
-    limit(10)
+    limit(50)
   );
   const snap = await getDocs(q);
   return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));

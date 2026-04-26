@@ -80,6 +80,13 @@ const onboardingSteps = [
     desc: "Sınav uzmanı yapay zeka asistanın! Gramer analizi, metin yorumlama ve kişiselleştirilmiş içerik üretimi için her an seninle.",
     icon: "fa-wand-magic-sparkles",
     color: "var(--accent)"
+  },
+  {
+    id: "social",
+    title: "Sosyal: Paylaş ve Yarış",
+    desc: "Arkadaş ekle, onlara meydan oku ve kelime soruları gönder. Dil öğrenmeyi sosyal bir deneyime dönüştür; birlikte daha hızlı ilerle!",
+    icon: "fa-user-group",
+    color: "#ff9f0a"
   }
 ];
 
@@ -174,8 +181,10 @@ export default function Onboarding() {
           padding: 32px;
           display: flex;
           flex-direction: column;
-          gap: 32px;
+          gap: 24px;
           box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
+          max-height: 90vh;
+          overflow-y: auto;
         }
 
         .onboarding-header {
@@ -231,11 +240,12 @@ export default function Onboarding() {
         }
 
         .onboarding-content h2 {
-          font-size: 2.2rem;
+          font-size: 1.8rem;
           font-weight: 900;
           margin: 0;
           color: #fff;
           letter-spacing: -1px;
+          word-break: break-word;
         }
 
         .onboarding-content h2 :global(span) {
@@ -243,9 +253,9 @@ export default function Onboarding() {
         }
 
         .onboarding-content p {
-          font-size: 1rem;
+          font-size: 0.95rem;
           color: #86868b;
-          line-height: 1.6;
+          line-height: 1.5;
           margin: 0;
         }
 
@@ -277,6 +287,26 @@ export default function Onboarding() {
         @keyframes pop {
           from { opacity: 0; transform: scale(0.9) translateY(20px); }
           to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        @media (max-width: 480px) {
+          .onboarding-card {
+            padding: 24px;
+            gap: 20px;
+            border-radius: 24px;
+            max-width: calc(100vw - 40px);
+          }
+          .onboarding-content h2 {
+            font-size: 1.5rem;
+          }
+          .onboarding-icon {
+            width: 64px;
+            height: 64px;
+            font-size: 1.8rem;
+          }
+          .progress-dot {
+            width: 12px;
+          }
         }
       `}</style>
     </div>

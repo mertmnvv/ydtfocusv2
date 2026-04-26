@@ -53,6 +53,7 @@ export function AuthProvider({ children }) {
 
       if ((!currentData.displayName || currentData.displayName === "Kullanıcı") && firebaseUser.displayName) {
         updates.displayName = firebaseUser.displayName;
+        updates.searchName = firebaseUser.displayName.toLowerCase();
         dName = firebaseUser.displayName;
       }
       if (!currentData.photoURL && firebaseUser.photoURL) {

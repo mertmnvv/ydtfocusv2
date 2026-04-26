@@ -87,7 +87,7 @@ export default function ChatHub() {
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
       const results = await searchUsers(searchQuery);
-      setSearchResults(results.filter(r => r.id !== user.uid).slice(0, 5));
+      setSearchResults(results.filter(r => r.id !== user.uid).slice(0, 20));
     }, searchQuery.length > 0 ? 150 : 0);
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery, user]);
@@ -235,32 +235,36 @@ export default function ChatHub() {
                 )}
                 {activeTab === "friends" && (
                   <div className="chat-items">
-                    {friends.map(f => (
-                      <div key={f.id} className="chat-item" onClick={() => handleFriendClick(f)}>
-                        <div className="friend-item-indicator"></div>
-                        <div className="chat-item-avatar friend-av" onClick={(e) => { e.stopPropagation(); setSelectedProfileId(f.id); }}>
-                          {f.photoURL ? (
-                            <img src={f.photoURL} alt={f.displayName} className="chat-avatar-img" />
-                          ) : (
-                            f.displayName?.[0]
-                          )}
-                        </div>
-                        <div className="chat-item-info">
-                          <div className="chat-item-name">
-                            {f.displayName}
-                            {f.role === "admin" ? (
-                              <i className="fa-solid fa-user-shield" style={{ color: "#ff453a", marginLeft: 6, fontSize: "0.7rem" }}></i>
-                            ) : f.role === "premium" ? (
-                              <i className="fa-solid fa-crown" style={{ color: "#ffd60a", marginLeft: 6, fontSize: "0.7rem" }}></i>
-                            ) : null}
+                    {friends.length === 0 ? (
+                      <div className="empty-state">Henüz arkadaşın yok. "Ara" kısmından arkadaş ekleyebilirsin.</div>
+                    ) : (
+                      friends.map(f => (
+                        <div key={f.id} className="chat-item" onClick={() => handleFriendClick(f)}>
+                          <div className="friend-item-indicator"></div>
+                          <div className="chat-item-avatar friend-av" onClick={(e) => { e.stopPropagation(); setSelectedProfileId(f.id); }}>
+                            {f.photoURL ? (
+                              <img src={f.photoURL} alt={f.displayName} className="chat-avatar-img" />
+                            ) : (
+                              f.displayName?.[0]
+                            )}
                           </div>
-                          <div className="chat-item-last">Mesaj göndermek için dokun</div>
+                          <div className="chat-item-info">
+                            <div className="chat-item-name">
+                              {f.displayName}
+                              {f.role === "admin" ? (
+                                <i className="fa-solid fa-user-shield" style={{ color: "#ff453a", marginLeft: 6, fontSize: "0.7rem" }}></i>
+                              ) : f.role === "premium" ? (
+                                <i className="fa-solid fa-crown" style={{ color: "#ffd60a", marginLeft: 6, fontSize: "0.7rem" }}></i>
+                              ) : null}
+                            </div>
+                            <div className="chat-item-last">Mesaj göndermek için dokun</div>
+                          </div>
+                          <button className="mini-profile-btn" onClick={(e) => { e.stopPropagation(); setSelectedProfileId(f.id); }}>
+                            <i className="fa-solid fa-user"></i>
+                          </button>
                         </div>
-                        <button className="mini-profile-btn" onClick={(e) => { e.stopPropagation(); setSelectedProfileId(f.id); }}>
-                          <i className="fa-solid fa-user"></i>
-                        </button>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 )}
                 {activeTab === "requests" && (
