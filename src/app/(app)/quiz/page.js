@@ -200,15 +200,11 @@ export default function QuizPage() {
     }
 
     setTimeout(() => {
-      if (!quizActiveRef.current) return; // Kullanıcı quizi terk ettiyse devam etme
+      if (!quizActiveRef.current) return;
       
       if (qIdx + 1 < questions.length) {
-        const nextIdx = qIdx + 1;
         setAnswered(null);
-        setQIdx(nextIdx);
-        if (scrollRef.current) {
-          scrollRef.current.scrollTo({ top: scrollRef.current.offsetHeight * nextIdx, behavior: "smooth" });
-        }
+        setQIdx(prev => prev + 1);
       } else {
         setFinished(true);
         quizActiveRef.current = false;
@@ -223,7 +219,7 @@ export default function QuizPage() {
           });
         }
       }
-    }, 1200);
+    }, 1100);
   }
 
   if (loading) return <div className="page-loading"><div className="spinner-ring"></div></div>;
@@ -457,42 +453,71 @@ export default function QuizPage() {
         <span className="quiz-sim-counter">{qIdx + 1}/{questions.length}</span>
       </div>
 
-      <div className="quiz-scroll-container" ref={scrollRef}>
-        {questions.map((q, idx) => (
-          <div key={idx} className={`quiz-slide ${idx === qIdx ? "active" : ""}`}>
-            <div className="quiz-sim-body">
-              <div className="quiz-sim-header-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, marginBottom: 40 }}>
-                <div className="quiz-sim-word" style={{ marginBottom: 0 }}>{q.word}</div>
-                <ShareButton item={q} type="question" />
-              </div>
-              <div className="quiz-sim-options">
-                {q.options.map((opt, oi) => {
-                  let cls = "quiz-sim-opt";
-                  if (idx === qIdx && answered !== null) {
-                    if (opt.correct) cls += " correct-ans flash-success";
-                    else if (oi === answered && !opt.correct) cls += " wrong-ans shake-error";
-                  }
-                  return (
-                    <button key={oi} className={cls} onClick={() => handleAnswer(oi)} disabled={idx !== qIdx || answered !== null}>
-                      <span className="quiz-sim-opt-letter">{String.fromCharCode(65 + oi)}</span>
-                      {opt.text}
-                    </button>
-                  );
-                })}
+      <div className="quiz-scroll-container">
+        <div 
+          className="quiz-slides-wrapper" 
+          style={{ 
+            transform: `translateY(-${qIdx * 100}%)`,
+            transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+          }}
+        >
+          {questions.map((q, idx) => (
+            <div key={idx} className={`quiz-slide ${idx === qIdx ? "active" : ""}`}>
+              <div className="quiz-sim-body">
+                <div className="quiz-sim-header-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, marginBottom: 40 }}>
+                  <div className="quiz-sim-word" style={{ marginBottom: 0 }}>{q.word}</div>
+                  <ShareButton item={q} type="question" />
+                </div>
+                <div className="quiz-sim-options">
+                  {q.options.map((opt, oi) => {
+                    let cls = "quiz-sim-opt";
+                    if (idx === qIdx && answered !== null) {
+                      if (opt.correct) cls += " correct-ans flash-success";
+                      else if (oi === answered && !opt.correct) cls += " wrong-ans shake-error";
+                    }
+                    return (
+                      <button key={oi} className={cls} onClick={() => handleAnswer(oi)} disabled={idx !== qIdx || answered !== null}>
+                        <span className="quiz-sim-opt-letter">{String.fromCharCode(65 + oi)}</span>
+                        {opt.text}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       <style jsx>{`
-        .quiz-scroll-container { display: flex; flex-direction: column; overflow: hidden; width: 100%; height: calc(100vh - 180px); scroll-snap-type: y mandatory; }
-        .quiz-slide {
-          flex: 0 0 100%; width: 100%; height: 100%; scroll-snap-align: start;
-          display: flex; align-items: center; justify-content: center; pointer-events: none;
-          transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0; transform: translateY(40px);
+        .quiz-scroll-container { 
+          width: 100%; 
+          height: calc(100vh - 220px); 
+          overflow: hidden;
+          position: relative;
         }
-        .quiz-slide.active { pointer-events: all; opacity: 1; transform: translateY(0); }
+        .quiz-slides-wrapper {
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+        }
+        .quiz-slide {
+          flex: 0 0 100%; 
+          width: 100%; 
+          height: 100%; 
+          display: flex; 
+          align-items: center; 
+          justify-content: center; 
+          pointer-events: none;
+          transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
+          opacity: 0; 
+          transform: scale(0.95);
+        }
+        .quiz-slide.active { 
+          pointer-events: all; 
+          opacity: 1; 
+          transform: scale(1);
+        }
       `}</style>
     </div>
   );
