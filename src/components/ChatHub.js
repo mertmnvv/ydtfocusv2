@@ -525,10 +525,40 @@ export default function ChatHub() {
         .card-main-text { font-size: 1.3rem; font-weight: 900; margin-bottom: 12px; }
         .card-action { font-size: 0.7rem; font-weight: 900; text-transform: uppercase; padding: 6px 12px; background: rgba(255,255,255,0.05); border-radius: 8px; width: fit-content; }
 
-        .chat-input-bar { margin: 12px; padding: 8px 12px; display: flex; gap: 10px; align-items: center; border-radius: 20px; background: var(--glass); border: 1px solid var(--border); transition: all 0.2s; }
-        .chat-input-bar:focus-within { border-color: var(--accent); background: var(--bg-elevated); }
-        .chat-input-bar input { flex: 1; background: none; border: none; color: var(--text); outline: none; font-size: 0.9rem; }
-        .chat-input-bar button { width: 38px; height: 38px; border-radius: 12px; background: var(--accent); color: #000; border: none; cursor: pointer; transition: 0.2s; }
+        .chat-input-bar { 
+          margin: 16px; 
+          padding: 8px 12px; 
+          display: flex; 
+          gap: 12px; 
+          align-items: center; 
+          border-radius: 22px; 
+          background: rgba(255, 255, 255, 0.05); 
+          border: 1px solid var(--border); 
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .chat-input-bar:focus-within { 
+          border-color: var(--accent); 
+          background: rgba(255, 255, 255, 0.08); 
+          box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+          transform: translateY(-2px);
+        }
+        .chat-input-bar input { flex: 1; background: none; border: none; color: var(--text); outline: none; font-size: 0.95rem; font-weight: 500; }
+        .chat-input-bar button { 
+          width: 40px; 
+          height: 40px; 
+          border-radius: 12px; 
+          background: var(--accent); 
+          color: #000; 
+          border: none; 
+          cursor: pointer; 
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 12px rgba(226, 183, 20, 0.3);
+        }
+        .chat-input-bar button:hover { transform: scale(1.05); background: #ffc400; }
 
         .solution-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 30000; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(20px); }
         .solution-modal { width: 100%; max-width: 400px; padding: 45px 35px; border-radius: 40px; background: rgba(30,30,30,0.85); border: 1px solid rgba(226, 183, 20, 0.3); box-shadow: 0 40px 100px rgba(0,0,0,0.6); text-align: center; position: relative; }
@@ -544,7 +574,10 @@ export default function ChatHub() {
 
         @media (max-width: 768px) {
           .chat-hub-container { bottom: 90px; right: 20px; }
-          .chat-hub-window { width: calc(100vw - 40px); max-width: 340px; height: 480px; bottom: 70px; }
+          .chat-hub-window { width: calc(100vw - 40px); max-width: 360px; height: 520px; bottom: 70px; border-radius: 28px; }
+          .chat-input-bar { margin: 12px; padding: 6px 10px; }
+          .chat-window-header { min-height: 56px; padding: 10px 14px; }
+          .chat-messages { padding: 15px 12px; }
         }
       `}</style>
     </div>

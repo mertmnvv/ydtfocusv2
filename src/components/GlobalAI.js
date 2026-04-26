@@ -125,7 +125,7 @@ export default function GlobalAI() {
 
     // Kelime listesini hazırla
     const isIdFormat = (str) => /^\d{10,15}_[a-z0-9]{3,10}$/.test(str);
-    
+
     // Önce kullanıcı meta verisindeki hataları kullan
     let sourceWords = (userMetadata?.mistakes || []).filter(w => !isIdFormat(w));
 
@@ -144,7 +144,7 @@ export default function GlobalAI() {
     // Hemen geri bildirim ver
     setMessages(prev => [...prev, { role: "ai", content: "Hemen senin için özel bir metin hazırlamaya başlıyorum, lütfen bekle..." }]);
     setLoading(true);
-    
+
     if (window.location.pathname !== "/reading") {
       window.location.href = "/reading?generate=special";
       return;
@@ -165,7 +165,7 @@ export default function GlobalAI() {
         body: JSON.stringify({
           model: "llama-3.1-8b-instant",
           messages: [
-            { role: "system", content: "You are a technical assistant that returns ONLY JSON. No conversation." }, 
+            { role: "system", content: "You are a technical assistant that returns ONLY JSON. No conversation." },
             { role: "user", content: prompt }
           ],
           temperature: 0.3,
@@ -176,24 +176,24 @@ export default function GlobalAI() {
       clearTimeout(timeoutId);
       const data = await response.json();
       const rawContent = data.choices[0].message.content;
-      
+
       const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error("JSON not found");
-      
+
       const result = JSON.parse(jsonMatch[0]);
-      
+
       const event = new CustomEvent("focus-load-passage", { detail: result });
       window.dispatchEvent(event);
 
-      const aiMsg = { 
-        role: "ai", 
-        content: `Özel metnin hazır! Reading paneline yükledim. Hadi soruları çözelim. İstersen metindeki anlamadığın kelimeleri bana sorabilir veya bu metnin gramer yapısını analiz etmemi isteyebilirsin!` 
+      const aiMsg = {
+        role: "ai",
+        content: `Özel metnin hazır! Reading paneline yükledim. Hadi soruları çözelim. İstersen metindeki anlamadığın kelimeleri bana sorabilir veya bu metnin gramer yapısını analiz etmemi isteyebilirsin!`
       };
       setMessages(prev => [...prev, aiMsg]);
       if (user) saveAIMessage(user.uid, aiMsg);
     } catch (e) {
       console.error("Metin üretme hatası:", e);
-      const errorMsg = e.name === 'AbortError' 
+      const errorMsg = e.name === 'AbortError'
         ? "Üzgünüm, metin üretme işlemi çok uzun sürdüğü için iptal edildi. Lütfen tekrar dener misin?"
         : "Metni üretirken bir sorun oluştu. Teknik bir takılma yaşamış olabilirim, lütfen tekrar dener misin?";
       setMessages(prev => [...prev, { role: "ai", content: errorMsg }]);
@@ -250,7 +250,7 @@ export default function GlobalAI() {
     if (typeof overrideText === 'string') setSuggestions([]);
 
     const userMsg = textToSend.trim();
-    if (!overrideText) setInput("");
+    if (typeof overrideText !== 'string') setInput("");
 
     const newMessage = { role: "user", content: userMsg };
     setMessages(prev => [...prev, newMessage]);
@@ -339,7 +339,7 @@ export default function GlobalAI() {
       if (actionMatches.length > 0 && user) {
         let addedCount = 0;
         const newlyAdded = []; // Bu mesaj döngüsünde eklenenleri takip et
-        
+
         for (const match of actionMatches) {
           try {
             // JSON içindeki potansiyel hatalı karakterleri temizleyelim
@@ -351,7 +351,7 @@ export default function GlobalAI() {
 
             // GÜVENLİK KONTROLÜ: Eğer kelime bir ID formatındaysa kaydetme
             const isIdFormat = /^\d{10,15}_[a-z0-9]{3,10}$/.test(wordLower);
-            
+
             const alreadyInBank = words.some(w => w.word?.toLowerCase().trim() === wordLower);
             const alreadyInSession = newlyAdded.includes(wordLower);
 
@@ -361,7 +361,7 @@ export default function GlobalAI() {
               newlyAdded.push(wordLower);
               addedCount++;
             }
-            
+
             // Etiketi mesajdan temizle
             aiContent = aiContent.replace(match[0], "");
           } catch (e) {
@@ -547,6 +547,20 @@ export default function GlobalAI() {
           flex-direction: column;
           overflow: hidden;
           box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        @media (max-width: 768px) {
+          .global-ai-panel {
+            left: 10px;
+            right: 10px;
+            width: auto;
+            bottom: 145px;
+            height: 60vh;
+          }
+          .global-ai-fab {
+            left: 20px;
+            bottom: 90px;
+          }
         }
 
         .global-ai-header {
@@ -798,20 +812,6 @@ export default function GlobalAI() {
         @keyframes dotBlink {
           0%, 80%, 100% { opacity: 0; }
           40% { opacity: 1; }
-        }
-
-        @media (max-width: 768px) {
-          .global-ai-panel {
-            left: 10px;
-            right: 10px;
-            width: auto;
-            bottom: 145px;
-            height: 60vh;
-          }
-          .global-ai-fab {
-            left: 20px;
-            bottom: 90px;
-          }
         }
       `}</style>
     </>

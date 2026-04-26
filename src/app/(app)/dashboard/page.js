@@ -304,17 +304,18 @@ export default function DashboardPage() {
         .dash-badge-more:hover { border-color: var(--accent); color: var(--accent); }
 
         .badges-full-pop {
-          position: absolute; top: 30px; left: 0; z-index: 100;
+          position: absolute; top: 35px; right: 0; z-index: 100;
           background: var(--bg-elevated); border: 1px solid var(--border);
-          border-radius: 12px; padding: 12px; min-width: 200px;
-          box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-          backdrop-filter: blur(10px);
+          border-radius: 16px; padding: 16px; min-width: 240px;
+          box-shadow: 0 15px 45px rgba(0,0,0,0.6);
+          backdrop-filter: blur(25px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
         }
         .pop-overlay { position: fixed; inset: 0; z-index: 99; }
-        .pop-header { font-size: 0.7rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
-        .pop-list { display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto; padding-right: 4px; }
-        .pop-item { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 700; color: var(--text); }
-        .pop-item i { width: 18px; text-align: center; font-size: 1rem; }
+        .pop-header { font-size: 0.75rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; letter-spacing: 0.5px; }
+        .pop-list { display: flex; flex-direction: column; gap: 4px; max-height: 300px; overflow-y: auto; padding-right: 8px; }
+        .pop-item { display: flex; align-items: center; gap: 12px; font-size: 0.9rem; font-weight: 700; color: var(--text); padding: 8px 0; border-radius: 8px; transition: 0.2s; white-space: nowrap; }
+        .pop-item i { width: 22px; text-align: center; font-size: 1.1rem; flex-shrink: 0; }
         .buy-premium-mini-btn {
           background: transparent; border: 1px solid var(--accent); color: var(--accent);
           padding: 3px 12px; border-radius: 8px; font-size: 0.7rem; font-weight: 800;
