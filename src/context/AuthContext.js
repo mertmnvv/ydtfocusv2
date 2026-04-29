@@ -112,8 +112,15 @@ export function AuthProvider({ children }) {
     if (!user) return;
 
     const interval = setInterval(() => {
-      // Her 60 saniyede bir Firestore'u güncelle
+      // Her 60 saniyede bir çalışma süresini, her 120 saniyede bir son görülmeyi güncelle
       incrementStudyMinutes(user.uid, 1).catch(console.error);
+      
+      // Heartbeat: lastSeen güncelle
+      if (Math.random() > 0.5) { // Her dakika değil de yaklaşık 2 dakikada bir (basit kontrol)
+         setDoc(doc(db, "users", user.uid), { 
+           "publicStats.lastSeen": serverTimestamp() 
+         }, { merge: true }).catch(console.error);
+      }
     }, 60000);
 
     return () => clearInterval(interval);

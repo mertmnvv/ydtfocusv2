@@ -7,13 +7,15 @@ import { db } from "@/lib/firebase";
 import { sendFriendRequest, getOrCreateChat } from "@/lib/firestore";
 import { useNotification } from "@/context/NotificationContext";
 import { BADGES } from "@/constants/badges";
+import PremiumModal from "./PremiumModal";
 
 export default function ProfileModal({ userId, onClose }) {
-  const { user } = useAuth();
+  const { user, isPremium } = useAuth();
   const { showNotification } = useNotification();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAllBadges, setShowAllBadges] = useState(false);
+  const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
 
   const updatePhoto = async () => {
     const url = window.prompt("Yeni profil resmi URL'sini yapıştırın:");
@@ -43,6 +45,10 @@ export default function ProfileModal({ userId, onClose }) {
   }, [userId]);
 
   const handleAddFriend = async () => {
+    if (!isPremium) {
+      setIsPremiumModalOpen(true);
+      return;
+    }
     try {
       await sendFriendRequest(user.uid, userId);
       showNotification("Arkadaşlık isteği gönderildi!", "success");
@@ -52,11 +58,14 @@ export default function ProfileModal({ userId, onClose }) {
   };
 
   const handleMessage = async () => {
+    if (!isPremium) {
+      setIsPremiumModalOpen(true);
+      return;
+    }
     try {
       const chatId = await getOrCreateChat(user.uid, userId);
       showNotification("Sohbet merkezine gidiliyor...", "success");
-      onClose(); // Modalı kapat
-      // Buradan ChatHub'ı tetiklemek için bir event veya global state kullanılabilir
+      onClose(); 
       window.dispatchEvent(new CustomEvent("focus-open-chat", { detail: { chatId } }));
     } catch (err) {
       showNotification("Sohbet başlatılamadı.", "error");
@@ -67,6 +76,7 @@ export default function ProfileModal({ userId, onClose }) {
 
   return (
     <div className="p-modal-overlay" onClick={onClose}>
+      <PremiumModal isOpen={isPremiumModalOpen} onClose={() => setIsPremiumModalOpen(false)} />
       <div className="p-modal-content glass-card animate-popIn" onClick={e => e.stopPropagation()}>
         <button className="p-modal-close" onClick={onClose}>×</button>
         
@@ -99,7 +109,6 @@ export default function ProfileModal({ userId, onClose }) {
                       <span className="badge-standard">Standart</span>
                     )}
 
-                    {/* Mini Badges Next to Name */}
                     {profile.badges && profile.badges.length > 0 && (
                       <div className="p-modal-mini-badges">
                         {profile.badges.slice(-3).map(bId => (
@@ -143,7 +152,6 @@ export default function ProfileModal({ userId, onClose }) {
               </div>
             </div>
 
-            {/* Achievements Section - Only Earned */}
             {profile.badges && profile.badges.length > 0 && (
               <div className="p-modal-achievements">
                 <div className="ach-header-flex">
@@ -197,44 +205,40 @@ export default function ProfileModal({ userId, onClose }) {
         }
         .p-modal-content {
           width: 100%; max-width: 440px; padding: 32px; position: relative;
-          background: var(--bg-card); backdrop-filter: blur(25px);
-          border: 1px solid var(--border); border-radius: 32px;
-          box-shadow: 0 40px 100px rgba(0, 0, 0, 0.3);
-        }
-        :global([data-theme='dark']) .p-modal-content {
-          background: rgba(28, 28, 30, 0.8);
+          background: #1c1c1e; backdrop-filter: blur(25px);
+          border: 1px solid #333; border-radius: 32px;
           box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
         }
         .p-modal-close {
-          position: absolute; top: 20px; right: 20px; background: var(--glass); 
-          border: 1px solid var(--border); width: 36px; height: 36px; border-radius: 12px;
-          color: var(--text-muted); font-size: 1.2rem; cursor: pointer; display: flex; 
+          position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.05); 
+          border: 1px solid #333; width: 36px; height: 36px; border-radius: 12px;
+          color: #888; font-size: 1.2rem; cursor: pointer; display: flex; 
           align-items: center; justify-content: center; transition: all 0.2s;
         }
-        .p-modal-close:hover { background: var(--bg-elevated); color: var(--text); }
+        .p-modal-close:hover { background: #333; color: #fff; }
         .p-modal-loading { padding: 60px; display: flex; justify-content: center; }
         
         .p-modal-top { display: flex; align-items: center; gap: 24px; margin-bottom: 32px; }
         .p-modal-avatar {
-          width: 90px; height: 90px; border-radius: 28px; background: var(--bg-elevated);
+          width: 90px; height: 90px; border-radius: 28px; background: #333;
           display: flex; align-items: center; justify-content: center; font-size: 2.8rem;
-          font-weight: 900; color: var(--text); border: 1px solid var(--border);
-          transition: all 0.3s; position: relative;
+          font-weight: 900; color: #fff; border: 1px solid #444;
+          transition: all 0.3s; position: relative; overflow: hidden;
         }
+        .p-modal-avatar-img { width: 100%; height: 100%; object-fit: cover; }
         .p-modal-avatar.premium-glow {
           border-color: #ffd60a;
           box-shadow: 0 0 25px rgba(255, 214, 10, 0.25);
-          background: linear-gradient(135deg, rgba(255, 214, 10, 0.15), var(--bg-elevated));
+          background: linear-gradient(135deg, rgba(255, 214, 10, 0.15), #333);
         }
         .p-modal-avatar-edit {
           position: absolute; bottom: -5px; right: -5px; width: 32px; height: 32px;
-          border-radius: 50%; background: var(--accent); color: #000; border: 3px solid var(--bg-card);
+          border-radius: 50%; background: #ffd60a; color: #000; border: 3px solid #1c1c1e;
           display: flex; align-items: center; justify-content: center; cursor: pointer;
           font-size: 0.8rem; transition: all 0.2s;
         }
-        .p-modal-avatar-edit:hover { transform: scale(1.1); }
         .p-modal-title-group { display: flex; flex-direction: column; gap: 4px; }
-        .p-modal-name { font-size: 1.6rem; font-weight: 900; margin: 0; color: var(--text); letter-spacing: -0.5px; }
+        .p-modal-name { font-size: 1.6rem; font-weight: 900; margin: 0; color: #fff; letter-spacing: -0.5px; }
         .p-modal-badge { display: flex; margin-bottom: 4px; }
         .badge-premium { 
           background: rgba(255, 214, 10, 0.15); color: #ffd60a; padding: 4px 10px; 
@@ -247,69 +251,45 @@ export default function ProfileModal({ userId, onClose }) {
           border: 1px solid rgba(255, 69, 58, 0.2); display: flex; align-items: center; gap: 5px;
         }
         .badge-standard {
-          background: var(--glass); color: var(--text-muted); padding: 4px 10px;
+          background: rgba(255,255,255,0.05); color: #888; padding: 4px 10px;
           border-radius: 8px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
-          border: 1px solid var(--border);
+          border: 1px solid #333;
         }
         .p-modal-mini-badges { display: flex; align-items: center; gap: 8px; margin-left: 12px; }
         .mini-badge-icon { font-size: 0.85rem; opacity: 0.9; }
         .mini-badge-plus { 
-          font-size: 0.7rem; font-weight: 900; color: var(--text-muted); 
-          background: var(--bg-elevated); padding: 2px 6px; border-radius: 6px;
+          font-size: 0.7rem; font-weight: 900; color: #888; 
+          background: #333; padding: 2px 6px; border-radius: 6px;
           cursor: pointer; transition: 0.2s;
         }
-        .mini-badge-plus:hover { color: var(--accent); transform: scale(1.1); }
-
         .p-modal-achievements { margin-bottom: 32px; }
         .ach-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .ach-title { font-size: 0.8rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0; }
-        .ach-count-badge { font-size: 0.7rem; font-weight: 800; color: var(--accent); background: var(--glass); padding: 2px 8px; border-radius: 6px; border: 1px solid var(--border); }
-        
+        .ach-title { font-size: 0.8rem; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0; }
+        .ach-count-badge { font-size: 0.7rem; font-weight: 800; color: #ffd60a; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 6px; border: 1px solid #333; }
         .ach-grid { display: grid; grid-template-columns: 1fr; gap: 10px; max-height: 250px; overflow-y: auto; padding-right: 8px; }
-        .ach-grid::-webkit-scrollbar { width: 3px; }
-        .ach-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
         .ach-card { 
           display: flex; align-items: center; gap: 12px; padding: 12px 14px; 
-          background: var(--glass); border: 1px solid var(--border); border-radius: 14px;
-          transition: all 0.2s;
+          background: rgba(255,255,255,0.03); border: 1px solid #333; border-radius: 14px;
         }
         .ach-card.earned { border-left: 4px solid var(--b-color); }
-        .ach-card.locked { opacity: 0.6; filter: grayscale(1); }
-        .ach-card.locked:hover { opacity: 0.8; filter: grayscale(0.5); }
-        
         .ach-icon { font-size: 1.1rem; color: var(--b-color); width: 24px; text-align: center; }
-        .ach-lock-small { font-size: 0.8rem; color: var(--text-muted); }
         .ach-info { display: flex; flex-direction: column; flex: 1; }
-        .ach-name-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
-        .ach-name { font-size: 0.85rem; font-weight: 800; color: var(--text); }
-        .ach-status-tag { font-size: 0.6rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
-        .ach-desc { font-size: 0.65rem; color: var(--text-muted); font-weight: 600; line-height: 1.3; }
-        .ach-empty { 
-          padding: 24px; background: var(--glass); border: 1px dashed var(--border); 
-          border-radius: 16px; text-align: center; display: flex; flex-direction: column; 
-          align-items: center; gap: 10px; color: var(--text-muted); font-size: 0.75rem; 
-          font-weight: 600;
-        }
-        .ach-lock { font-size: 1.2rem; color: var(--border); }
-        .p-modal-streak { display: flex; align-items: center; gap: 8px; color: var(--accent); font-weight: 800; font-size: 0.9rem; }
-        .p-modal-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 10px var(--accent); }
-        
+        .ach-name { font-size: 0.85rem; font-weight: 800; color: #fff; }
+        .ach-desc { font-size: 0.65rem; color: #888; font-weight: 600; line-height: 1.3; }
+        .p-modal-streak { display: flex; align-items: center; gap: 8px; color: #ffd60a; font-weight: 800; font-size: 0.9rem; }
+        .p-modal-dot { width: 8px; height: 8px; background: #ffd60a; border-radius: 50%; box-shadow: 0 0 10px #ffd60a; }
         .p-modal-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 32px; }
-        .p-m-stat { background: var(--glass); border: 1px solid var(--border); border-radius: 20px; padding: 16px; text-align: center; }
-        .p-m-val { font-size: 1.3rem; font-weight: 900; color: var(--text); margin-bottom: 2px; }
-        .p-m-label { font-size: 0.6rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
-        
+        .p-m-stat { background: rgba(255,255,255,0.03); border: 1px solid #333; border-radius: 20px; padding: 16px; text-align: center; }
+        .p-m-val { font-size: 1.3rem; font-weight: 900; color: #fff; margin-bottom: 2px; }
+        .p-m-label { font-size: 0.6rem; color: #888; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
         .p-modal-actions { display: flex; gap: 12px; }
         .p-modal-btn-primary, .p-modal-btn-ghost {
           flex: 1; padding: 14px; border-radius: 16px; font-weight: 800; font-size: 0.9rem;
           cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
           transition: all 0.2s;
         }
-        .p-modal-btn-primary { background: var(--accent); color: #000; border: none; }
-        .p-modal-btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(226, 183, 20, 0.3); }
-        .p-modal-btn-ghost { background: var(--glass); color: var(--text); border: 1px solid var(--border); }
-        .p-modal-btn-ghost:hover { background: var(--bg-elevated); border-color: var(--accent-muted); }
-        
+        .p-modal-btn-primary { background: #ffd60a; color: #000; border: none; }
+        .p-modal-btn-ghost { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid #333; }
         @keyframes popIn { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         .animate-popIn { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
       `}</style>

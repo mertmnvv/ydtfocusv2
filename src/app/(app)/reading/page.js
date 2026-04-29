@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { useSearchParams } from "next/navigation";
-import { subscribeToUserWords, addUserWord, completeReadingPassage } from "@/lib/firestore";
+import { subscribeToUserWords, addUserWord, completeReadingPassage, getUserMistakes } from "@/lib/firestore";
 import ShareButton from "@/components/ShareButton";
 
 const TOPICS = [
@@ -89,6 +89,10 @@ export default function ReadingPage() {
   const [topic, setTopic] = useState("random");
   const [generating, setGenerating] = useState(false);
   const [myWords, setMyWords] = useState([]);
+  const [passageTitle, setPassageTitle] = useState("");
+  const [translatedText, setTranslatedText] = useState("");
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
   const [lookupInput, setLookupInput] = useState("");
   const [wordInput, setWordInput] = useState("");
@@ -178,7 +182,27 @@ export default function ReadingPage() {
     const t = selectedTopic || topic;
     setTopic(t);
     setGenerating(true);
-    let prompt = `Write an English reading passage about ${t}. Level: ${level} CEFR. Length: 150-200 words. Focus on YDT exam style academic vocabulary. ONLY return the pure text paragraph.`;
+    const levelConstraints = {
+      "A2": "Use very simple SVO sentences, common daily vocabulary, and avoid complex clauses. Keep it basic and direct.",
+      "B1": "Use intermediate vocabulary and clear standard English. Include simple complex sentences (because, although, if).",
+      "B2": "Use upper-intermediate academic vocabulary, technical terms, passive voice, and complex relative clauses. This is typical YDT level.",
+      "C1": "Use advanced, sophisticated academic vocabulary (GRE/SAT level), abstract concepts, complex logical connectors, and varied sentence structures."
+    };
+
+    let prompt = `Create an English reading passage about ${t}. 
+    Target Level: ${level} CEFR. 
+    Linguistic Constraints: ${levelConstraints[level] || ""}
+    Format: Return ONLY a valid JSON object with keys: 
+      "title": "Creative academic title",
+      "en": "The English reading text (Strictly English)",
+      "tr": "Professional Turkish translation. 
+             - Ensure natural, fluent, and academic phrasing.
+             - Correctly handle causative structures: 'make us feel' should be 'hissettirir' (NOT 'hissedebilir').
+             - Avoid literal translation. Use professional SOV Turkish.
+             - No foreign language mixing."
+    Length: 150-200 words. 
+    Focus: YDT exam style academic vocabulary.`;
+
     try {
       const response = await fetch("/api/groq", {
         method: "POST",
@@ -187,15 +211,89 @@ export default function ReadingPage() {
           model: "llama-3.1-8b-instant",
           messages: [{ role: "user", content: prompt }],
           temperature: 0.7,
+          response_format: { type: "json_object" },
         }),
       });
       const data = await response.json();
       if (data.choices?.[0]?.message?.content) {
-        setText(data.choices[0].message.content.replace(/\*/g, "").trim());
+        const parsed = JSON.parse(data.choices[0].message.content);
+        setPassageTitle(parsed.title || "");
+        setText(parsed.en || "");
+        setTranslatedText(parsed.tr || "");
         setQuizQuestions([]); 
+        setIsFlipped(false);
       }
     } catch {
       setText("Bağlantı hatası.");
+    }
+    setGenerating(false);
+    setIsFinished(false);
+  }
+
+  async function generateStoryFromMyWords() {
+    if (!user) return requireAuth(() => {});
+    setGenerating(true);
+    try {
+      const mistakes = await getUserMistakes(user.uid);
+      const bank = myWords.map(w => w.word);
+      
+      // Filtreleme: Sadece gerçek kelimeleri al (ID'leri ve çok uzun teknik dizileri temizle)
+      const isIdFormat = (str) => /^\d{10,20}_[a-z0-9]+$/.test(str) || str.includes("_") || /\d/.test(str);
+      
+      const combined = [...new Set([...bank, ...mistakes])].filter(w => w && w.length > 1 && !isIdFormat(w));
+      
+      if (combined.length < 3) {
+        showNotification("En az 3 gerçek akademik kelimeniz olmalı (Bankada veya hatalarda).", "warning");
+        setGenerating(false);
+        return;
+      }
+
+      const shuffled = combined.sort(() => 0.5 - Math.random());
+      const selectedWords = shuffled.slice(0, 7);
+      
+      const levelConstraints = {
+        "A2": "Use very simple SVO sentences and common daily vocabulary for all text except the required words. Keep it basic.",
+        "B1": "Use intermediate vocabulary and clear standard English. Include simple complex sentences.",
+        "B2": "Use upper-intermediate academic vocabulary, passive voice, and complex clauses. Typical YDT exam level.",
+        "C1": "Use advanced, sophisticated academic vocabulary, abstract concepts, and complex logical connectors."
+      };
+
+      let prompt = `Write an English academic reading passage. 
+      Target Level: ${level} CEFR.
+      Linguistic Constraints: ${levelConstraints[level] || ""}
+      Required Words to Include: ${selectedWords.join(", ")}. 
+      Format: Return ONLY a valid JSON object with keys: 
+        "title": "Creative title",
+        "en": "English text (Strictly English, required words in **bold**)",
+        "tr": "Professional Turkish translation (Strictly Turkish). 
+               - NO foreign words mixed in. 
+               - Ensure perfect grammar and spelling. 
+               - Use natural, academic Turkish sentence structure."
+      Length: 150-200 words.`;
+      
+      const response = await fetch("/api/groq", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "llama-3.1-8b-instant",
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.6,
+          response_format: { type: "json_object" },
+        }),
+      });
+      const data = await response.json();
+      if (data.choices?.[0]?.message?.content) {
+        const parsed = JSON.parse(data.choices[0].message.content);
+        setPassageTitle(parsed.title || "");
+        setText(parsed.en || "");
+        setTranslatedText(parsed.tr || "");
+        setTopic("Kelimelerim");
+        setQuizQuestions([]);
+        setIsFlipped(false);
+        showNotification(`Hikaye oluşturuldu! Kullanılan kelimeler: ${selectedWords.join(", ")}`, "success");
+      }
+    } catch (err) {
+      showNotification("Hikaye üretilirken hata oluştu.", "error");
     }
     setGenerating(false);
     setIsFinished(false);
@@ -305,37 +403,56 @@ export default function ReadingPage() {
 
   function renderAnalysis() {
     if (!text.trim()) return null;
-    const sentences = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [text];
-    return sentences.map((sentence, si) => {
-      const tokens = sentence.split(/(\s+)/);
+    
+    // Paragraflara böl
+    const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim());
+    
+    return paragraphs.map((para, pi) => {
+      // Cümlelere böl
+      const sentences = para.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [para];
+      
       return (
-        <span key={si} className="focus-sentence">
-          {tokens.map((token, ti) => {
-            const clean = token.replace(/[^\p{L}]/gu, "").toLowerCase().trim();
-            if (!clean || clean.length < 2) return <span key={ti}>{token}</span>;
-            const isSaved = myWords.some(w => w.word?.toLowerCase() === clean);
-            const isAcademic = YDT_ACADEMIC_WORDS.includes(clean);
+        <div key={pi} className="reading-paragraph">
+          {sentences.map((sentence, si) => {
+            const tokens = sentence.split(/(\s+)/);
             return (
-              <span key={ti} className={`hover-word ${isSaved ? "is-saved" : ""} ${isAcademic ? "academic-word" : ""}`}
-                onClick={() => lookupWord(clean)}>
-                {token}
+              <span key={si} className="focus-sentence">
+                {tokens.map((token, ti) => {
+                  const clean = token.replace(/[^\p{L}]/gu, "").toLowerCase().trim();
+                  if (!clean || clean.length < 2) return <span key={ti}>{token}</span>;
+                  const isSaved = myWords.some(w => w.word?.toLowerCase() === clean);
+                  const isAcademic = YDT_ACADEMIC_WORDS.includes(clean);
+                  return (
+                    <span key={ti} className={`hover-word ${isSaved ? "is-saved" : ""} ${isAcademic ? "academic-word" : ""}`}
+                      onClick={() => lookupWord(clean)}>
+                      {token}
+                    </span>
+                  );
+                })}
               </span>
             );
           })}
-          {" "}
-        </span>
+        </div>
       );
     });
   }
 
   return (
-    <div className="reading-page">
+    <div className={`reading-page ${sidebarCollapsed ? "zen-mode" : ""}`}>
       <div className="header-split" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <h2 className="section-title" style={{ margin: 0 }}>Metin Analizi</h2>
           {text.trim() && <ShareButton item={{ text: text, title: topic }} type="reading" />}
         </div>
-        <div className="reading-controls">
+        <div className="reading-controls" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <button 
+            className={`btn-ghost ${sidebarCollapsed ? "active" : ""}`} 
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            style={{ padding: '8px 16px', borderRadius: '12px', fontSize: '0.85rem' }}
+          >
+            <i className={`fa-solid ${sidebarCollapsed ? "fa-expand-arrows-alt" : "fa-compress-arrows-alt"}`} style={{ marginRight: 8 }}></i>
+            {sidebarCollapsed ? " Kenar Çubuğunu Göster" : " Odak Modu"}
+          </button>
           <select value={level} onChange={e => setLevel(e.target.value)} className="reading-select">
             <option value="A2">A2</option><option value="B1">B1</option>
             <option value="B2">B2</option><option value="C1">C1</option>
@@ -354,10 +471,18 @@ export default function ReadingPage() {
             <span className="chip-label">{t.label}</span>
           </button>
         ))}
+        <button 
+          className={`topic-chip special-chip ${topic === "Kelimelerim" ? "active" : ""}`}
+          onClick={generateStoryFromMyWords}
+          disabled={generating}
+        >
+          <span className="chip-label"><i className="fa-solid fa-magic-wand-sparkles" style={{ marginRight: 6 }}></i> Kelimelerimle Yaz</span>
+        </button>
       </div>
 
-      <div className="reading-grid">
-        <div className="reading-sidebar">
+      <div className={`reading-grid ${sidebarCollapsed ? "collapsed-sidebar" : ""}`}>
+        {!sidebarCollapsed && (
+          <div className="reading-sidebar animate-fadeInLeft">
           <div className="glass-card">
             <div className="card-header-minimal">Kelime Ara</div>
             <div className="minimal-search-box">
@@ -379,23 +504,57 @@ export default function ReadingPage() {
               className="reading-textarea"
               placeholder="Metninizi buraya ekleyin..."
               value={text}
-              onChange={e => setText(e.target.value)}
+              onChange={e => {
+                setText(e.target.value);
+                setPassageTitle("");
+              }}
               rows={8}
             />
           </div>
         </div>
+      )}
 
-        <div className="reading-main">
+      <div className="reading-main">
           {text.trim() ? (
             <>
-              <div className="glass-card reading-display-card">
-                <div className="card-header-minimal">Analiz</div>
-                <div className="reading-display">{renderAnalysis()}</div>
-                <div className="analysis-actions" style={{ display: 'flex', gap: 10, marginTop: 15 }}>
-                  <button onClick={generateQuiz} className="btn-ghost flex-1" disabled={quizLoading || isFinished}>
-                    {quizLoading ? "Hazırlanıyor..." : isFinished ? "Test Tamamlandı" : "Okuduğunu Anlama Testi"}
-                  </button>
+              <div className={`reading-card-scene ${isFlipped ? "is-flipped" : ""}`}>
+                <div className="reading-card-inner">
+                  {/* FRONT: ENGLISH ANALYSIS */}
+                  <div className="reading-card-front glass-card reading-display-card">
+                    <div className="card-header-minimal">
+                      <span>Analiz</span>
+                      {translatedText && (
+                        <button className="btn-translate-toggle" onClick={() => setIsFlipped(true)}>
+                          <i className="fa-solid fa-language"></i> Türkçesine Bak
+                        </button>
+                      )}
+                    </div>
+                    {passageTitle && <h1 className="reading-title-display">{passageTitle}</h1>}
+                    <div className="reading-display">{renderAnalysis()}</div>
+                  </div>
+
+                  {/* BACK: TURKISH TRANSLATION */}
+                  <div className="reading-card-back glass-card reading-display-card">
+                    <div className="card-header-minimal">
+                      <span>Türkçe Çeviri</span>
+                      <button className="btn-translate-toggle" onClick={() => setIsFlipped(false)}>
+                        <i className="fa-solid fa-arrow-left"></i> İngilizceye Dön
+                      </button>
+                    </div>
+                    {passageTitle && <h1 className="reading-title-display">{passageTitle} (Çeviri)</h1>}
+                    <div className="reading-display translation-text-display">
+                      {translatedText.split(/\n+/).map((p, i) => (
+                        <p key={i} className="reading-paragraph">{p}</p>
+                      ))}
+                    </div>
+                  </div>
                 </div>
+              </div> {/* End of reading-card-scene */}
+
+              <div className="analysis-actions" style={{ display: 'flex', gap: 10, marginTop: 15 }}>
+                <button onClick={generateQuiz} className="btn-ghost flex-1" disabled={quizLoading || isFinished}>
+                  {quizLoading ? "Hazırlanıyor..." : isFinished ? "Test Tamamlandı" : "Okuduğunu Anlama Testi"}
+                </button>
               </div>
 
               {isFinished && (

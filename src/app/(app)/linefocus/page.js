@@ -1,9 +1,102 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, memo, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import CustomDialog from "@/components/CustomDialog";
+import { getUserWords, getUserMistakes } from "@/lib/firestore";
+
+// --- Sub-components for Optimization ---
+
+const Sidebar = memo(({ isOpen, setOpen, history, setReaderData, onClear }) => (
+  <>
+    <button className={`lf-sidebar-toggle ${isOpen ? "shifted" : ""}`}
+      onClick={() => setOpen(!isOpen)}>
+      <i className={`fas ${isOpen ? "fa-times" : "fa-history"}`}></i>
+      {isOpen ? "close" : "history"}
+    </button>
+
+    <div className={`lf-sidebar ${isOpen ? "is-open" : ""}`}>
+      <div className="lf-sidebar-inner">
+        <h3 className="lf-sidebar-label">completed sentences</h3>
+        <button className="lf-clear-btn" onClick={onClear}>clear history</button>
+        <div className="lf-history-list">
+          {history.map((item, i) => (
+            <div key={i} className="lf-history-item" onClick={() => setReaderData(item)}>
+              <div className="lf-story-meta">
+                {item.isBook ? "ai endless book" : "general flow"}
+              </div>
+              <div className="lf-history-en">{item.en?.substring(0, 120)}...</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </>
+));
+
+const TypingArea = memo(({ sentence, charIdx, typedChars }) => {
+  if (!sentence) return null;
+  const target = sentence.en.trim();
+  const words = target.split(" ");
+  const trText = sentence.tr?.trim() || "";
+  const trWords = trText.split(" ");
+  const ratio = target.length > 0 ? charIdx / target.length : 0;
+  const highlightCount = Math.ceil(ratio * trWords.length);
+
+  let globalIdx = 0;
+
+  return (
+    <div className="lf-flow-container">
+      <div className="lf-text-box">
+        {words.map((word, wi) => {
+          const startGlobal = globalIdx;
+          const letterSpans = [];
+          for (let ci = 0; ci < word.length; ci++) {
+            const gi = startGlobal + ci;
+            let cls = "lf-letter";
+            if (gi < charIdx) {
+              const tc = typedChars[gi];
+              cls += tc && tc.correct ? " lf-typed" : " lf-wrong";
+            }
+            if (gi === charIdx) cls += " lf-active";
+            letterSpans.push(<span key={gi} className={cls}>{word[ci]}</span>);
+          }
+          globalIdx += word.length;
+          if (wi < words.length - 1) {
+            const spaceGi = globalIdx;
+            let spaceCls = "lf-letter";
+            if (spaceGi < charIdx) spaceCls += " lf-typed";
+            if (spaceGi === charIdx) spaceCls += " lf-active";
+            letterSpans.push(<span key={`s${spaceGi}`} className={`${spaceCls} lf-space-char`}>&nbsp;</span>);
+            globalIdx++;
+          }
+          return <div key={wi} className="lf-word">{letterSpans}</div>;
+        })}
+      </div>
+
+      <div className="lf-translation">
+        {trWords.map((w, i) => (
+          <span key={i} className={`lf-tr-word ${i < highlightCount ? "lf-tr-highlight" : ""}`}>
+            {w}{" "}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+});
+
+const ReaderOverlay = memo(({ data, onClose }) => (
+  <div className="lf-reader-overlay" onClick={onClose}>
+    <div className="lf-reader-content" onClick={e => e.stopPropagation()}>
+      <button className="lf-reader-close" onClick={onClose}>
+        <i className="fas fa-times"></i> close reader
+      </button>
+      <div className="lf-reader-en">{data.en}</div>
+      <div className="lf-reader-tr">{data.tr}</div>
+    </div>
+  </div>
+));
 
 export default function LinefocusPage() {
   const { user, loading: authLoading, setAuthModalOpen } = useAuth();
@@ -45,19 +138,17 @@ export default function LinefocusPage() {
     setHistory(newHistory);
     localStorage.setItem("lf_history_blocks", JSON.stringify(newHistory));
   }
-
   // Kategori ile başlat
   async function startFlow(topic) {
     setLoading(true);
     const seed = Math.floor(Math.random() * 10000);
     const prompt = `Task: Write a UNIQUE 4-sentence connected story about ${topic}. Seed: ${seed}. Level: A2-B1.
 CRITICAL TURKISH TRANSLATION RULES:
-1. MANDATORY: Use natural, fluid Turkish SOV (Subject-Object-Verb) order. 
-2. DO NOT translate word-for-word. Capture the MEANING and rephrase as a native Turkish speaker would.
-3. ABSOLUTELY NO DEVRIK (INVERTED) SENTENCES. The verb must always be at the end.
-4. Never start Turkish sentences with "Ve", "Ama", or "Fakat". Use "Bununla birlikte", "Ancak" or restructure.
+1. MANDATORY: Natural, fluid Turkish SOV (Subject-Object-Verb) order. The verb MUST be at the end.
+2. DO NOT translate word-for-word. Focus on MEANING and rephrase like a native academic translator.
+3. ABSOLUTELY NO DEVRIK (INVERTED) SENTENCES.
+4. Never start Turkish sentences with "Ve", "Ama", or "Fakat". Use sophisticated connectors.
 5. Relative clauses (who/which/that) MUST become Turkish participle forms (-en/-an/-dığı).
-6. Each Turkish sentence must be grammatically perfect and independently understandable.
 Return ONLY a JSON array: [{"en": "english sentence", "tr": "natural Turkish"}]`;
 
     try {
@@ -70,24 +161,15 @@ Return ONLY a JSON array: [{"en": "english sentence", "tr": "natural Turkish"}]`
         }),
       });
       
-      let parsed;
-      if (!resp.ok) {
-        console.warn("AI API failed, using mock data");
-        parsed = [
-          { "en": "The music began to play softly in the background.", "tr": "Müzik arka planda yavaşça çalmaya başladı." },
-          { "en": "Everyone in the room stopped talking to listen.", "tr": "Odadaki herkes dinlemek için konuşmayı kesti." },
-          { "en": "It was a beautiful melody that felt very familiar.", "tr": "Çok tanıdık gelen güzel bir melodiydi." },
-          { "en": "The atmosphere became peaceful and calm immediately.", "tr": "Atmosfer anında huzurlu ve sakin bir hal aldı." }
-        ];
-      } else {
-        const data = await resp.json();
-        const raw = data.choices?.[0]?.message?.content || "";
-        const jsonMatch = raw.match(/\[[\s\S]*\]/);
-        if (!jsonMatch) throw new Error("JSON bulunamadı");
-        parsed = JSON.parse(jsonMatch[0]);
-      }
+      if (!resp.ok) throw new Error("API hatası");
+      
+      const data = await resp.json();
+      const raw = data.choices?.[0]?.message?.content || "";
+      const jsonMatch = raw.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) throw new Error("JSON bulunamadı");
+      const parsed = JSON.parse(jsonMatch[0]);
 
-      if (parsed.length > 0) {
+      if (parsed && parsed.length > 0) {
         setSentences(parsed);
         setSIdx(0);
         setCharIdx(0);
@@ -101,7 +183,7 @@ Return ONLY a JSON array: [{"en": "english sentence", "tr": "natural Turkish"}]`
       }
     } catch (err) {
       console.error(err);
-      showNotification("Bağlantı hatası. Test modu aktif edildi.", "info");
+      showNotification("Yapay zeka şu an yanıt veremiyor. Test modu aktif.", "info");
       const mock = [
         { "en": "The music began to play softly in the background.", "tr": "Müzik arka planda yavaşça çalmaya başladı." },
         { "en": "Everyone in the room stopped talking to listen.", "tr": "Odadaki herkes dinlemek için konuşmayı kesti." },
@@ -132,11 +214,11 @@ STORY HISTORY: "${bookHistory}"
 ### LINGUISTIC CONSTRAINTS: CEFR A2-B1 transition. Include at least 2 Academic Keywords.
 ### STORY RULES: Maintain Sci-Fi Mystery atmosphere. Continue from where history left off.
 ### TURKISH TRANSLATION RULES:
-1. MANDATORY: Use natural, fluid Turkish SOV (Subject-Object-Verb) order. Verb MUST be at the end.
-2. DO NOT translate word-for-word. Capture the MEANING and rephrase naturally.
-3. ABSOLUTELY NO DEVRIK (INVERTED) SENTENCES. Standard spoken/written Turkish rules apply.
+1. MANDATORY: Natural, fluid Turkish SOV (Subject-Object-Verb) order. Verb MUST be at the end.
+2. DO NOT translate word-for-word. Focus on MEANING. Rephrase to sound natural to a Turkish ear.
+3. ABSOLUTELY NO DEVRIK (INVERTED) SENTENCES.
 4. Relative clauses (who/which/that) → Turkish participle forms (-en/-an/-dığı).
-5. Never start Turkish with "Ve", "Ama", or "Fakat" — restructure instead.
+5. Ensure perfect grammatical transition between sentences.
 ### OUTPUT: Return ONLY raw JSON array.
 [{"en": "Sentence 1", "tr": "Doğal Türkçe 1"},{"en": "Sentence 2", "tr": "Doğal Türkçe 2"},{"en": "Sentence 3", "tr": "Doğal Türkçe 3"},{"en": "Sentence 4", "tr": "Doğal Türkçe 4"}]`;
 
@@ -146,28 +228,19 @@ STORY HISTORY: "${bookHistory}"
         body: JSON.stringify({
           model: "llama-3.1-8b-instant",
           messages: [{ role: "user", content: prompt }],
-          temperature: 0.55, max_tokens: 800,
+          temperature: 0.55,
         }),
       });
 
-      let parsed;
-      if (!resp.ok) {
-        console.warn("AI API failed, using mock data for book");
-        parsed = [
-          { "en": "The first chapter of the mysterious book was titled 'The Beginning'.", "tr": "Gizemli kitabın ilk bölümü 'Başlangıç' başlığını taşıyordu." },
-          { "en": "It spoke of an ancient machine hidden beneath the city.", "tr": "Şehrin altına gizlenmiş antik bir makineden bahsediyordu." },
-          { "en": "Nobody knew who had built it or what its purpose was.", "tr": "Onu kimin yaptığını ya da amacının ne olduğunu kimse bilmiyordu." },
-          { "en": "But everyone felt its power vibrating through the ground.", "tr": "Ancak herkes onun gücünün yerin altından titreştiğini hissediyordu." }
-        ];
-      } else {
-        const data = await resp.json();
-        const raw = (data.choices?.[0]?.message?.content || "").replace(/```json/g, "").replace(/```/g, "").trim();
-        const jsonMatch = raw.match(/\[[\s\S]*\]/);
-        if (!jsonMatch) throw new Error("JSON bozuk");
-        parsed = JSON.parse(jsonMatch[0]);
-      }
+      if (!resp.ok) throw new Error("API hatası");
 
-      if (parsed.length > 0) {
+      const data = await resp.json();
+      const raw = (data.choices?.[0]?.message?.content || "").replace(/```json/g, "").replace(/```/g, "").trim();
+      const jsonMatch = raw.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) throw new Error("JSON bozuk");
+      const parsed = JSON.parse(jsonMatch[0]);
+
+      if (parsed && parsed.length > 0) {
         setSentences(parsed);
         setSIdx(0);
         setCharIdx(0);
@@ -181,7 +254,7 @@ STORY HISTORY: "${bookHistory}"
       }
     } catch (err) {
       console.error(err);
-      showNotification("AI bağlantı hatası. Test modu aktif edildi.", "info");
+      showNotification("Yapay zeka şu an yanıt veremiyor. Test modu aktif.", "info");
       const mock = [
         { "en": "The first chapter of the mysterious book was titled 'The Beginning'.", "tr": "Gizemli kitabın ilk bölümü 'Başlangıç' başlığını taşıyordu." },
         { "en": "It spoke of an ancient machine hidden beneath the city.", "tr": "Şehrin altına gizlenmiş antik bir makineden bahsediyordu." },
@@ -196,6 +269,77 @@ STORY HISTORY: "${bookHistory}"
       processingRef.current = false;
       setIsEndless(true);
       setPhase("typing");
+    }
+    setLoading(false);
+  }
+
+  // Personal Article from Bank & Mistakes
+  async function startPersonalArticle() {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const [words, mistakes] = await Promise.all([
+        getUserWords(user.uid),
+        getUserMistakes(user.uid)
+      ]);
+
+      const bankWords = words.map(w => w.word);
+      const combined = [...new Set([...bankWords, ...mistakes])].filter(w => w && w.length > 2);
+
+      if (combined.length < 3) {
+        showNotification("Bankanızda veya hatalarınızda yeterli kelime (en az 3) yok.", "warning");
+        setLoading(false);
+        return;
+      }
+
+      // Pick random words
+      const shuffled = combined.sort(() => 0.5 - Math.random());
+      const selectedWords = shuffled.slice(0, 10);
+
+      const prompt = `### ROLE: Expert Academic English Professor for YDT preparation.
+### TASK: Generate a UNIQUE 4-sentence CONNECTED ACADEMIC ARTICLE.
+### KEYWORDS TO USE: ${selectedWords.join(", ")}
+### LINGUISTIC CONSTRAINTS: Level B2-C1. Academic/Formal tone. High quality.
+### TURKISH TRANSLATION RULES:
+1. MANDATORY: Natural, fluid Turkish SOV (Subject-Object-Verb) order. Verb MUST be at the end.
+2. DO NOT translate word-for-word. Focus on ACADEMIC MEANING and rephrase with formal Turkish structures.
+3. ABSOLUTELY NO DEVRIK (INVERTED) SENTENCES.
+4. Relative clauses (who/which/that) MUST become Turkish participle forms (-en/-an/-dığı).
+### OUTPUT: Return ONLY raw JSON array.
+[{"en": "...", "tr": "..."}, {"en": "...", "tr": "..."}, {"en": "...", "tr": "..."}, {"en": "...", "tr": "..."}]`;
+
+      const resp = await fetch("/api/groq", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "llama-3.1-8b-instant",
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.65,
+        }),
+      });
+
+      if (!resp.ok) throw new Error("API hatası");
+      
+      const data = await resp.json();
+      const raw = (data.choices?.[0]?.message?.content || "").replace(/```json/g, "").replace(/```/g, "").trim();
+      const jsonMatch = raw.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) throw new Error("JSON bozuk");
+      const parsed = JSON.parse(jsonMatch[0]);
+
+      if (parsed && parsed.length > 0) {
+        setSentences(parsed);
+        setSIdx(0);
+        setCharIdx(0);
+        setTotalKeys(0);
+        setWrongKeys(0);
+        setTypedChars([]);
+        sessionRef.current = "personal_academic_flow";
+        processingRef.current = false;
+        setIsEndless(false);
+        setPhase("typing");
+      }
+    } catch (err) {
+      console.error(err);
+      showNotification("Yapay zeka şu an yanıt veremiyor.", "error");
     }
     setLoading(false);
   }
@@ -352,6 +496,8 @@ STORY HISTORY: "${bookHistory}"
     showNotification("Okuma geçmişi temizlendi.", "success");
   }
 
+  const memoHistory = useMemo(() => history, [history]);
+
   // Render
   const categories = [
     "music", "movies & tv", "sports", "travel", "coffee", "gaming",
@@ -373,32 +519,14 @@ STORY HISTORY: "${bookHistory}"
     let globalIdx = 0;
     return (
       <div className="lf-standalone">
-        {/* Sidebar Toggle */}
-        <button className={`lf-sidebar-toggle ${sidebarOpen ? "shifted" : ""}`}
-          onClick={() => setSidebarOpen(!sidebarOpen)}>
-          <i className={`fas ${sidebarOpen ? "fa-times" : "fa-history"}`}></i>
-          {sidebarOpen ? "close" : "history"}
-        </button>
+        <Sidebar 
+          isOpen={sidebarOpen} 
+          setOpen={setSidebarOpen} 
+          history={memoHistory} 
+          setReaderData={setReaderData}
+          onClear={() => setShowClearConfirm(true)}
+        />
 
-        {/* Sidebar */}
-        <div className={`lf-sidebar ${sidebarOpen ? "is-open" : ""}`}>
-          <div className="lf-sidebar-inner">
-            <h3 className="lf-sidebar-label">completed sentences</h3>
-            <button className="lf-clear-btn" onClick={() => setShowClearConfirm(true)}>clear history</button>
-            <div className="lf-history-list">
-              {history.map((item, i) => (
-                <div key={i} className="lf-history-item" onClick={() => setReaderData(item)}>
-                  <div className="lf-story-meta">
-                    {item.isBook ? "ai endless book" : new Date().toLocaleDateString() + " - general flow"}
-                  </div>
-                  <div className="lf-history-en">{item.en?.substring(0, 120)}...</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Top Bar */}
         <div className="lf-top-bar">
           <button className="lf-exit-btn" onClick={resetToSetup}>
             <i className="fas fa-chevron-left"></i> back
@@ -406,7 +534,6 @@ STORY HISTORY: "${bookHistory}"
           <div className="lf-logo">line<span>focus</span></div>
         </div>
 
-        {/* Main */}
         <div className="lf-main">
           <div className="lf-controls">
             <button className="lf-select-btn" onClick={resetToSetup}>
@@ -422,58 +549,15 @@ STORY HISTORY: "${bookHistory}"
             <span className="lf-progress">{sIdx + 1} / {sentences.length}</span>
           </div>
 
-          <div className="lf-flow-container">
-            {/* English text */}
-            <div className="lf-text-box">
-              {words.map((word, wi) => {
-                const startGlobal = globalIdx;
-                const letterSpans = [];
-                for (let ci = 0; ci < word.length; ci++) {
-                  const gi = startGlobal + ci;
-                  let cls = "lf-letter";
-                  if (gi < charIdx) {
-                    const tc = typedChars[gi];
-                    cls += tc && tc.correct ? " lf-typed" : " lf-wrong";
-                  }
-                  if (gi === charIdx) cls += " lf-active";
-                  letterSpans.push(<span key={gi} className={cls}>{word[ci]}</span>);
-                }
-                globalIdx += word.length;
-                // Add space
-                if (wi < words.length - 1) {
-                  const spaceGi = globalIdx;
-                  let spaceCls = "lf-letter";
-                  if (spaceGi < charIdx) spaceCls += " lf-typed";
-                  if (spaceGi === charIdx) spaceCls += " lf-active";
-                  letterSpans.push(<span key={`s${spaceGi}`} className={spaceCls}> </span>);
-                  globalIdx++;
-                }
-                return <div key={wi} className="lf-word">{letterSpans}</div>;
-              })}
-            </div>
-
-            {/* Turkish translation (shadow flow) */}
-            <div className="lf-translation">
-              {trWords.map((w, i) => (
-                <span key={i} className={`lf-tr-word ${i < highlightCount ? "lf-tr-highlight" : ""}`}>
-                  {w}{" "}
-                </span>
-              ))}
-            </div>
-          </div>
+          <TypingArea 
+            sentence={sentences[sIdx]} 
+            charIdx={charIdx} 
+            typedChars={typedChars} 
+          />
         </div>
 
-        {/* Reader Mode Overlay */}
         {readerData && (
-          <div className="lf-reader-overlay" onClick={() => setReaderData(null)}>
-            <div className="lf-reader-content" onClick={e => e.stopPropagation()}>
-              <button className="lf-reader-close" onClick={() => setReaderData(null)}>
-                <i className="fas fa-times"></i> close reader
-              </button>
-              <div className="lf-reader-en">{readerData.en}</div>
-              <div className="lf-reader-tr">{readerData.tr}</div>
-            </div>
-          </div>
+          <ReaderOverlay data={readerData} onClose={() => setReaderData(null)} />
         )}
       </div>
     );
@@ -561,30 +645,13 @@ STORY HISTORY: "${bookHistory}"
   // SETUP SCREEN
   return (
     <div className="lf-standalone">
-      {/* Sidebar Toggle */}
-      <button className={`lf-sidebar-toggle ${sidebarOpen ? "shifted" : ""}`}
-        onClick={() => setSidebarOpen(!sidebarOpen)}>
-        <i className={`fas ${sidebarOpen ? "fa-times" : "fa-history"}`}></i>
-        {sidebarOpen ? "close" : "history"}
-      </button>
-
-      {/* Sidebar */}
-      <div className={`lf-sidebar ${sidebarOpen ? "is-open" : ""}`}>
-        <div className="lf-sidebar-inner">
-          <h3 className="lf-sidebar-label">completed sentences</h3>
-          <button className="lf-clear-btn" onClick={() => setShowClearConfirm(true)}>clear history</button>
-          <div className="lf-history-list">
-            {history.map((item, i) => (
-              <div key={i} className="lf-history-item" onClick={() => setReaderData(item)}>
-                <div className="lf-story-meta">
-                  {item.isBook ? "ai endless book" : "general flow"}
-                </div>
-                <div className="lf-history-en">{item.en?.substring(0, 120)}...</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <Sidebar 
+        isOpen={sidebarOpen} 
+        setOpen={setSidebarOpen} 
+        history={memoHistory} 
+        setReaderData={setReaderData}
+        onClear={() => setShowClearConfirm(true)}
+      />
 
       {/* Top Bar */}
       <div className="lf-top-bar">
@@ -605,6 +672,9 @@ STORY HISTORY: "${bookHistory}"
             <button className="lf-endless-btn" onClick={startEndlessBook}>
               open ai book
             </button>
+            <button className="lf-personal-btn" onClick={startPersonalArticle}>
+              generate from bank & mistakes
+            </button>
           </div>
           {loading && (
             <p className="lf-loading">
@@ -614,17 +684,8 @@ STORY HISTORY: "${bookHistory}"
         </div>
       </div>
 
-      {/* Reader */}
       {readerData && (
-        <div className="lf-reader-overlay" onClick={() => setReaderData(null)}>
-          <div className="lf-reader-content" onClick={e => e.stopPropagation()}>
-            <button className="lf-reader-close" onClick={() => setReaderData(null)}>
-              <i className="fas fa-times"></i> close reader
-            </button>
-            <div className="lf-reader-en">{readerData.en}</div>
-            <div className="lf-reader-tr">{readerData.tr}</div>
-          </div>
-        </div>
+        <ReaderOverlay data={readerData} onClose={() => setReaderData(null)} />
       )}
 
       {showClearConfirm && (

@@ -7,6 +7,7 @@ import { BADGES } from "@/constants/badges";
 import Link from "next/link";
 import Leaderboard from "@/components/Leaderboard";
 import CustomDialog from "@/components/CustomDialog";
+import PremiumModal from "@/components/PremiumModal";
 
 export default function DashboardPage() {
   const { user, userProfile, isAdmin, isPremium } = useAuth();
@@ -24,13 +25,13 @@ export default function DashboardPage() {
       return;
     }
 
-    let unsubWords = () => {};
-    let unsubStats = () => {};
+    let unsubWords = () => { };
+    let unsubStats = () => { };
 
     const setupListeners = async () => {
       try {
         const h = await getUserHeroStats(user.uid);
-        
+
         // Real-time Kelime Takibi
         unsubWords = subscribeToUserWords(user.uid, (wordList) => {
           if (!isMounted) return;
@@ -43,7 +44,7 @@ export default function DashboardPage() {
         unsubStats = subscribeToUserStats(user.uid, (s) => {
           if (!isMounted) return;
           setStats({ ...(s || {}), streak: s?.streak || 0 });
-          
+
           // İki veri de güncelken rozet kontrolü yap
           // (words state'inden alabiliriz çünkü subscribe zaten çalışıyor)
           checkAndGrantBadges(user.uid, s, words.length, h.levels, words);
@@ -55,13 +56,13 @@ export default function DashboardPage() {
     };
 
     setupListeners();
-    return () => { 
-      isMounted = false; 
+    return () => {
+      isMounted = false;
       unsubWords();
       unsubStats();
     };
   }, [user]); // words bağımlılığını checkAndGrantBadges için useEffect dışında yönetebiliriz ama şimdilik burada kalsın veya useCallback kullanabiliriz.
-  
+
   // Words değiştiğinde de rozeti kontrol etmek için:
   useEffect(() => {
     if (user && stats && words.length > 0) {
@@ -77,7 +78,7 @@ export default function DashboardPage() {
   const masteredCount = words.filter(w => w.level >= 4).length;
   const pct = total > 0 ? Math.round((masteredCount / total) * 100) : 0;
   const dueCount = words.filter(w => (w.nextReview || 0) <= Date.now()).length;
-  
+
   const levels = [
     { name: "Yeni", key: "level0", color: "#ff453a" },
     { name: "Adım 1", key: "level1", color: "#ff9f0a" },
@@ -135,8 +136,8 @@ export default function DashboardPage() {
                       );
                     })}
                     {userProfile.badges.length > 3 && (
-                      <button 
-                        className="dash-badge-more" 
+                      <button
+                        className="dash-badge-more"
                         onClick={(e) => {
                           e.stopPropagation();
                           setShowAllBadgesPop(!showAllBadgesPop);
@@ -193,7 +194,7 @@ export default function DashboardPage() {
               {dueCount > 0 ? `${dueCount} Kelime Seni Bekliyor` : "Harika! Bugün her şey taze."}
             </h2>
             <p className="focus-desc">
-              {dueCount > 0 
+              {dueCount > 0
                 ? "Unutma eğrisine yenik düşmeden kelimelerini tekrar etmelisin."
                 : "Tüm kelimelerin şu an güvende. Yeni kelimeler ekleyerek ilerleyebilirsin."}
             </p>
@@ -271,15 +272,7 @@ export default function DashboardPage() {
 
 
 
-      {showPremiumModal && (
-        <CustomDialog
-          title="YDT Focus Premium"
-          message="Şu anda YDT Focus test aşamasında olduğu için tüm özellikler herkese ÜCRETSİZ! Çok yakında gelecek olan özel soru bankaları, yapay zeka analizleri ve ek özellikler ile Premium üyeliği aktifleştireceğiz. Şimdilik her şeyin tadını çıkarın! "
-          confirmText="Harika!"
-          onConfirm={() => setShowPremiumModal(false)}
-          onCancel={() => setShowPremiumModal(false)}
-        />
-      )}
+      <PremiumModal isOpen={showPremiumModal} onClose={() => setShowPremiumModal(false)} />
 
       <style jsx>{`
         .plan-badge-wrapper { display: flex; }

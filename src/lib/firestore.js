@@ -340,6 +340,13 @@ export async function updateUserRole(uid, role) {
   await updateDoc(userRef, { role });
 }
 
+export async function deleteUserDoc(uid) {
+  const userRef = doc(db, "users", uid);
+  await deleteDoc(userRef);
+  // Not: Bu sadece Firestore dokümanını siler. 
+  // Auth kaydını silmek için Firebase Admin SDK (Cloud Functions/API) gereklidir.
+}
+
 export async function updateLastReminderDate(uid) {
   const userRef = doc(db, "users", uid);
   await updateDoc(userRef, { lastReminderDate: new Date().toDateString() });

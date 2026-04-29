@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getAllUsers, updateUserRole } from "@/lib/firestore";
+import { getAllUsers, updateUserRole, deleteUserDoc } from "@/lib/firestore";
 import { useNotification } from "@/context/NotificationContext";
 import CustomDialog from "@/components/CustomDialog";
 
@@ -11,6 +11,7 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
   const [roleConfirm, setRoleConfirm] = useState(null); // { uid, currentRole }
+  const [userToDelete, setUserToDelete] = useState(null); // { uid, name }
 
   useEffect(() => {
     loadUsers();
@@ -35,6 +36,18 @@ export default function AdminUsersPage() {
     } catch (err) {
       showNotification("Rol güncellenirken hata oluştu.", "error");
     }
+  }
+  
+  async function handleDeleteUser() {
+    if (!userToDelete) return;
+    try {
+      await deleteUserDoc(userToDelete.uid);
+      setUsers(prev => prev.filter(u => u.uid !== userToDelete.uid && u.id !== userToDelete.uid));
+      showNotification(`${userToDelete.name} silindi`, "success");
+    } catch (err) {
+      showNotification("Kullanıcı silinirken hata oluştu.", "error");
+    }
+    setUserToDelete(null);
   }
 
   const filteredUsers = filter
@@ -101,15 +114,24 @@ export default function AdminUsersPage() {
                     </div>
                   </td>
                   <td>
-                    <select 
-                      className="admin-select-sm"
-                      value={u.role || "free"}
-                      onChange={(e) => handleRoleUpdate(u.uid || u.id, e.target.value)}
-                    >
-                      <option value="free">Standart</option>
-                      <option value="premium">Premium</option>
-                      <option value="admin">Admin</option>
-                    </select>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <select 
+                        className="admin-select-sm"
+                        value={u.role || "free"}
+                        onChange={(e) => handleRoleUpdate(u.uid || u.id, e.target.value)}
+                      >
+                        <option value="free">Standart</option>
+                        <option value="premium">Premium</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                      <button 
+                        className="admin-delete-btn"
+                        onClick={() => setUserToDelete({ uid: u.uid || u.id, name: u.displayName || u.email })}
+                        title="Kullanıcıyı Sil"
+                      >
+                        <i className="fa-solid fa-trash-can"></i>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -117,6 +139,17 @@ export default function AdminUsersPage() {
           </table>
         </div>
       </div>
+
+      {userToDelete && (
+        <CustomDialog
+          title="Kullanıcıyı Sil"
+          message={`"${userToDelete.name}" isimli kullanıcıyı veritabanından silmek istediğine emin misin? Bu işlem geri alınamaz.`}
+          confirmText="Evet, Sil"
+          confirmColor="#ff453a"
+          onConfirm={handleDeleteUser}
+          onCancel={() => setUserToDelete(null)}
+        />
+      )}
       
       <style jsx>{`
         .admin-select-sm {
@@ -138,6 +171,24 @@ export default function AdminUsersPage() {
           padding: 10px;
         }
         .admin-badge-premium { background: rgba(226, 183, 20, 0.2); color: var(--accent); }
+        .admin-delete-btn {
+          background: rgba(255, 69, 58, 0.1);
+          border: 1px solid rgba(255, 69, 58, 0.2);
+          color: #ff453a;
+          width: 36px;
+          height: 36px;
+          border-radius: 8px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: 0.2s;
+        }
+        .admin-delete-btn:hover {
+          background: #ff453a;
+          color: #fff;
+          transform: scale(1.05);
+        }
       `}</style>
     </div>
   );

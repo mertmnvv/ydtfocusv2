@@ -119,7 +119,7 @@ export default function AppLayout({ children }) {
             <ThemeToggle />
             {user ? (
               <div className="profile-menu-wrapper">
-                <button 
+                <button
                   className={`profile-mini-trigger ${profileOpen ? "active" : ""}`}
                   onClick={() => setProfileOpen(!profileOpen)}
                 >
@@ -252,7 +252,7 @@ export default function AppLayout({ children }) {
           </Link>
         ))}
         {/* Profile Button */}
-        <button 
+        <button
           className={`bottom-nav-item profile ${profileOpen ? "active" : ""}`}
           onClick={() => setProfileOpen(!profileOpen)}
         >
@@ -273,9 +273,9 @@ export default function AppLayout({ children }) {
             <div className="popup-header">
               <div className="popup-name-group">
                 <div className="popup-name">{userProfile?.displayName || "Kullanıcı"}</div>
-                <div className="popup-plan-tag" style={{ 
-                  fontSize: '0.65rem', 
-                  fontWeight: 800, 
+                <div className="popup-plan-tag" style={{
+                  fontSize: '0.65rem',
+                  fontWeight: 800,
                   color: isAdmin ? '#ff453a' : isPremium ? 'var(--accent)' : 'var(--text-muted)',
                   textTransform: 'uppercase',
                   letterSpacing: '1px'
