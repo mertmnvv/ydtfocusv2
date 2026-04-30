@@ -93,6 +93,34 @@ export default function ReadingPage() {
   const [translatedText, setTranslatedText] = useState("");
   const [isFlipped, setIsFlipped] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [streamMode, setStreamMode] = useState(false);
+  const [currentCardIdx, setCurrentCardIdx] = useState(0);
+  const [logicLines, setLogicLines] = useState([]);
+  const [conjunctions, setConjunctions] = useState([]);
+  const [hoveredRef, setHoveredRef] = useState(null);
+  const [hoveredConj, setHoveredConj] = useState(null);
+
+  function speakWord(w) {
+    if (!w) return;
+    
+    // Önceki seslendirmeleri anında iptal et (Sıra beklememesi için)
+    window.speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(w);
+    
+    // Tarayıcıdaki sesleri al ve Amerikan aksanlı olanı bul
+    const voices = window.speechSynthesis.getVoices();
+    const usVoice = voices.find(v => v.lang === "en-US" && v.name.includes("Google")) || 
+                    voices.find(v => v.lang === "en-US") || 
+                    voices[0];
+    
+    if (usVoice) utterance.voice = usVoice;
+    utterance.lang = "en-US";
+    utterance.rate = 0.85; 
+    utterance.pitch = 1;
+    
+    window.speechSynthesis.speak(utterance);
+  }
   
   const [lookupInput, setLookupInput] = useState("");
   const [wordInput, setWordInput] = useState("");
@@ -189,19 +217,29 @@ export default function ReadingPage() {
       "C1": "Use advanced, sophisticated academic vocabulary (GRE/SAT level), abstract concepts, complex logical connectors, and varied sentence structures."
     };
 
-    let prompt = `Create an English reading passage about ${t}. 
-    Target Level: ${level} CEFR. 
-    Linguistic Constraints: ${levelConstraints[level] || ""}
+    let prompt = `Write a high-quality, professional academic reading passage for YDT students.
+    Target Level: ${level} CEFR.
+    Topic: ${t}.
+    
+    Linguistic Requirements:
+    - Style: Professional academic journal (e.g., Nature, The Economist).
+    - Sentence Structure: Use complex clauses, passive voice, and academic logical connectors. 
+    - Cohesion: Ensure logical flow and perfect transitions between sentences.
+    - NO repetitive simplistic SVO sentences.
+    - NO typos or spelling errors.
+    
     Format: Return ONLY a valid JSON object with keys: 
-      "title": "Creative academic title",
-      "en": "The English reading text (Strictly English)",
-      "tr": "Professional Turkish translation. 
-             - Ensure natural, fluent, and academic phrasing.
-             - Correctly handle causative structures: 'make us feel' should be 'hissettirir' (NOT 'hissedebilir').
-             - Avoid literal translation. Use professional SOV Turkish.
-             - No foreign language mixing."
-    Length: 150-200 words. 
-    Focus: YDT exam style academic vocabulary.`;
+      "title": "A professional academic title",
+      "en": "The English reading text (Sophisticated English)",
+      "tr": "Professional Turkish translation (Academic Turkish)",
+      "logic_lines": [
+        {"ref": "it/they/this", "target": "EXACT phrase in text", "context": "explanation"}
+      ],
+      "conjunctions": [
+        {"word": "however/when/etc", "type": "contrast/time/etc", "tr": "Türkçe anlamı"}
+      ]
+    Important: The 'target' MUST match a substring in the 'en' text exactly.
+    Length: 150-200 words.`;
 
     try {
       const response = await fetch("/api/groq", {
@@ -210,7 +248,7 @@ export default function ReadingPage() {
         body: JSON.stringify({
           model: "llama-3.1-8b-instant",
           messages: [{ role: "user", content: prompt }],
-          temperature: 0.7,
+          temperature: 0.2,
           response_format: { type: "json_object" },
         }),
       });
@@ -220,8 +258,11 @@ export default function ReadingPage() {
         setPassageTitle(parsed.title || "");
         setText(parsed.en || "");
         setTranslatedText(parsed.tr || "");
+        setLogicLines(parsed.logic_lines || []);
+        setConjunctions(parsed.conjunctions || []);
         setQuizQuestions([]); 
         setIsFlipped(false);
+        setCurrentCardIdx(0);
       }
     } catch {
       setText("Bağlantı hatası.");
@@ -258,17 +299,21 @@ export default function ReadingPage() {
         "C1": "Use advanced, sophisticated academic vocabulary, abstract concepts, and complex logical connectors."
       };
 
-      let prompt = `Write an English academic reading passage. 
+      let prompt = `Write a professional academic reading passage that logically integrates the following vocabulary.
       Target Level: ${level} CEFR.
-      Linguistic Constraints: ${levelConstraints[level] || ""}
-      Required Words to Include: ${selectedWords.join(", ")}. 
+      Required Vocabulary: ${selectedWords.join(", ")}.
+      
+      Linguistic Requirements:
+      - The text must be a coherent academic argument or analysis, NOT a list of random sentences.
+      - Use sophisticated sentence structures and professional academic tone.
+      - Bold the required words in the "en" text.
+      - Ensure perfect logical flow and cohesive links.
+      
       Format: Return ONLY a valid JSON object with keys: 
-        "title": "Creative title",
-        "en": "English text (Strictly English, required words in **bold**)",
-        "tr": "Professional Turkish translation (Strictly Turkish). 
-               - NO foreign words mixed in. 
-               - Ensure perfect grammar and spelling. 
-               - Use natural, academic Turkish sentence structure."
+        "title": "Academic Title",
+        "en": "English text (Sophisticated, professional, words in **bold**)",
+        "tr": "Accurate academic Turkish translation"
+      
       Length: 150-200 words.`;
       
       const response = await fetch("/api/groq", {
@@ -277,7 +322,7 @@ export default function ReadingPage() {
         body: JSON.stringify({
           model: "llama-3.1-8b-instant",
           messages: [{ role: "user", content: prompt }],
-          temperature: 0.6,
+          temperature: 0.2,
           response_format: { type: "json_object" },
         }),
       });
@@ -332,19 +377,7 @@ export default function ReadingPage() {
       const data = await resp.json();
       setWordInput(data.en || clean);
       setMeaningInput(data.tr || "Bulunamadı");
-      
-      const enWord = data.en || clean;
-      try {
-        const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${enWord}`);
-        if (dictRes.ok) {
-          const dictData = await dictRes.json();
-          let syns = [];
-          dictData[0]?.meanings?.forEach(m => {
-            if (m.synonyms?.length > 0) syns = [...syns, ...m.synonyms.filter(s => !s.includes(" ") && s.length < 15)];
-          });
-          if (syns.length > 0) setSynInput([...new Set(syns)].slice(0, 3).join(", "));
-        }
-      } catch {}
+      setSynInput(data.synonyms || "-");
     } catch {
       setMeaningInput("Hata.");
     }
@@ -395,6 +428,122 @@ export default function ReadingPage() {
     setQuizLoading(false);
   }
 
+  function renderStreamMode() {
+    if (!text.trim()) return null;
+    
+    // Metni cümlelere böl ve 2'şerli kartlar yap
+    const sentences = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [text];
+    const cards = [];
+    for (let i = 0; i < sentences.length; i += 2) {
+      cards.push(sentences.slice(i, i + 2).join(" "));
+    }
+
+    if (currentCardIdx >= cards.length) setCurrentCardIdx(0);
+
+    const currentCard = cards[currentCardIdx];
+    const tokens = currentCard.split(/(\s+)/);
+
+    return (
+      <div className="stream-container">
+        {/* Progress Bar */}
+        <div className="stream-overall-progress">
+          <div 
+            className="stream-progress-fill" 
+            style={{ width: `${((currentCardIdx + 1) / cards.length) * 100}%` }}
+          ></div>
+        </div>
+
+        <div className="stream-card-wrapper animate-slideIn">
+          <div className="stream-card-content">
+            {tokens.map((token, ti) => {
+              const clean = token.replace(/[^\p{L}]/gu, "").toLowerCase().trim();
+              
+              // Bu kelime bir referans mı?
+              const isRef = logicLines.find(l => l?.ref?.toLowerCase() === clean);
+              // Bu kelime bir bağlaç mı?
+              const isConj = conjunctions.find(c => c?.word?.toLowerCase() === clean);
+              
+              // Sadece hover edilen referansın hedefini parlat
+              const isCurrentTarget = hoveredRef && hoveredRef.target.toLowerCase().includes(clean);
+              
+              const isActiveRef = hoveredRef && hoveredRef.ref.toLowerCase() === clean;
+
+              return (
+                <span 
+                  key={ti} 
+                  className={`stream-word 
+                    ${isRef ? "logic-ref" : ""} 
+                    ${isConj ? "conj-ref" : ""} 
+                    ${isActiveRef || isCurrentTarget ? "connection-active" : ""} 
+                    ${hoveredConj && hoveredConj.word.toLowerCase() === clean ? "conj-active" : ""}
+                  `}
+                  style={{ cursor: 'pointer' }}
+                  onMouseEnter={() => {
+                    if (isRef) setHoveredRef(isRef);
+                    if (isConj) setHoveredConj(isConj);
+                  }}
+                  onMouseLeave={() => {
+                    setHoveredRef(null);
+                    setHoveredConj(null);
+                  }}
+                  onClick={() => {
+                    if (clean) {
+                      if (isRef || isConj) {
+                        // Mobilde tıklayınca ipucunu göster/gizle
+                        setHoveredRef(prev => (prev === isRef ? null : isRef));
+                        setHoveredConj(prev => (prev === isConj ? null : isConj));
+                      } else {
+                        setLookupInput(clean);
+                        setTimeout(() => lookupWord(clean), 0);
+                      }
+                    }
+                  }}
+                >
+                  {token}
+                  {isActiveRef && (
+                    <span className="logic-connector-tip">
+                      {hoveredRef.target}
+                    </span>
+                  )}
+                  {hoveredConj && hoveredConj.word.toLowerCase() === clean && (
+                    <span className={`conj-connector-tip ${isActiveRef ? "stacked" : ""}`}>
+                      {hoveredConj.tr}
+                    </span>
+                  )}
+                </span>
+              );
+            })}
+          </div>
+          
+          <div className="stream-card-footer">
+            <button 
+              className="btn-stream-nav" 
+              onClick={() => setCurrentCardIdx(prev => Math.max(0, prev - 1))}
+              disabled={currentCardIdx === 0}
+            >
+              <i className="fa-solid fa-chevron-left"></i>
+            </button>
+            <div className="stream-progress">
+              Kart {currentCardIdx + 1} / {cards.length}
+            </div>
+            <button 
+              className="btn-stream-nav highlight" 
+              onClick={() => setCurrentCardIdx(prev => Math.min(cards.length - 1, prev + 1))}
+              disabled={currentCardIdx === cards.length - 1}
+            >
+              {currentCardIdx === cards.length - 1 ? <i className="fa-solid fa-check"></i> : <i className="fa-solid fa-chevron-right"></i>}
+            </button>
+          </div>
+        </div>
+        
+        {/* Quick Quiz for the card */}
+        <div className="stream-quick-quiz animate-fadeIn">
+           <p className="quiz-hint"><i className="fa-solid fa-bolt"></i> Bu parçayı anladın mı? Devam et!</p>
+        </div>
+      </div>
+    );
+  }
+
   function checkAnswer(qIdx, opt) {
     setQuizQuestions(prev => prev.map((q, i) => 
       i === qIdx ? { ...q, userAnswer: opt } : q
@@ -413,22 +562,15 @@ export default function ReadingPage() {
       
       return (
         <div key={pi} className="reading-paragraph">
-          {sentences.map((sentence, si) => {
-            const tokens = sentence.split(/(\s+)/);
+          {para.split(/(\s+)/).map((token, ti) => {
+            const clean = token.replace(/[^\p{L}]/gu, "").toLowerCase().trim();
+            if (!clean || clean.length < 2) return <span key={ti}>{token}</span>;
+            const isSaved = myWords.some(w => w.word?.toLowerCase() === clean);
+            const isAcademic = YDT_ACADEMIC_WORDS.includes(clean);
             return (
-              <span key={si} className="focus-sentence">
-                {tokens.map((token, ti) => {
-                  const clean = token.replace(/[^\p{L}]/gu, "").toLowerCase().trim();
-                  if (!clean || clean.length < 2) return <span key={ti}>{token}</span>;
-                  const isSaved = myWords.some(w => w.word?.toLowerCase() === clean);
-                  const isAcademic = YDT_ACADEMIC_WORDS.includes(clean);
-                  return (
-                    <span key={ti} className={`hover-word ${isSaved ? "is-saved" : ""} ${isAcademic ? "academic-word" : ""}`}
-                      onClick={() => lookupWord(clean)}>
-                      {token}
-                    </span>
-                  );
-                })}
+              <span key={ti} className={`hover-word ${isSaved ? "is-saved" : ""} ${isAcademic ? "academic-word" : ""}`}
+                onClick={() => lookupWord(clean)}>
+                {token}
               </span>
             );
           })}
@@ -445,6 +587,14 @@ export default function ReadingPage() {
           {text.trim() && <ShareButton item={{ text: text, title: topic }} type="reading" />}
         </div>
         <div className="reading-controls" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <button 
+            className={`btn-ghost ${streamMode ? "active" : ""}`} 
+            onClick={() => setStreamMode(!streamMode)}
+            style={{ padding: '8px 16px', borderRadius: '12px', fontSize: '0.85rem', color: streamMode ? 'var(--accent)' : '' }}
+          >
+            <i className="fa-solid fa-layer-group" style={{ marginRight: 8 }}></i>
+            {streamMode ? " SmartStream Aktif" : " SmartStream Modu"}
+          </button>
           <button 
             className={`btn-ghost ${sidebarCollapsed ? "active" : ""}`} 
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -522,15 +672,17 @@ export default function ReadingPage() {
                   {/* FRONT: ENGLISH ANALYSIS */}
                   <div className="reading-card-front glass-card reading-display-card">
                     <div className="card-header-minimal">
-                      <span>Analiz</span>
-                      {translatedText && (
+                      <span>{streamMode ? "SmartStream Akışı" : "Analiz"}</span>
+                      {translatedText && !streamMode && (
                         <button className="btn-translate-toggle" onClick={() => setIsFlipped(true)}>
                           <i className="fa-solid fa-language"></i> Türkçesine Bak
                         </button>
                       )}
                     </div>
                     {passageTitle && <h1 className="reading-title-display">{passageTitle}</h1>}
-                    <div className="reading-display">{renderAnalysis()}</div>
+                    <div className="reading-display">
+                      {streamMode ? renderStreamMode() : renderAnalysis()}
+                    </div>
                   </div>
 
                   {/* BACK: TURKISH TRANSLATION */}
@@ -608,16 +760,53 @@ export default function ReadingPage() {
           <div className="responsive-lookup-card animate-slideUp" onClick={e => e.stopPropagation()}>
             <div className="sheet-handle"></div>
             <div className="card-header-minimal">
-              <span>Sonuç</span>
+              <span>Hızlı Sözlük</span>
               <button onClick={() => setShowResultCard(false)} className="btn-close-minimal">Kapat</button>
             </div>
+
+            {/* Pop-up İçi Hızlı Arama */}
+            <div className="popup-search-box" style={{ marginBottom: 24, display: 'flex', gap: 8 }}>
+              <input 
+                placeholder="Yeni bir kelime ara..." 
+                value={lookupInput} 
+                onChange={e => setLookupInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && lookupWord()}
+                style={{ 
+                  flex: 1, 
+                  background: 'rgba(255, 255, 255, 0.05)', 
+                  border: '1px solid rgba(255, 255, 255, 0.1)', 
+                  borderRadius: '12px', 
+                  padding: '10px 14px', 
+                  fontSize: '0.85rem',
+                  color: '#fff'
+                }}
+              />
+              <button 
+                onClick={() => lookupWord()} 
+                className="btn-icon-sm"
+                style={{ background: 'var(--accent)', color: '#000', borderRadius: '12px', padding: '0 15px' }}
+              >
+                <i className="fa-solid fa-search"></i>
+              </button>
+            </div>
+
             {fetchingDetails ? (
               <div className="sheet-loading-small"><div className="spinner-ring"></div></div>
             ) : (
               <>
                 <div className="lookup-fields">
                   <div className="lookup-field">
-                    <label>KELİME</label>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <label>KELİME</label>
+                      <button 
+                        className="btn-icon-sm" 
+                        onClick={() => speakWord(wordInput)} 
+                        title="Dinle"
+                        style={{ background: 'rgba(255, 255, 255, 0.05)', border: 'none', color: 'var(--accent)', cursor: 'pointer' }}
+                      >
+                        <i className="fa-solid fa-volume-high"></i>
+                      </button>
+                    </div>
                     <input value={wordInput} onChange={e => setWordInput(e.target.value)} />
                   </div>
                   <div className="lookup-field">
@@ -629,7 +818,19 @@ export default function ReadingPage() {
                     <input value={synInput} onChange={e => setSynInput(e.target.value)} />
                   </div>
                 </div>
-                <button onClick={saveWord} className="btn-primary w-100 mt-2">Kaydet</button>
+                <button 
+                  onClick={saveWord} 
+                  className="btn-primary w-100 mt-4"
+                  style={{ 
+                    padding: '16px', 
+                    borderRadius: '16px', 
+                    fontSize: '0.9rem', 
+                    fontWeight: 900,
+                    boxShadow: '0 10px 20px rgba(226, 183, 20, 0.2)' 
+                  }}
+                >
+                  Bankaya Kaydet
+                </button>
               </>
             )}
           </div>

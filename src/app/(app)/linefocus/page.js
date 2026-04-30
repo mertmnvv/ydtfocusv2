@@ -142,14 +142,22 @@ export default function LinefocusPage() {
   async function startFlow(topic) {
     setLoading(true);
     const seed = Math.floor(Math.random() * 10000);
-    const prompt = `Task: Write a UNIQUE 4-sentence connected story about ${topic}. Seed: ${seed}. Level: A2-B1.
-CRITICAL TURKISH TRANSLATION RULES:
-1. MANDATORY: Natural, fluid Turkish SOV (Subject-Object-Verb) order. The verb MUST be at the end.
-2. DO NOT translate word-for-word. Focus on MEANING and rephrase like a native academic translator.
-3. ABSOLUTELY NO DEVRIK (INVERTED) SENTENCES.
-4. Never start Turkish sentences with "Ve", "Ama", or "Fakat". Use sophisticated connectors.
-5. Relative clauses (who/which/that) MUST become Turkish participle forms (-en/-an/-dığı).
-Return ONLY a JSON array: [{"en": "english sentence", "tr": "natural Turkish"}]`;
+    const prompt = `Task: Write exactly 4 high-quality, professional academic English sentences about ${topic}.
+    Level: B1-B2 Academic.
+    
+    Linguistic Requirements:
+    - Style: Professional academic journal (e.g., Nature, The Economist).
+    - Sentence Structure: Use complex clauses, passive voice, and academic logical connectors.
+    - Cohesion: Ensure perfect logical flow between the 4 sentences.
+    - NO repetitive simplistic SVO sentences. NO typos.
+    
+    Turkish Translation Rules:
+    1. Natural, fluid Turkish SOV order (Verb at the end).
+    2. Professional academic translation, NOT word-for-word.
+    3. NO devrik sentences.
+    4. Relative clauses → Turkish participle forms (-en/-an/-dığı).
+    
+    Return ONLY a JSON array: [{"en": "Sentence 1", "tr": "Türkçe 1"}, ...]`;
 
     try {
       const resp = await fetch("/api/groq", {
@@ -157,7 +165,7 @@ Return ONLY a JSON array: [{"en": "english sentence", "tr": "natural Turkish"}]`
         body: JSON.stringify({
           model: "llama-3.1-8b-instant",
           messages: [{ role: "user", content: prompt }],
-          temperature: 0.7,
+          temperature: 0.2,
         }),
       });
       
@@ -208,19 +216,22 @@ Return ONLY a JSON array: [{"en": "english sentence", "tr": "natural Turkish"}]`
     const chapter = parseInt(localStorage.getItem("ai_book_chapter") || "1");
     const bookHistory = localStorage.getItem("ai_book_history") || "In a dark and silent futuristic city, a young coder named Kael finds a strange, ancient machine.";
 
-    const prompt = `### ROLE: Expert Linguistics Professor and Sci-Fi/Mystery Author for YDT preparation.
-### TASK: Generate EXACTLY 4 connected sentences for Chapter ${chapter} of an ongoing A2+ level story.
-STORY HISTORY: "${bookHistory}"
-### LINGUISTIC CONSTRAINTS: CEFR A2-B1 transition. Include at least 2 Academic Keywords.
-### STORY RULES: Maintain Sci-Fi Mystery atmosphere. Continue from where history left off.
-### TURKISH TRANSLATION RULES:
-1. MANDATORY: Natural, fluid Turkish SOV (Subject-Object-Verb) order. Verb MUST be at the end.
-2. DO NOT translate word-for-word. Focus on MEANING. Rephrase to sound natural to a Turkish ear.
-3. ABSOLUTELY NO DEVRIK (INVERTED) SENTENCES.
-4. Relative clauses (who/which/that) → Turkish participle forms (-en/-an/-dığı).
-5. Ensure perfect grammatical transition between sentences.
-### OUTPUT: Return ONLY raw JSON array.
-[{"en": "Sentence 1", "tr": "Doğal Türkçe 1"},{"en": "Sentence 2", "tr": "Doğal Türkçe 2"},{"en": "Sentence 3", "tr": "Doğal Türkçe 3"},{"en": "Sentence 4", "tr": "Doğal Türkçe 4"}]`;
+    const prompt = `### ROLE: Expert Linguistics Professor.
+    ### TASK: Generate exactly 4 professional academic English sentences for Chapter ${chapter} of a story.
+    STORY HISTORY: "${bookHistory}"
+    
+    Linguistic Requirements:
+    - Style: High-end academic prose.
+    - Structure: Complex clauses and professional transitions.
+    - Cohesion: Logically continue the story with sophisticated links.
+    - NO simplistic SVO repetitions. NO typos.
+    
+    Turkish Translation Rules:
+    1. Natural, fluid Turkish SOV order (Verb at the end).
+    2. Professional academic rephrasing, NOT word-for-word.
+    3. Relative clauses → Turkish participle forms.
+    
+    Return ONLY raw JSON array: [{"en": "Sentence 1", "tr": "Doğal Türkçe 1"}, ...]`;
 
     try {
       const resp = await fetch("/api/groq", {
@@ -228,7 +239,7 @@ STORY HISTORY: "${bookHistory}"
         body: JSON.stringify({
           model: "llama-3.1-8b-instant",
           messages: [{ role: "user", content: prompt }],
-          temperature: 0.55,
+          temperature: 0.2,
         }),
       });
 
@@ -283,8 +294,9 @@ STORY HISTORY: "${bookHistory}"
         getUserMistakes(user.uid)
       ]);
 
+      const isIdFormat = (str) => /^\d{10,20}_[a-z0-9]+$/.test(str) || str.includes("_") || /\d/.test(str);
       const bankWords = words.map(w => w.word);
-      const combined = [...new Set([...bankWords, ...mistakes])].filter(w => w && w.length > 2);
+      const combined = [...new Set([...bankWords, ...mistakes])].filter(w => w && w.length > 2 && !isIdFormat(w));
 
       if (combined.length < 3) {
         showNotification("Bankanızda veya hatalarınızda yeterli kelime (en az 3) yok.", "warning");
@@ -296,24 +308,29 @@ STORY HISTORY: "${bookHistory}"
       const shuffled = combined.sort(() => 0.5 - Math.random());
       const selectedWords = shuffled.slice(0, 10);
 
-      const prompt = `### ROLE: Expert Academic English Professor for YDT preparation.
-### TASK: Generate a UNIQUE 4-sentence CONNECTED ACADEMIC ARTICLE.
-### KEYWORDS TO USE: ${selectedWords.join(", ")}
-### LINGUISTIC CONSTRAINTS: Level B2-C1. Academic/Formal tone. High quality.
-### TURKISH TRANSLATION RULES:
-1. MANDATORY: Natural, fluid Turkish SOV (Subject-Object-Verb) order. Verb MUST be at the end.
-2. DO NOT translate word-for-word. Focus on ACADEMIC MEANING and rephrase with formal Turkish structures.
-3. ABSOLUTELY NO DEVRIK (INVERTED) SENTENCES.
-4. Relative clauses (who/which/that) MUST become Turkish participle forms (-en/-an/-dığı).
-### OUTPUT: Return ONLY raw JSON array.
-[{"en": "...", "tr": "..."}, {"en": "...", "tr": "..."}, {"en": "...", "tr": "..."}, {"en": "...", "tr": "..."}]`;
+      const prompt = `### ROLE: Expert Academic English Professor.
+      ### TASK: Generate exactly 4 professional academic English sentences that logically integrate the following vocabulary.
+      KEYWORDS: ${selectedWords.join(", ")}
+      
+      Linguistic Requirements:
+      - Style: Professional academic journal (e.g., Nature, The Economist).
+      - Sentence Structure: Use complex clauses and passive voice.
+      - Cohesion: Ensure perfect logical flow and professional transitions between the 4 sentences.
+      - NO repetitive simplistic SVO sentences. NO typos.
+      
+      Turkish Translation Rules:
+      1. Natural, fluid Turkish SOV order (Verb at the end).
+      2. Professional academic rephrasing, NOT word-for-word.
+      3. Relative clauses → Turkish participle forms.
+      
+      Return ONLY raw JSON array: [{"en": "Sentence 1", "tr": "Türkçe 1"}, ...]`;
 
       const resp = await fetch("/api/groq", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "llama-3.1-8b-instant",
           messages: [{ role: "user", content: prompt }],
-          temperature: 0.65,
+          temperature: 0.2,
         }),
       });
 
