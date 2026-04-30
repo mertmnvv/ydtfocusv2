@@ -8,47 +8,28 @@ YDT Focus; YDT (Yabancı Dil Testi), YÖKDİL ve YDS gibi ileri düzey akademik 
 
 Platformun ana amacı, akademik kelime dağarcığını geliştirmek, okuduğunu anlama becerilerini artırmak ve sınav stratejilerini interaktif bir deneyimle pekiştirmektir. Bu doğrultuda aşağıdaki temel hedefler gözetilmiştir:
 
-*   Akademik kelimelerin uzun süreli hafızada tutulması için aralıklı tekrar (SRS) algoritmalarının kullanılması.
-*   Yapay zeka yardımıyla kişiselleştirilmiş ve sınav formatına uygun okuma metni üretimi.
-*   Emoji ve karmaşık unsurlardan arındırılmış, profesyonel ve odaklanmış kullanıcı arayüzü.
-*   Öğrencilerin gelişimlerini veriye dayalı metriklerle ve topluluk sıralamasıyla anlık olarak takip edebilmesi.
+*   **Sıfır Sürtünme:** Kelime arama, seslendirme ve metin analizi süreçlerinde kesintisiz bir akış.
+*   **Akademik Derinlik:** Sadece basit kelimeler değil, sınav standartlarında (B2-C1) kompleks yapılarla çalışma.
+*   **Odaklanmış Tasarım:** Emoji ve karmaşık unsurlardan arındırılmış, profesyonel Glassmorphism UI.
+*   **Veriye Dayalı İlerleme:** SRS (Aralıklı Tekrar) ve detaylı analitik paneli ile gelişim takibi.
 
 ---
 
-## Teknik Altyapı ve Mimari
+## Son Güncellemeler ve İnovasyonlar 🚀
 
-Proje, modern yazılım mimarisi standartlarına uygun olarak modüler, ölçeklenebilir ve performans odaklı bir yapıda geliştirilmiştir.
+### 🧠 AI-Native Sözlük & Çeviri Motoru
+Geleneksel sözlük servislerinin (404 hatası veren dış API'lar) yerini alan, tamamen AI tabanlı yeni nesil sözlük sistemi. 
+- **Sıfır Hata:** Hiçbir kelime cevapsız kalmaz; en temelden en akademiğe tüm terimler AI tarafından anında analiz edilir.
+- **Seri Arama:** Sözlük paneli içindeki yeni arama barı ile paneli kapatmadan arka arkaya kelime aratabilme.
 
----
+### 📝 YDT Pro Metin Mühendisliği
+Okuma metni üretim algoritması "Academic Journal" (The Economist, Nature) seviyesine yükseltildi.
+- **Kompleks Sözdizimi:** Basit cümleler yerine yan cümlecikli, edilgen çatılı ve akademik bağlaçlarla örülmüş zengin pasajlar.
+- **Mantıksal Akış (Cohesion):** Cümleler arası kusursuz geçişler ve profesyonel argüman yapıları.
 
-## Uygulama Olarak Kullanım (PWA)
-
-YDT Focus, bir web uygulamasından daha fazlasıdır. Progressive Web App (PWA) teknolojisi sayesinde platformu cihazlarınıza tam ekran bir uygulama olarak kurabilirsiniz:
-
-*   **Masaüstü (Windows/macOS/Linux):** Chrome veya Edge tarayıcısında adres çubuğundaki "Yükle" ikonuna tıklayarak uygulamayı dock/başlat menüsüne ekleyebilirsiniz.
-*   **Mobil (iOS/Android):** Safari'de "Paylaş" -> "Ana Ekrana Ekle" veya Chrome'da "Ayarlar" -> "Uygulamayı Yükle" seçeneklerini kullanarak YDT Focus'u uygulama çekmecenize taşıyabilirsiniz.
-
-Bu sayede platformu internet tarayıcısından bağımsız, daha hızlı ve tam ekran modunda bir yerel uygulama konforunda kullanabilirsiniz.
-
----
-
-### Kullanılan Teknolojiler
-
-*   **Frontend Framework:** Next.js (App Router ve Turbopack entegrasyonu).
-*   **Kütüphane:** React (Concurrent Rendering ve Server Components desteği).
-*   **Backend Servisleri:** Firebase (Authentication, Firestore ve Cloud Messaging).
-*   **Yapay Zeka:** Groq Cloud API (Llama 3.1 modelleri) üzerinden sağlanan Focus AI asistanı.
-*   **Stil Yönetimi:** Vanilla CSS (Özel Tasarım Sistemi, Glassmorphism, Responsive Grid).
-*   **Durum Yönetimi:** React Context API ve özel hook mimarisi.
-
-### Tasarım Sistemi (Design System)
-
-Platform, premium bir estetik anlayışıyla, glassmorphism (cam efekti) ve derinlik hissi veren katmanlı bir tasarım dilini benimser.
-
-*   **Dinamik Tema:** Karanlık (Dark) ve Aydınlık (Light) mod desteği.
-*   **Bento Grid:** Verilerin ve istatistiklerin mobil uyumlu, kutucuklu yapıda sunumu.
-*   **Mikro-Animasyonlar:** Yüksek kare hızına sahip CSS transition ve keyframe animasyonları.
-*   **Tipografi:** Okunabilirliği yüksek, akademik odaklı Inter font ailesi.
+### 🌓 LineFocus Aydınlık Mod & UI
+- **Premium Light Mode:** Apple standartlarında, ferah ve okunabilirliği yüksek (`#f2f2f7`) aydınlık tema desteği.
+- **ID Filtreleme:** Kelime bankasından teknik verilerin sızmasını engelleyen zeki veri temizleme algoritması.
 
 ---
 
@@ -60,58 +41,37 @@ Kullanıcının günlük kelime hedeflerini, çalışma serisini (streak), seviy
 ### 2. Focus AI (Yapay Zeka Asistanı)
 Öğrencinin tüm süreç boyunca yanında olan uzman bir hoca. Kelime analizi yapar, metinleri açıklar, hatalar üzerinden pratik yaptırır ve kullanıcıya özel çalışma rotası belirler.
 
-### 3. Yapay Zeka Destekli Okuma (Reading)
-Llama 3.1 modelleri kullanılarak CEFR seviyelerine göre üretilen akademik metinler. Metin içerisinde geçen akademik kelimelerin otomatik tespiti ve AI tarafından oluşturulan anlama soruları.
+### 3. SmartStream Reading (Yapay Zeka Destekli Okuma)
+Llama 3.1 modelleri kullanılarak üretilen akademik metinler. Metin içerisinde geçen akademik kelimelerin otomatik tespiti ve Amerikan aksanlı (Google US English) premium seslendirme desteği.
 
 ### 4. Aralıklı Tekrar Sistemi (SRS)
 Unutma eğrisini minimize eden 5 kademeli (Level 0-4) tekrar algoritması. Kullanıcının doğru/yanlış yanıtlarına göre kelimelerin bir sonraki gösterim zamanını otomatik olarak hesaplar.
 
-### 5. Linefocus (Odaklı Okuma)
+### 5. Linefocus (Odaklı Yazım)
 Yazım (typing) tabanlı, mekanik klavye ses efektleri ve karakter bazlı animasyonlarla zenginleştirilmiş, metne derinlemesine odaklanmayı sağlayan özel çalışma modülü.
 
 ### 6. Topluluk ve Sıralama
-Kullanıcıların çalışma performanslarına göre (Seri, Haftalık Vakit, Kelime Sayısı) birbirleriyle yarıştığı, Premium ve Admin rollerinin özel ikonlarla (Taç ve Kalkan) belirtildiği sosyal katman.
+Kullanıcıların çalışma performanslarına göre birbirleriyle yarıştığı, Premium ve Admin rollerinin özel ikonlarla belirtildiği sosyal katman.
 
-### 7. Gelişmiş Mesajlaşma ve Sosyal Paylaşım
-Arkadaşlık sistemi, anlık mesajlaşma ve metin/soru paylaşımını destekleyen ChatHub merkezi. Kullanıcılar birbirlerinin profillerini detaylı olarak inceleyebilir ve soru çözümü için yardımlaşabilir.
+---
+
+## Teknik Altyapı ve Mimari
+
+*   **Frontend:** Next.js 14 (App Router), React 18, Vanilla CSS.
+*   **Backend:** Firebase (Auth, Firestore).
+*   **Yapay Zeka:** Groq Cloud API (Llama 3.1 8b/70b).
+*   **PWA:** Progressive Web App desteği ile tüm cihazlara uygulama olarak kurulabilir.
 
 ---
 
 ## Kurulum ve Yapılandırma
 
-### Gereksinimler
-*   Node.js 18.x veya üzeri
-*   Firebase Projesi (Auth ve Firestore etkinleştirilmiş)
-*   Groq Cloud API Key
-
 ### Adımlar
-
-1.  Bağımlılıkları yükleyin:
-    ```bash
-    npm install
-    ```
-
-2.  `.env.local` dosyası oluşturarak Firebase ve AI API anahtarlarınızı tanımlayın.
-
-3.  Geliştirme sunucusunu başlatın:
-    ```bash
-    npm run dev
-    ```
-
----
-
-## Veri Modeli ve Güvenlik
-
-Firestore üzerinde veriler hiyerarşik bir yapıda tutulur:
-*   `users/{uid}`: Kullanıcı profili, rol bilgileri (Standart, Premium, Admin) ve sosyal veriler.
-*   `users/{uid}/words`: Kullanıcıya özel kelime bankası ve SRS verileri.
-*   `archive`: Genel akademik sözlük veritabanı.
-*   `grammarTopics`: Gramer ve sınav taktikleri içeriği.
-
-Güvenlik, Firebase Authentication ve Firestore Security Rules katmanlarıyla en üst düzeyde sağlanmaktadır.
+1. Bağımlılıkları yükleyin: `npm install`
+2. `.env.local` dosyasına Firebase ve Groq anahtarlarınızı ekleyin.
+3. Başlatın: `npm run dev`
 
 ---
 
 ## Geliştirici Notu
-
-Bu proje, dil öğrenme sürecini daha verimli, ölçülebilir ve keyifli hale getirmek amacıyla Mert tarafından geliştirilmiştir. Her bir bileşen, öğrenci performansını maksimize etmek için özenle optimize edilmiştir.
+Bu proje, dil öğrenme sürecini daha verimli, ölçülebilir ve keyifli hale getirmek amacıyla **Mert** tarafından geliştirilmiştir. Hazırlanma, Odaklan. Başarı sadece bir çıktı.
