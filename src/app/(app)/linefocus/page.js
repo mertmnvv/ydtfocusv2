@@ -5,7 +5,6 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import CustomDialog from "@/components/CustomDialog";
 import { getUserWords, getUserMistakes, checkDailyLimit, incrementDailyLimit } from "@/lib/firestore";
-import PremiumModal from "@/components/PremiumModal";
 
 // --- Sub-components for Optimization ---
 
@@ -100,10 +99,9 @@ const ReaderOverlay = memo(({ data, onClose }) => (
 ));
 
 export default function LinefocusPage() {
-  const { user, loading: authLoading, setAuthModalOpen, isPremium } = useAuth();
+  const { user, loading: authLoading, setAuthModalOpen, isPremium, setPremiumModalOpen } = useAuth();
   const { showNotification } = useNotification();
   const [phase, setPhase] = useState("setup"); // setup | typing | result
-  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [sentences, setSentences] = useState([]);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -148,7 +146,7 @@ export default function LinefocusPage() {
     if (!isPremium) {
       const { limitReached } = await checkDailyLimit(user.uid, "linefocus");
       if (limitReached) {
-        setShowPremiumModal(true);
+        setPremiumModalOpen(true);
         return;
       }
     }
@@ -235,7 +233,7 @@ export default function LinefocusPage() {
     if (!isPremium) {
       const { limitReached } = await checkDailyLimit(user.uid, "linefocus");
       if (limitReached) {
-        setShowPremiumModal(true);
+        setPremiumModalOpen(true);
         return;
       }
     }
@@ -325,7 +323,7 @@ export default function LinefocusPage() {
     if (!isPremium) {
       const { limitReached } = await checkDailyLimit(user.uid, "linefocus");
       if (limitReached) {
-        setShowPremiumModal(true);
+        setPremiumModalOpen(true);
         return;
       }
     }
@@ -762,8 +760,6 @@ export default function LinefocusPage() {
           cancelText="Cancel"
         />
       )}
-      {/* Premium Modal */}
-      <PremiumModal isOpen={showPremiumModal} onClose={() => setShowPremiumModal(false)} />
     </div>
   );
 }

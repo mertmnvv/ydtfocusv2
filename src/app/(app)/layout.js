@@ -9,6 +9,9 @@ import GlobalAI from "@/components/GlobalAI";
 import AuthModal from "@/components/AuthModal";
 import Onboarding from "@/components/Onboarding";
 import ChatHub from "@/components/ChatHub";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import PremiumModal from "@/components/PremiumModal";
+import PremiumPaywall from "@/components/PremiumPaywall";
 
 const navItems = [
   { id: "dashboard", label: "Level Up", href: "/dashboard" },
@@ -25,13 +28,23 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { useFcmToken } from "@/hooks/useFcmToken";
 
 export default function AppLayout({ children }) {
-  const { user, userProfile, loading, logout, isAdmin, isPremium } = useAuth();
+  const { user, userProfile, loading, logout, isAdmin, isPremium, premiumModalOpen, setPremiumModalOpen } = useAuth();
   useFcmToken(user);
   const router = useRouter();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
+
+  useEffect(() => {
+    if (!loading && user && !isPremium) {
+      const hasSeenSession = sessionStorage.getItem("paywall_session_seen");
+      if (!hasSeenSession) {
+        setShowPaywall(true);
+      }
+    }
+  }, [user, loading, isPremium]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -327,8 +340,25 @@ export default function AppLayout({ children }) {
       <GlobalAI />
       {/* Global Auth Modal */}
       <AuthModal />
+      {/* Premium Paywall (Full Screen for non-premium) */}
+      <PremiumPaywall 
+        isOpen={showPaywall} 
+        onClose={() => {
+          setShowPaywall(false);
+          sessionStorage.setItem("paywall_session_seen", "true");
+        }} 
+        onUpgrade={(plan) => {
+          setShowPaywall(false);
+          sessionStorage.setItem("paywall_session_seen", "true");
+          setPremiumModalOpen(true);
+        }}
+      />
       {/* Onboarding Tour */}
-      <Onboarding />
+      <Onboarding onOpenPremium={() => setPremiumModalOpen(true)} />
+      {/* Premium Modal */}
+      <PremiumModal isOpen={premiumModalOpen} onClose={() => setPremiumModalOpen(false)} />
+      {/* PWA Mobile App Prompt */}
+      <PWAInstallPrompt />
     </div>
   );
 }

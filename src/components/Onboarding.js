@@ -5,18 +5,19 @@ import { useAuth } from "@/context/AuthContext";
 
 const onboardingSteps = [
   {
-    id: "welcome",
-    title: 'ydt<span>focus</span>',
-    desc: "Sınav hazırlık sürecini bir üst seviyeye taşıyoruz. Bilimsel metotlar ve yapay zeka desteğiyle hedeflerine ulaşman için buradayız.",
-    icon: "fa-rocket",
-    color: "var(--accent)"
+    id: "premium",
+    title: 'Elite <span>Focus</span>',
+    desc: "YDT Focus deneyimini sınırsız yaşa! Yapay zeka ile metin üretimi, kelime bankasından hikaye oluşturma ve gelişmiş analizlere sahip olmak için Elite üyeliğe katıl.",
+    icon: "fa-crown",
+    color: "var(--accent)",
+    isPremiumStep: true
   },
   {
-    id: "pwa",
-    title: "Focus'u Uygulama Yap",
-    desc: "YDT Focus bir web uygulamasından fazlasıdır! Tarayıcı ayarlarından 'Uygulama Olarak Yükle' veya 'Ana Ekrana Ekle' diyerek masaüstü veya mobil cihazına tam ekran uygulama olarak kurabilirsin.",
-    icon: "fa-mobile-screen-button",
-    color: "#ff375f"
+    id: "welcome",
+    title: 'ydt<span>focus</span> Hoş Geldin',
+    desc: "Sınav hazırlık sürecini bir üst seviyeye taşıyoruz. Bilimsel metotlar ve yapay zeka desteğiyle hedeflerine ulaşman için buradayız.",
+    icon: "fa-rocket",
+    color: "#0a84ff"
   },
   {
     id: "dashboard",
@@ -90,7 +91,7 @@ const onboardingSteps = [
   }
 ];
 
-export default function Onboarding() {
+export default function Onboarding({ onOpenPremium }) {
   const { user } = useAuth();
   const [isVisible, setIsVisible] = useState(false);
   const [step, setStep] = useState(0);
@@ -132,7 +133,7 @@ export default function Onboarding() {
               <div 
                 key={i} 
                 className={`progress-dot ${i <= step ? "active" : ""}`}
-                style={{ backgroundColor: i <= step ? currentStep.color : "" }}
+                style={{ backgroundColor: i <= step ? (onboardingSteps[i].color || "var(--accent)") : "" }}
               />
             ))}
           </div>
@@ -145,6 +146,18 @@ export default function Onboarding() {
           </div>
           <h2 dangerouslySetInnerHTML={{ __html: currentStep.title }}></h2>
           <p>{currentStep.desc}</p>
+          
+          {currentStep.isPremiumStep && (
+            <button 
+              className="onboarding-premium-btn" 
+              onClick={() => {
+                onOpenPremium();
+                handleNext();
+              }}
+            >
+              Hemen Elite Ol <i className="fa-solid fa-chevron-right"></i>
+            </button>
+          )}
         </div>
 
         <div className="onboarding-footer">
@@ -257,6 +270,28 @@ export default function Onboarding() {
           color: #86868b;
           line-height: 1.5;
           margin: 0;
+        }
+
+        .onboarding-premium-btn {
+          margin-top: 8px;
+          background: var(--accent);
+          color: #000;
+          border: none;
+          padding: 12px 24px;
+          border-radius: 14px;
+          font-size: 0.95rem;
+          font-weight: 800;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          transition: all 0.3s;
+          box-shadow: 0 10px 20px rgba(var(--accent-rgb, 255, 214, 10), 0.2);
+        }
+
+        .onboarding-premium-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 15px 30px rgba(var(--accent-rgb, 255, 214, 10), 0.3);
         }
 
         .onboarding-footer {

@@ -83,7 +83,7 @@ const YDT_ACADEMIC_WORDS = [
 ];
 
 export default function ReadingPage() {
-  const { user, requireAuth, isPremium } = useAuth();
+  const { user, requireAuth, isPremium, setPremiumModalOpen } = useAuth();
   const { showNotification } = useNotification();
   const [text, setText] = useState("");
   const [level, setLevel] = useState("B1");
@@ -207,7 +207,6 @@ export default function ReadingPage() {
     }
   }, [quizQuestions]);
 
-  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   async function generateAIText(selectedTopic) {
     if (!user) return requireAuth(() => {});
@@ -216,7 +215,7 @@ export default function ReadingPage() {
     if (!isPremium) {
       const { limitReached } = await checkDailyLimit(user.uid, "reading");
       if (limitReached) {
-        setShowPremiumModal(true);
+        setPremiumModalOpen(true);
         return;
       }
     }
@@ -292,7 +291,7 @@ export default function ReadingPage() {
     if (!isPremium) {
       const { limitReached } = await checkDailyLimit(user.uid, "reading");
       if (limitReached) {
-        setShowPremiumModal(true);
+        setPremiumModalOpen(true);
         return;
       }
     }
@@ -865,8 +864,6 @@ export default function ReadingPage() {
           </div>
         </div>
       )}
-      {/* Premium Modal */}
-      <PremiumModal isOpen={showPremiumModal} onClose={() => setShowPremiumModal(false)} />
     </div>
   );
 }
