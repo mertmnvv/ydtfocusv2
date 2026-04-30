@@ -252,16 +252,23 @@ export default function ChatHub() {
                   </span>
                 </div>
                 <button className="header-trash" onClick={handleClearChat}><i className="fa-solid fa-trash-can"></i></button>
+                <button className="header-close-btn" onClick={() => setIsOpen(false)}><i className="fa-solid fa-xmark"></i></button>
               </div>
             ) : (
-              <div className="hub-nav">
-                 <button className={`hub-tab ${activeTab === "chats" ? "active" : ""}`} onClick={() => setActiveTab("chats")}>Sohbetler</button>
-                 <button className={`hub-tab ${activeTab === "friends" ? "active" : ""}`} onClick={() => setActiveTab("friends")}>Arkadaşlar</button>
-                 <button className={`hub-tab ${activeTab === "requests" ? "active" : ""}`} onClick={() => setActiveTab("requests")}>
-                   İstekler {requests.length > 0 && <span className="tab-badge">{requests.length}</span>}
-                 </button>
-                 <button className={`hub-tab ${activeTab === "search" ? "active" : ""}`} onClick={() => setActiveTab("search")}>Ara</button>
-              </div>
+              <>
+                <div className="hub-title-row">
+                  <h4 className="hub-title"><i className="fa-solid fa-comments" style={{marginRight: 8, fontSize: '0.9rem'}}></i>Sohbet</h4>
+                  <button className="header-close-btn" onClick={() => setIsOpen(false)}><i className="fa-solid fa-xmark"></i></button>
+                </div>
+                <div className="hub-nav">
+                   <button className={`hub-tab ${activeTab === "chats" ? "active" : ""}`} onClick={() => setActiveTab("chats")}>Sohbetler</button>
+                   <button className={`hub-tab ${activeTab === "friends" ? "active" : ""}`} onClick={() => setActiveTab("friends")}>Arkadaşlar</button>
+                   <button className={`hub-tab ${activeTab === "requests" ? "active" : ""}`} onClick={() => setActiveTab("requests")}>
+                     İstekler {requests.length > 0 && <span className="tab-badge">{requests.length}</span>}
+                   </button>
+                   <button className={`hub-tab ${activeTab === "search" ? "active" : ""}`} onClick={() => setActiveTab("search")}>Ara</button>
+                </div>
+              </>
             )}
           </div>
 
@@ -436,60 +443,65 @@ export default function ChatHub() {
 
       <style jsx>{`
         .chat-hub-fab { position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: #000; border: none; cursor: pointer; z-index: 1000; box-shadow: 0 4px 20px rgba(226, 183, 20, 0.4); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; transition: all 0.2s; }
-        @media (max-width: 768px) {
-          .chat-hub-fab { bottom: 85px; width: 50px; height: 50px; }
-        }
         .chat-hub-fab:hover { transform: scale(1.1); }
         .chat-hub-fab.active { transform: rotate(90deg); background: #333; color: white; }
         .notification-badge { position: absolute; top: -5px; right: -5px; background: #ff453a; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; border: 2px solid #1c1c1e; font-weight: bold; }
-        .chat-hub-panel { position: fixed; bottom: 95px; right: 24px; width: 360px; height: 600px; background: #1c1c1e; border-radius: 28px; border: 1px solid var(--border); z-index: 1000; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        .hub-header { padding: 15px; border-bottom: 1px solid #333; background: #222; }
-        .hub-nav { display: flex; gap: 10px; }
-        .hub-tab { flex: 1; background: none; border: none; color: #888; padding: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600; border-radius: 8px; transition: 0.2s; }
-        .hub-tab.active { color: white; background: #333; }
+        .chat-hub-panel { position: fixed; bottom: 95px; right: 24px; width: 380px; height: 620px; background: #1c1c1e; border-radius: 28px; border: 1px solid var(--border); z-index: 1000; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .hub-header { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(34,34,34,0.95); backdrop-filter: blur(20px); }
+        .hub-nav { display: flex; gap: 6px; }
+        .hub-tab { flex: 1; background: none; border: none; color: #888; padding: 10px 8px; cursor: pointer; font-size: 0.85rem; font-weight: 700; border-radius: 10px; transition: 0.2s; }
+        .hub-tab.active { color: white; background: rgba(255,255,255,0.1); }
+        .hub-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .hub-title { margin: 0; font-size: 1.1rem; font-weight: 800; color: #fff; display: flex; align-items: center; }
+        .header-close-btn { background: none; border: none; color: #888; cursor: pointer; padding: 8px; font-size: 1.2rem; transition: 0.2s; }
+        .header-close-btn:hover { color: #fff; }
         .hub-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; background: #111; }
-        .chat-item:hover { background: #222; }
+        .chat-item { display: flex; align-items: center; gap: 12px; padding: 14px 20px; cursor: pointer; transition: 0.15s; position: relative; }
+        .chat-item:hover { background: #1a1a1a; }
         .chat-item:hover .chat-list-delete { opacity: 1; }
         .chat-list-delete { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #555; cursor: pointer; opacity: 0; transition: 0.2s; padding: 10px; }
         .chat-list-delete:hover { color: #ff4444; }
-        .chat-item-avatar { width: 45px; height: 45px; border-radius: 12px; background: #333; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; overflow: hidden; }
+        .chat-item-avatar { width: 48px; height: 48px; border-radius: 14px; background: #2a2a2a; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; overflow: hidden; flex-shrink: 0; }
         .chat-item-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .chat-item-info h6 { margin: 0; font-size: 0.95rem; }
-        .chat-item-info p { margin: 0; font-size: 0.8rem; color: #777; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+        .chat-item-info h6 { margin: 0; font-size: 0.95rem; font-weight: 700; }
+        .chat-item-info p { margin: 2px 0 0; font-size: 0.8rem; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
         .active-chat-container { flex: 1; display: flex; flex-direction: column; height: 100%; position: relative; }
-        .messages-list { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .message-bubble { max-width: 80%; padding: 10px 14px; border-radius: 15px; font-size: 0.9rem; line-height: 1.4; position: relative; }
-        .message-bubble.sent { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 4px; padding-right: 30px; }
+        .messages-list { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+        .message-bubble { max-width: 80%; padding: 12px 16px; border-radius: 18px; font-size: 0.95rem; line-height: 1.5; position: relative; }
+        .message-bubble.sent { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 4px; padding-right: 32px; }
         .message-bubble.received { align-self: flex-start; background: #222; color: #ddd; border-bottom-left-radius: 4px; }
         .msg-delete-btn { position: absolute; top: 5px; right: 5px; background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; font-size: 0.7rem; opacity: 0; transition: 0.2s; }
         .message-bubble:hover .msg-delete-btn { opacity: 1; }
         .msg-delete-btn:hover { color: #ff4444; }
-        .chat-input-area { padding: 12px; border-top: 1px solid #333; display: flex; gap: 10px; background: #222; }
-        .chat-input-area input { flex: 1; background: #111; border: 1px solid #444; border-radius: 10px; padding: 8px 15px; color: white; outline: none; }
-        .chat-input-area button { background: var(--primary); border: none; color: white; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; transition: 0.2s; }
+        .chat-input-area { padding: 14px 16px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; gap: 10px; background: rgba(34,34,34,0.95); backdrop-filter: blur(20px); }
+        .chat-input-area input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 12px 16px; color: white; outline: none; font-size: 0.95rem; }
+        .chat-input-area input:focus { border-color: var(--accent); }
+        .chat-input-area button { background: var(--primary); border: none; color: white; width: 44px; height: 44px; border-radius: 12px; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
         .chat-input-area button:hover { transform: scale(1.05); }
-        .search-view { padding: 15px; }
-        .search-box { display: flex; align-items: center; gap: 10px; background: #222; padding: 10px 15px; border-radius: 12px; border: 1px solid #333; }
-        .search-box input { background: none; border: none; color: white; outline: none; flex: 1; }
-        .search-results { margin-top: 15px; display: flex; flex-direction: column; gap: 8px; }
-        .search-item { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 10px; cursor: pointer; transition: 0.2s; }
-        .search-item:hover { background: #222; }
-        .search-avatar { width: 40px; height: 40px; border-radius: 10px; background: #333; display: flex; align-items: center; justify-content: center; font-weight: bold; overflow: hidden; }
+        .search-view { padding: 16px; }
+        .search-box { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 12px 16px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); }
+        .search-box input { background: none; border: none; color: white; outline: none; flex: 1; font-size: 0.95rem; }
+        .search-results { margin-top: 16px; display: flex; flex-direction: column; gap: 6px; }
+        .search-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; cursor: pointer; transition: 0.2s; }
+        .search-item:hover { background: #1a1a1a; }
+        .search-avatar { width: 42px; height: 42px; border-radius: 12px; background: #2a2a2a; display: flex; align-items: center; justify-content: center; font-weight: bold; overflow: hidden; }
         .search-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .search-info h6 { margin: 0; font-size: 0.9rem; }
         .search-info span { font-size: 0.75rem; color: var(--primary); font-weight: 600; }
-        .requests-section { padding: 10px 15px; border-bottom: 1px solid #222; }
-        .requests-section h6 { color: #555; margin-bottom: 10px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
-        .request-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
+        .requests-section { padding: 12px 20px; }
+        .requests-section h6 { color: #555; margin-bottom: 12px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
+        .request-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
         .req-actions { display: flex; gap: 8px; }
-        .req-actions button { width: 32px; height: 32px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; transition: 0.2s; }
+        .req-actions button { width: 36px; height: 36px; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; transition: 0.2s; }
         .btn-accept { background: #1a7a3a; color: white; }
         .btn-reject { background: #333; color: #888; }
-        .chat-header-info { display: flex; align-items: center; gap: 10px; width: 100%; }
-        .back-btn { background: none; border: none; color: #888; cursor: pointer; padding: 5px; }
-        .header-avatar { width: 35px; height: 35px; border-radius: 8px; background: #444; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; overflow: hidden; }
+        .chat-header-info { display: flex; align-items: center; gap: 12px; width: 100%; }
+        .back-btn { background: none; border: none; color: #888; cursor: pointer; padding: 8px; font-size: 1.1rem; }
+        .header-avatar { width: 38px; height: 38px; border-radius: 10px; background: #444; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; overflow: hidden; }
         .header-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .header-text h5 { margin: 0; font-size: 0.95rem; }
+        .header-text h5 { margin: 0; font-size: 1rem; font-weight: 700; }
+        .header-trash { background: none; border: none; color: #555; cursor: pointer; margin-left: auto; padding: 8px; font-size: 0.9rem; }
+        .header-trash:hover { color: #ff4444; }
         .status-online { font-size: 0.7rem; color: #30d158; font-weight: bold; }
         .status-offline { font-size: 0.7rem; color: #888; font-weight: bold; }
         .tab-badge { background: #ff453a; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 10px; margin-left: 4px; }
@@ -517,6 +529,25 @@ export default function ChatHub() {
         .btn-submit-q { background: #ffd60a; color: #000; }
         .solved-success { color: #30d158; font-weight: bold; margin-bottom: 10px; }
         .solved-error { color: #ff453a; font-weight: bold; margin-bottom: 10px; }
+        .empty-state { text-align: center; padding: 40px 20px; color: #555; font-size: 0.9rem; }
+        .friends-list h6 { padding: 12px 20px; color: #666; font-size: 0.8rem; font-weight: 700; }
+
+        /* ─── MOBILE FULLSCREEN ─── */
+        @media (max-width: 768px) {
+          .chat-hub-fab { bottom: 85px; right: 16px; width: 50px; height: 50px; }
+          .chat-hub-panel { inset: 0; width: 100%; height: 100%; border-radius: 0; bottom: 0; right: 0; border: none; }
+          .hub-header { padding: 16px; padding-top: max(16px, env(safe-area-inset-top)); }
+          .hub-tab { padding: 12px 8px; font-size: 0.9rem; }
+          .chat-item { padding: 14px 16px; }
+          .chat-item-info p { max-width: 55vw; }
+          .message-bubble { max-width: 85%; font-size: 1rem; }
+          .chat-input-area { padding: 12px 16px; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+          .chat-input-area input { padding: 14px 16px; font-size: 1rem; }
+          .chat-input-area button { width: 48px; height: 48px; }
+          .search-view { padding: 16px; }
+          .search-box { padding: 14px 16px; }
+          .search-box input { font-size: 1rem; }
+        }
       `}</style>
     </>
   );
