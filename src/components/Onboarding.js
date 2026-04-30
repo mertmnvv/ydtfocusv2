@@ -343,6 +343,45 @@ export default function Onboarding({ onOpenPremium }) {
             width: 12px;
           }
         }
+
+        /* Landscape/Small Height Optimization */
+        @media (max-height: 500px) {
+          .onboarding-card {
+            padding: 16px 24px;
+            gap: 12px;
+            flex-direction: row;
+            max-width: 90vw;
+            align-items: center;
+          }
+          .onboarding-header {
+            position: absolute;
+            top: 16px;
+            left: 24px;
+            right: 24px;
+          }
+          .onboarding-content {
+            flex: 1;
+            flex-direction: row;
+            text-align: left;
+            align-items: center;
+            gap: 20px;
+            margin-top: 20px;
+          }
+          .onboarding-icon {
+            width: 48px;
+            height: 48px;
+            font-size: 1.5rem;
+            margin-bottom: 0;
+          }
+          .onboarding-content h2 { font-size: 1.2rem; }
+          .onboarding-content p { font-size: 0.85rem; }
+          .onboarding-footer {
+            width: 140px;
+            margin-top: 20px;
+          }
+          .onboarding-next { padding: 12px; }
+          .onboarding-premium-btn { padding: 8px 16px; font-size: 0.85rem; }
+        }
       `}</style>
     </div>
   );

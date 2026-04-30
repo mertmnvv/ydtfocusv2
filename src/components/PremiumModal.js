@@ -144,8 +144,9 @@ export default function PremiumModal({ isOpen, onClose }) {
           border-radius: 32px;
           width: 100%;
           max-width: 440px;
+          max-height: 95vh;
+          overflow-y: auto;
           position: relative;
-          overflow: hidden;
           box-shadow: 0 30px 60px rgba(0,0,0,0.5);
           animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
@@ -320,6 +321,18 @@ export default function PremiumModal({ isOpen, onClose }) {
           font-size: 0.75rem;
           color: var(--text-muted);
           font-weight: 600;
+        }
+
+        /* Landscape/Small Height Fix */
+        @media (max-height: 600px) {
+          .p-modal-content { padding: 24px; }
+          .p-modal-icon-wrapper { width: 48px; height: 48px; font-size: 1.5rem; margin-bottom: 12px; }
+          .p-modal-content h2 { font-size: 1.4rem; }
+          .p-modal-content p { margin-bottom: 16px; font-size: 0.9rem; }
+          .p-plans-container { flex-direction: row; margin-bottom: 16px; }
+          .p-plan-card { flex: 1; padding: 12px; }
+          .p-plan-price { font-size: 1.1rem; }
+          .p-features-grid { margin-bottom: 16px; }
         }
         
         @keyframes fadeIn {

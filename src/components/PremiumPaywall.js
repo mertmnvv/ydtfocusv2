@@ -317,6 +317,51 @@ export default function PremiumPaywall({ isOpen, onClose, onUpgrade }) {
             align-items: center;
           }
         }
+
+        /* Landscape and Small Height Optimization */
+        @media (max-height: 600px) {
+          .paywall-container {
+            padding: 20px;
+            gap: 16px;
+            justify-content: flex-start;
+          }
+          .paywall-header h1 {
+            font-size: 1.5rem;
+          }
+          .paywall-features {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+          }
+          .paywall-feature {
+            gap: 8px;
+          }
+          .pf-icon {
+            width: 32px;
+            height: 32px;
+            font-size: 0.9rem;
+          }
+          .pf-text strong {
+            font-size: 0.8rem;
+          }
+          .pf-text span {
+            display: none; /* Hide description in tight height */
+          }
+          .paywall-plans {
+            flex-direction: row;
+          }
+          .paywall-plan {
+            flex: 1;
+            padding: 10px;
+          }
+          .plan-name { font-size: 0.85rem; }
+          .plan-price { font-size: 0.75rem; }
+        }
+
+        @media (max-height: 400px) {
+           .paywall-header { display: none; }
+           .paywall-features { display: none; }
+        }
       `}</style>
     </div>
   );
