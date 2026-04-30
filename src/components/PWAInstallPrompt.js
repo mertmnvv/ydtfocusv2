@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 export default function PWAInstallPrompt() {
   const [isVisible, setIsVisible] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
 
   useEffect(() => {
@@ -13,12 +14,15 @@ export default function PWAInstallPrompt() {
       return;
     }
 
-    // iOS kontrolü
-    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const ua = navigator.userAgent;
+    const ios = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+    const android = /Android/.test(ua);
+    
     setIsIOS(ios);
+    setIsAndroid(android);
 
-    // iOS için her zaman göster (veya localStorage ile kontrol et)
-    if (ios && !localStorage.getItem("pwa_prompt_dismissed")) {
+    // iOS veya Android için her zaman göster (veya localStorage ile kontrol et)
+    if ((ios || android) && !localStorage.getItem("pwa_prompt_dismissed")) {
       setIsVisible(true);
     }
   }, []);
@@ -26,6 +30,9 @@ export default function PWAInstallPrompt() {
   const handleInstallClick = () => {
     if (isIOS) {
       alert("iOS'ta yüklemek için: Paylaş butonuna basın ve 'Ana Ekrana Ekle' seçeneğini seçin.");
+    } else if (isAndroid) {
+      // Direct APK download link
+      window.location.href = "/ydtfocus.apk";
     }
   };
 
@@ -43,13 +50,15 @@ export default function PWAInstallPrompt() {
           <img src="/icon-192.png" alt="App Icon" />
         </div>
         <div className="pwa-app-info">
-          <div className="pwa-app-name">YDT Focus App</div>
-          <div className="pwa-app-tagline">Mobil deneyimi başlat</div>
+          <div className="pwa-app-name">YDT Focus Mobile</div>
+          <div className="pwa-app-tagline">
+            {isAndroid ? "Android Uygulamasını İndir" : "Mobil deneyimi başlat"}
+          </div>
         </div>
       </div>
       <div className="pwa-banner-actions">
         <button className="pwa-install-btn" onClick={handleInstallClick}>
-          {isIOS ? "Nasıl Yüklenir?" : "Yükle"}
+          {isIOS ? "Nasıl Yüklenir?" : isAndroid ? "APK İndir" : "Yükle"}
         </button>
         <button className="pwa-close-btn" onClick={handleDismiss}>
           <i className="fa-solid fa-xmark"></i>
