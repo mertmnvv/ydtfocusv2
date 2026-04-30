@@ -47,7 +47,7 @@ export default function PWAInstallPrompt() {
     <div className="pwa-smart-banner animate-slideUp">
       <div className="pwa-banner-content">
         <div className="pwa-app-icon">
-          <img src="/icon-192.png" alt="App Icon" />
+          <img src="/icon-512.png" alt="App Icon" />
         </div>
         <div className="pwa-app-info">
           <div className="pwa-app-name">YDT Focus Mobile</div>
