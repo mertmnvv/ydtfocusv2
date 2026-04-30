@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 export default function PWAInstallPrompt() {
   const [isVisible, setIsVisible] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
-  const [isAndroid, setIsAndroid] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
 
   useEffect(() => {
@@ -16,23 +15,36 @@ export default function PWAInstallPrompt() {
 
     const ua = navigator.userAgent;
     const ios = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
-    const android = /Android/.test(ua);
-    
     setIsIOS(ios);
-    setIsAndroid(android);
 
-    // iOS veya Android için her zaman göster (veya localStorage ile kontrol et)
-    if ((ios || android) && !localStorage.getItem("pwa_prompt_dismissed")) {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      if (!localStorage.getItem("pwa_prompt_dismissed")) {
+        setIsVisible(true);
+      }
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+
+    // iOS için her zaman göster (veya localStorage ile kontrol et)
+    if (ios && !localStorage.getItem("pwa_prompt_dismissed")) {
       setIsVisible(true);
     }
+
+    return () => window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
   }, []);
 
-  const handleInstallClick = () => {
+  const handleInstallClick = async () => {
     if (isIOS) {
       alert("iOS'ta yüklemek için: Paylaş butonuna basın ve 'Ana Ekrana Ekle' seçeneğini seçin.");
-    } else if (isAndroid) {
-      // Direct APK download link
-      window.location.href = "/ydtfocus.apk";
+    } else if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        setIsVisible(false);
+      }
+      setDeferredPrompt(null);
     }
   };
 
@@ -50,15 +62,13 @@ export default function PWAInstallPrompt() {
           <img src="/icon-512.png" alt="App Icon" />
         </div>
         <div className="pwa-app-info">
-          <div className="pwa-app-name">YDT Focus Mobile</div>
-          <div className="pwa-app-tagline">
-            {isAndroid ? "Android Uygulamasını İndir" : "Mobil deneyimi başlat"}
-          </div>
+          <div className="pwa-app-name">YDT Focus App</div>
+          <div className="pwa-app-tagline">Mobil deneyimi başlat</div>
         </div>
       </div>
       <div className="pwa-banner-actions">
         <button className="pwa-install-btn" onClick={handleInstallClick}>
-          {isIOS ? "Nasıl Yüklenir?" : isAndroid ? "APK İndir" : "Yükle"}
+          {isIOS ? "Nasıl Yüklenir?" : "Yükle"}
         </button>
         <button className="pwa-close-btn" onClick={handleDismiss}>
           <i className="fa-solid fa-xmark"></i>
