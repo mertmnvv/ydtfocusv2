@@ -144,9 +144,16 @@ export function AuthProvider({ children }) {
   // Google ile giriş
   async function loginWithGoogle() {
     try {
+      // Capacitor ortamındaysak Popup çalışmaz, Redirect kullanmalıyız
+      const isNative = typeof window !== "undefined" && window.Capacitor?.isNative;
+
+      if (isNative) {
+        const { signInWithRedirect } = await import("firebase/auth");
+        return await signInWithRedirect(auth, googleProvider);
+      }
+
       const result = await signInWithPopup(auth, googleProvider);
       if (result.user) {
-        // Google'dan gelen profil bilgilerini hemen Firestore'a yansıt
         await setDoc(doc(db, "users", result.user.uid), {
           displayName: result.user.displayName,
           photoURL: result.user.photoURL,
@@ -155,11 +162,6 @@ export function AuthProvider({ children }) {
       }
       return result;
     } catch (err) {
-      // If popup is blocked, try redirect method
-      if (err.code === "auth/popup-blocked" || err.code === "auth/popup-closed-by-user") {
-        const { signInWithRedirect } = await import("firebase/auth");
-        return signInWithRedirect(auth, googleProvider);
-      }
       console.error("Google login error:", err.code, err.message);
       throw err;
     }
