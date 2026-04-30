@@ -12,6 +12,7 @@ import ChatHub from "@/components/ChatHub";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import PremiumModal from "@/components/PremiumModal";
 import PremiumPaywall from "@/components/PremiumPaywall";
+import FeedbackModal from "@/components/FeedbackModal";
 
 const navItems = [
   { id: "dashboard", label: "Level Up", href: "/dashboard" },
@@ -36,6 +37,7 @@ export default function AppLayout({ children }) {
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   useEffect(() => {
     if (!loading && user && !isPremium) {
@@ -168,6 +170,10 @@ export default function AppLayout({ children }) {
                         <i className="fa-solid fa-circle-xmark"></i>
                         <span>Hatalarım</span>
                       </Link>
+                      <button className="profile-drop-item" onClick={() => { setShowFeedback(true); setProfileOpen(false); }}>
+                        <i className="fa-solid fa-comments"></i>
+                        <span>Geri Bildirim</span>
+                      </button>
                       <div className="drop-divider"></div>
                       <button onClick={() => { logout(); setProfileOpen(false); }} className="profile-drop-item logout-red">
                         <i className="fa-solid fa-right-from-bracket"></i>
@@ -311,6 +317,10 @@ export default function AppLayout({ children }) {
                 <i className="fa-solid fa-language"></i>
                 <span>Sözlük</span>
               </Link>
+              <button className="popup-link" onClick={() => { setShowFeedback(true); setProfileOpen(false); }}>
+                <i className="fa-solid fa-comments"></i>
+                <span>Geri Bildirim</span>
+              </button>
               {isAdmin && (
                 <Link href="/admin" className="popup-link admin-link" onClick={() => setProfileOpen(false)}>
                   <i className="fa-solid fa-user-shield"></i>
@@ -357,6 +367,8 @@ export default function AppLayout({ children }) {
       <Onboarding onOpenPremium={() => setPremiumModalOpen(true)} />
       {/* Premium Modal */}
       <PremiumModal isOpen={premiumModalOpen} onClose={() => setPremiumModalOpen(false)} />
+      {/* Feedback Modal */}
+      <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
       {/* PWA Mobile App Prompt */}
       <PWAInstallPrompt />
     </div>

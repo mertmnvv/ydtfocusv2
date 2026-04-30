@@ -692,3 +692,22 @@ export async function checkAndGrantBadges(uid, stats, wordsCount, heroLevels, wo
   }
   return currentBadges;
 }
+
+// ===== GERİ BİLDİRİM =====
+
+export async function submitFeedback(uid, feedbackData) {
+  const feedbackRef = collection(db, "feedbacks");
+  return addDoc(feedbackRef, {
+    uid,
+    ...feedbackData,
+    status: "new",
+    serverTimestamp: serverTimestamp()
+  });
+}
+
+export async function getFeedbacks() {
+  const feedbackRef = collection(db, "feedbacks");
+  const q = query(feedbackRef, orderBy("serverTimestamp", "desc"));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
