@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useAuth } from "@/context/AuthContext";
 
 export default function PremiumModal({ isOpen, onClose }) {
   const [mounted, setMounted] = useState(false);
@@ -12,59 +13,116 @@ export default function PremiumModal({ isOpen, onClose }) {
     if (!isOpen) setShowComingSoon(false);
   }, [isOpen]);
 
+  const { user, userProfile } = useAuth();
+  const [selectedPlan, setSelectedPlan] = useState("yearly");
+  const [iframeToken, setIframeToken] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
   if (!mounted || !isOpen) return null;
+
+  const handleUpgrade = async () => {
+    if (!user) return alert("Lütfen önce giriş yapın.");
+    
+    setIsProcessing(true);
+    try {
+      const response = await fetch("/api/paytr/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          uid: user.uid,
+          email: user.email,
+          displayName: userProfile?.displayName || user.email,
+          plan: selectedPlan
+        })
+      });
+
+      const result = await response.json();
+      if (result.token) {
+        setIframeToken(result.token);
+      } else {
+        alert("Ödeme başlatılamadı: " + (result.error || "Bilinmeyen hata"));
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Bir hata oluştu.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   return createPortal(
     <div className="premium-modal-overlay" onClick={onClose}>
       <div className="premium-modal-card" onClick={(e) => e.stopPropagation()}>
-        {!showComingSoon ? (
-          <>
-            <div className="p-modal-close" onClick={onClose}>
-              <i className="fa-solid fa-xmark"></i>
+        <div className="p-modal-close" onClick={onClose}>
+          <i className="fa-solid fa-xmark"></i>
+        </div>
+        
+        <div className="p-modal-content">
+          {iframeToken ? (
+            <div className="paytr-iframe-container">
+              <iframe 
+                src={`https://www.paytr.com/odeme/guvenli/${iframeToken}`} 
+                id="paytriframe" 
+                frameBorder="0" 
+                scrolling="no" 
+                style={{ width: "100%", height: "600px" }}
+              ></iframe>
+              <button className="p-back-btn" onClick={() => setIframeToken(null)}>Geri Dön</button>
             </div>
-            
-            <div className="p-modal-content">
+          ) : (
+            <>
               <div className="p-modal-icon-wrapper">
                 <i className="fa-solid fa-crown"></i>
               </div>
               
-              <h2>YDT Focus Premium</h2>
-              <p>Hedeflerine daha hızlı ulaşmak için gücüne güç kat. Premium ile sınırları kaldır.</p>
+              <h2>YDT Focus Elite</h2>
+              <p>Akademik hedeflerine giden yolda tüm sınırları kaldır. Sınırsız AI gücü seni bekliyor.</p>
               
-              <div className="p-features-list">
-                <div className="p-feature-item">
-                  <i className="fa-solid fa-check-circle"></i>
-                  <span>Gelişmiş AI Hazırlık Koçu</span>
+              <div className="p-plans-container">
+                <div 
+                  className={`p-plan-card ${selectedPlan === "monthly" ? "active" : ""}`}
+                  onClick={() => setSelectedPlan("monthly")}
+                >
+                  <div className="p-plan-info">
+                    <span className="p-plan-name">Aylık Focus</span>
+                    <span className="p-plan-price">₺99</span>
+                  </div>
+                  <div className="p-plan-radio"></div>
                 </div>
-                <div className="p-feature-item">
-                  <i className="fa-solid fa-check-circle"></i>
-                  <span>Sınırsız Sosyal Hub & Mesajlaşma</span>
-                </div>
-                <div className="p-feature-item">
-                  <i className="fa-solid fa-check-circle"></i>
-                  <span>Kişiselleştirilmiş Çalışma Analizi</span>
-                </div>
-                <div className="p-feature-item">
-                  <i className="fa-solid fa-check-circle"></i>
-                  <span>Reklamsız ve Kesintisiz Deneyim</span>
+
+                <div 
+                  className={`p-plan-card ${selectedPlan === "yearly" ? "active" : ""}`}
+                  onClick={() => setSelectedPlan("yearly")}
+                >
+                  <div className="p-plan-badge">EN POPÜLER</div>
+                  <div className="p-plan-info">
+                    <span className="p-plan-name">Yıllık Focus</span>
+                    <span className="p-plan-price">₺799</span>
+                    <span className="p-plan-savings">₺389 Tasarruf Et</span>
+                  </div>
+                  <div className="p-plan-radio"></div>
                 </div>
               </div>
 
-              <button className="p-upgrade-main-btn" onClick={() => setShowComingSoon(true)}>
-                Şimdi Yükselt
+              <div className="p-features-grid">
+                <div className="p-f-item"><i className="fa-solid fa-bolt"></i> Sınırsız AI Metin</div>
+                <div className="p-f-item"><i className="fa-solid fa-microchip"></i> İleri Analiz</div>
+                <div className="p-f-item"><i className="fa-solid fa-shield-halved"></i> Reklamsız</div>
+                <div className="p-f-item"><i className="fa-solid fa-medal"></i> Gold Profil</div>
+              </div>
+
+              <button 
+                className="p-upgrade-main-btn" 
+                onClick={handleUpgrade}
+                disabled={isProcessing}
+              >
+                {isProcessing ? "Hazırlanıyor..." : "Hemen Başla"}
               </button>
               
-              <p className="p-footer-note">İstediğin zaman iptal edebilirsin.</p>
-            </div>
-          </>
-        ) : (
-          <div className="p-coming-soon">
-            <i className="fa-solid fa-rocket"></i>
-            <h2>Çok Yakında!</h2>
-            <p>Ödeme sistemimiz şu an entegrasyon aşamasında. Çok kısa süre içinde Premium avantajlarından faydalanabileceksin.</p>
-            <button className="p-back-btn" onClick={onClose}>Tamamdır!</button>
-          </div>
-        )}
+              <p className="p-footer-note">Güvenli ödeme altyapısı PayTR ile korunmaktadır.</p>
+            </>
+          )}
+        </div>
       </div>
 
       <style jsx>{`
@@ -143,24 +201,100 @@ export default function PremiumModal({ isOpen, onClose }) {
           font-size: 1rem;
         }
         
-        .p-features-list {
+        .p-plans-container {
           display: flex;
           flex-direction: column;
-          gap: 16px;
-          margin-bottom: 40px;
-          text-align: left;
+          gap: 12px;
+          margin-bottom: 32px;
         }
-        .p-feature-item {
+        .p-plan-card {
+          position: relative;
+          background: rgba(255,255,255,0.03);
+          border: 2px solid var(--border);
+          border-radius: 20px;
+          padding: 20px;
           display: flex;
           align-items: center;
-          gap: 12px;
-          color: #fff;
-          font-weight: 600;
-          font-size: 0.95rem;
+          justify-content: space-between;
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .p-feature-item i {
+        .p-plan-card.active {
+          border-color: var(--accent);
+          background: rgba(226, 183, 20, 0.05);
+        }
+        .p-plan-badge {
+          position: absolute;
+          top: -10px;
+          right: 20px;
+          background: var(--accent);
+          color: #000;
+          font-size: 0.65rem;
+          font-weight: 900;
+          padding: 4px 10px;
+          border-radius: 20px;
+          letter-spacing: 0.5px;
+        }
+        .p-plan-info {
+          display: flex;
+          flex-direction: column;
+          text-align: left;
+          gap: 2px;
+        }
+        .p-plan-name {
+          font-size: 0.9rem;
+          font-weight: 700;
+          color: var(--text-muted);
+        }
+        .p-plan-card.active .p-plan-name {
+          color: #fff;
+        }
+        .p-plan-price {
+          font-size: 1.4rem;
+          font-weight: 900;
+          color: #fff;
+        }
+        .p-plan-savings {
+          font-size: 0.75rem;
           color: var(--accent);
-          font-size: 1.1rem;
+          font-weight: 700;
+        }
+        .p-plan-radio {
+          width: 24px;
+          height: 24px;
+          border: 2px solid var(--border);
+          border-radius: 50%;
+          position: relative;
+        }
+        .p-plan-card.active .p-plan-radio {
+          border-color: var(--accent);
+        }
+        .p-plan-card.active .p-plan-radio::after {
+          content: "";
+          position: absolute;
+          inset: 4px;
+          background: var(--accent);
+          border-radius: 50%;
+        }
+
+        .p-features-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+          margin-bottom: 32px;
+          text-align: left;
+        }
+        .p-f-item {
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: #bbb;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .p-f-item i {
+          color: var(--accent);
+          font-size: 0.85rem;
         }
         
         .p-upgrade-main-btn {
@@ -183,29 +317,9 @@ export default function PremiumModal({ isOpen, onClose }) {
         
         .p-footer-note {
           margin-top: 20px;
-          font-size: 0.8rem;
+          font-size: 0.75rem;
           color: var(--text-muted);
           font-weight: 600;
-        }
-        
-        .p-coming-soon {
-          padding: 50px 30px;
-          text-align: center;
-        }
-        .p-coming-soon i {
-          font-size: 3rem;
-          color: var(--accent);
-          margin-bottom: 20px;
-        }
-        .p-back-btn {
-          margin-top: 24px;
-          background: rgba(255,255,255,0.05);
-          color: #fff;
-          border: none;
-          padding: 12px 24px;
-          border-radius: 12px;
-          font-weight: 700;
-          cursor: pointer;
         }
         
         @keyframes fadeIn {

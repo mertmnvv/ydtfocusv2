@@ -55,6 +55,25 @@ Kullanıcıların çalışma performanslarına göre birbirleriyle yarıştığ�
 
 ---
 
+## Elite (Premium) Üyelik Modeli
+
+YDT Focus, sürdürülebilir bir yapay zeka deneyimi sunmak için katmanlı bir üyelik yapısı kullanır:
+
+### Standart Üye (Ücretsiz)
+- Günlük 3 akademik metin/seans üretimi.
+- Temel kelime bankası özellikleri.
+- Topluluk sıralamasına katılım.
+
+### Elite Üye (Aylık ₺99 / Yıllık ₺799)
+- **Sınırsız AI Metin Üretimi:** Limitlere takılmadan sınırsız çalışma.
+- **İleri Analizler:** Hatalardan kişiselleştirilmiş metin üretme önceliği.
+- **Gold Profil:** Sıralama ve sosyal alanlarda özel Elite rozeti ve Gold görünüm.
+- **Reklamsız Deneyim:** Tamamen odaklanmış çalışma ortamı.
+
+Ödemeler, Türkiye'nin güvenli ödeme altyapısı **PayTR** üzerinden 256-bit SSL korumasıyla gerçekleştirilir.
+
+---
+
 ## Teknik Altyapı ve Mimari
 
 *   **Frontend:** Next.js 14 (App Router), React 18, Vanilla CSS.

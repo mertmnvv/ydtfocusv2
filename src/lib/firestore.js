@@ -1,8 +1,50 @@
 import {
   collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
   query, where, orderBy, limit, startAfter, serverTimestamp,
-  writeBatch, increment, onSnapshot, arrayUnion, addDoc
+  writeBatch, increment, onSnapshot, arrayUnion, addDoc, getDocFromCache
 } from "firebase/firestore";
+
+// ===== GÜNLÜK LİMİT TAKİBİ =====
+
+export async function checkDailyLimit(uid, type = "reading") {
+  const usageRef = doc(db, "users", uid, "data", "usage");
+  const snap = await getDoc(usageRef);
+  const today = new Date().toLocaleDateString('tr-TR');
+
+  if (!snap.exists()) return { count: 0, limitReached: false };
+
+  const data = snap.data()[type];
+  if (!data || data.lastDate !== today) return { count: 0, limitReached: false };
+
+  const limit = 3; // Standart kullanıcı limiti
+  return { count: data.count, limitReached: data.count >= limit };
+}
+
+export async function incrementDailyLimit(uid, type = "reading") {
+  const usageRef = doc(db, "users", uid, "data", "usage");
+  const today = new Date().toLocaleDateString('tr-TR');
+  const snap = await getDoc(usageRef);
+  
+  if (!snap.exists()) {
+    await setDoc(usageRef, {
+      [type]: { count: 1, lastDate: today }
+    });
+    return 1;
+  }
+
+  const current = snap.data()[type];
+  if (!current || current.lastDate !== today) {
+    await updateDoc(usageRef, {
+      [type]: { count: 1, lastDate: today }
+    });
+    return 1;
+  }
+
+  await updateDoc(usageRef, {
+    [`${type}.count`]: increment(1)
+  });
+  return current.count + 1;
+}
 import { db } from "@/lib/firebase";
 
 // ===== KULLANICI KELİME BANKASI =====

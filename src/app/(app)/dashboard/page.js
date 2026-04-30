@@ -115,9 +115,16 @@ export default function DashboardPage() {
             <h1 className="profile-name-small" style={{ margin: 0 }}>{userProfile?.displayName || "Kullanıcı"}</h1>
             <div className="plan-badge-wrapper" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               {isPremium ? (
-                <span className="premium-plan-badge">
-                  <i className="fa-solid fa-crown"></i> Premium Üye
-                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <span className="premium-plan-badge">
+                    <i className="fa-solid fa-crown"></i> {userProfile?.premiumType === "yearly" ? "Yıllık" : "Aylık"} Elite
+                  </span>
+                  {userProfile?.premiumUntil && (
+                    <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                      Bitiş: {new Date(userProfile.premiumUntil).toLocaleDateString('tr-TR')}
+                    </span>
+                  )}
+                </div>
               ) : (
                 <span className="standard-plan-badge">Standart Üye</span>
               )}

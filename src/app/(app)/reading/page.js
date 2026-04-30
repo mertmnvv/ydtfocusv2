@@ -4,8 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { useSearchParams } from "next/navigation";
-import { subscribeToUserWords, addUserWord, completeReadingPassage, getUserMistakes } from "@/lib/firestore";
+import { subscribeToUserWords, addUserWord, completeReadingPassage, getUserMistakes, checkDailyLimit, incrementDailyLimit } from "@/lib/firestore";
 import ShareButton from "@/components/ShareButton";
+import PremiumModal from "@/components/PremiumModal";
 
 const TOPICS = [
   { id: "random", label: "Karışık" },
@@ -82,7 +83,7 @@ const YDT_ACADEMIC_WORDS = [
 ];
 
 export default function ReadingPage() {
-  const { user, requireAuth } = useAuth();
+  const { user, requireAuth, isPremium } = useAuth();
   const { showNotification } = useNotification();
   const [text, setText] = useState("");
   const [level, setLevel] = useState("B1");
@@ -206,17 +207,24 @@ export default function ReadingPage() {
     }
   }, [quizQuestions]);
 
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+
   async function generateAIText(selectedTopic) {
+    if (!user) return requireAuth(() => {});
+
+    // Limit Kontrolü
+    if (!isPremium) {
+      const { limitReached } = await checkDailyLimit(user.uid, "reading");
+      if (limitReached) {
+        setShowPremiumModal(true);
+        return;
+      }
+    }
+
     const t = selectedTopic || topic;
     setTopic(t);
     setGenerating(true);
-    const levelConstraints = {
-      "A2": "Use very simple SVO sentences, common daily vocabulary, and avoid complex clauses. Keep it basic and direct.",
-      "B1": "Use intermediate vocabulary and clear standard English. Include simple complex sentences (because, although, if).",
-      "B2": "Use upper-intermediate academic vocabulary, technical terms, passive voice, and complex relative clauses. This is typical YDT level.",
-      "C1": "Use advanced, sophisticated academic vocabulary (GRE/SAT level), abstract concepts, complex logical connectors, and varied sentence structures."
-    };
-
+    
     let prompt = `Write a high-quality, professional academic reading passage for YDT students.
     Target Level: ${level} CEFR.
     Topic: ${t}.
@@ -263,8 +271,14 @@ export default function ReadingPage() {
         setQuizQuestions([]); 
         setIsFlipped(false);
         setCurrentCardIdx(0);
+
+        // Başarılı ise limiti artır
+        if (!isPremium) {
+          await incrementDailyLimit(user.uid, "reading");
+        }
       }
-    } catch {
+    } catch (error) {
+      console.error(error);
       setText("Bağlantı hatası.");
     }
     setGenerating(false);
@@ -273,6 +287,16 @@ export default function ReadingPage() {
 
   async function generateStoryFromMyWords() {
     if (!user) return requireAuth(() => {});
+
+    // Limit Kontrolü
+    if (!isPremium) {
+      const { limitReached } = await checkDailyLimit(user.uid, "reading");
+      if (limitReached) {
+        setShowPremiumModal(true);
+        return;
+      }
+    }
+
     setGenerating(true);
     try {
       const mistakes = await getUserMistakes(user.uid);
@@ -336,6 +360,11 @@ export default function ReadingPage() {
         setQuizQuestions([]);
         setIsFlipped(false);
         showNotification(`Hikaye oluşturuldu! Kullanılan kelimeler: ${selectedWords.join(", ")}`, "success");
+
+        // Başarılı ise limiti artır
+        if (!isPremium) {
+          await incrementDailyLimit(user.uid, "reading");
+        }
       }
     } catch (err) {
       showNotification("Hikaye üretilirken hata oluştu.", "error");
@@ -836,6 +865,8 @@ export default function ReadingPage() {
           </div>
         </div>
       )}
+      {/* Premium Modal */}
+      <PremiumModal isOpen={showPremiumModal} onClose={() => setShowPremiumModal(false)} />
     </div>
   );
 }

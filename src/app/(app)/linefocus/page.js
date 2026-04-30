@@ -4,7 +4,8 @@ import { useState, useEffect, useRef, useCallback, memo, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import CustomDialog from "@/components/CustomDialog";
-import { getUserWords, getUserMistakes } from "@/lib/firestore";
+import { getUserWords, getUserMistakes, checkDailyLimit, incrementDailyLimit } from "@/lib/firestore";
+import PremiumModal from "@/components/PremiumModal";
 
 // --- Sub-components for Optimization ---
 
@@ -99,9 +100,10 @@ const ReaderOverlay = memo(({ data, onClose }) => (
 ));
 
 export default function LinefocusPage() {
-  const { user, loading: authLoading, setAuthModalOpen } = useAuth();
+  const { user, loading: authLoading, setAuthModalOpen, isPremium } = useAuth();
   const { showNotification } = useNotification();
   const [phase, setPhase] = useState("setup"); // setup | typing | result
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [sentences, setSentences] = useState([]);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -140,6 +142,17 @@ export default function LinefocusPage() {
   }
   // Kategori ile başlat
   async function startFlow(topic) {
+    if (!user) return setAuthModalOpen(true);
+
+    // Limit Kontrolü
+    if (!isPremium) {
+      const { limitReached } = await checkDailyLimit(user.uid, "linefocus");
+      if (limitReached) {
+        setShowPremiumModal(true);
+        return;
+      }
+    }
+
     setLoading(true);
     const seed = Math.floor(Math.random() * 10000);
     const prompt = `Task: Write exactly 4 high-quality, professional academic English sentences about ${topic}.
@@ -176,7 +189,6 @@ export default function LinefocusPage() {
       const jsonMatch = raw.match(/\[[\s\S]*\]/);
       if (!jsonMatch) throw new Error("JSON bulunamadı");
       const parsed = JSON.parse(jsonMatch[0]);
-
       if (parsed && parsed.length > 0) {
         setSentences(parsed);
         setSIdx(0);
@@ -188,6 +200,11 @@ export default function LinefocusPage() {
         processingRef.current = false;
         setIsEndless(false);
         setPhase("typing");
+
+        // Başarılı ise limiti artır
+        if (!isPremium) {
+          await incrementDailyLimit(user.uid, "linefocus");
+        }
       }
     } catch (err) {
       console.error(err);
@@ -212,6 +229,17 @@ export default function LinefocusPage() {
 
   // Endless Book Mode
   async function startEndlessBook() {
+    if (!user) return setAuthModalOpen(true);
+
+    // Limit Kontrolü
+    if (!isPremium) {
+      const { limitReached } = await checkDailyLimit(user.uid, "linefocus");
+      if (limitReached) {
+        setShowPremiumModal(true);
+        return;
+      }
+    }
+
     setLoading(true);
     const chapter = parseInt(localStorage.getItem("ai_book_chapter") || "1");
     const bookHistory = localStorage.getItem("ai_book_history") || "In a dark and silent futuristic city, a young coder named Kael finds a strange, ancient machine.";
@@ -262,6 +290,11 @@ export default function LinefocusPage() {
         processingRef.current = false;
         setIsEndless(true);
         setPhase("typing");
+
+        // Başarılı ise limiti artır
+        if (!isPremium) {
+          await incrementDailyLimit(user.uid, "linefocus");
+        }
       }
     } catch (err) {
       console.error(err);
@@ -286,7 +319,16 @@ export default function LinefocusPage() {
 
   // Personal Article from Bank & Mistakes
   async function startPersonalArticle() {
-    if (!user) return;
+    if (!user) return setAuthModalOpen(true);
+
+    // Limit Kontrolü
+    if (!isPremium) {
+      const { limitReached } = await checkDailyLimit(user.uid, "linefocus");
+      if (limitReached) {
+        setShowPremiumModal(true);
+        return;
+      }
+    }
     setLoading(true);
     try {
       const [words, mistakes] = await Promise.all([
@@ -341,7 +383,6 @@ export default function LinefocusPage() {
       const jsonMatch = raw.match(/\[[\s\S]*\]/);
       if (!jsonMatch) throw new Error("JSON bozuk");
       const parsed = JSON.parse(jsonMatch[0]);
-
       if (parsed && parsed.length > 0) {
         setSentences(parsed);
         setSIdx(0);
@@ -353,6 +394,11 @@ export default function LinefocusPage() {
         processingRef.current = false;
         setIsEndless(false);
         setPhase("typing");
+
+        // Başarılı ise limiti artır
+        if (!isPremium) {
+          await incrementDailyLimit(user.uid, "linefocus");
+        }
       }
     } catch (err) {
       console.error(err);
@@ -716,6 +762,8 @@ export default function LinefocusPage() {
           cancelText="Cancel"
         />
       )}
+      {/* Premium Modal */}
+      <PremiumModal isOpen={showPremiumModal} onClose={() => setShowPremiumModal(false)} />
     </div>
   );
 }
