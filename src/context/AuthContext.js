@@ -144,12 +144,24 @@ export function AuthProvider({ children }) {
   // Google ile giriş
   async function loginWithGoogle() {
     try {
-      // Capacitor ortamındaysak Popup çalışmaz, Redirect kullanmalıyız
       const isNative = typeof window !== "undefined" && window.Capacitor?.isNative;
 
       if (isNative) {
-        const { signInWithRedirect } = await import("firebase/auth");
-        return await signInWithRedirect(auth, googleProvider);
+        // Native plugin kullanımı
+        const { FirebaseAuthentication } = await import("@capacitor-firebase/authentication");
+        const result = await FirebaseAuthentication.signInWithGoogle();
+        
+        // Native giriş başarılı oldu, Firebase JS SDK'ya da yansıtmak için (gerekirse)
+        // Genellikle plugin bunu otomatik yapar ama manuel kontrol iyi olur
+        if (result.user) {
+          // Profil bilgilerini güncelle
+          await setDoc(doc(db, "users", result.user.uid), {
+            displayName: result.user.displayName,
+            photoURL: result.user.photoURL,
+            lastLogin: serverTimestamp()
+          }, { merge: true });
+        }
+        return result;
       }
 
       const result = await signInWithPopup(auth, googleProvider);
