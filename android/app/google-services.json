@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "856274397620",
+    "project_id": "ydtfocus",
+    "storage_bucket": "ydtfocus.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:856274397620:android:0f08cfe50ead3864eceae1",
+        "android_client_info": {
+          "package_name": "com.ydtfocus.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "856274397620-uauncvrncog4n3m7t1nebtceoq0903kf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyANWFXjtkRjvCPViQec6pI_5L2y0X-etOk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "856274397620-uauncvrncog4n3m7t1nebtceoq0903kf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
