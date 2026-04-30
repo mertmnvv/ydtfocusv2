@@ -7,6 +7,12 @@ const config: CapacitorConfig = {
   server: {
     url: 'https://www.ydtfocus.xyz',
     cleartext: true
+  },
+  plugins: {
+    FirebaseAuthentication: {
+      skipNativeAuth: false,
+      providers: ["google.com"],
+    },
   }
 };
 

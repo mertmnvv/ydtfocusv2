@@ -144,7 +144,8 @@ export function AuthProvider({ children }) {
   // Google ile giriş
   async function loginWithGoogle() {
     try {
-      const isNative = typeof window !== "undefined" && window.Capacitor?.isNative;
+      const { Capacitor } = await import("@capacitor/core");
+      const isNative = Capacitor.isNative;
 
       if (isNative) {
         // Native plugin kullanımı
