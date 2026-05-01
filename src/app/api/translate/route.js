@@ -38,8 +38,8 @@ export async function POST(request) {
           }
         }
 
-        // En fazla 5 unique eş anlamlı
-        const uniqueSyns = [...new Set(allSynonyms)].slice(0, 5).join(", ");
+        // En fazla 2 unique eş anlamlı
+        const uniqueSyns = [...new Set(allSynonyms)].slice(0, 2).join(", ");
 
         // Türkçe çeviri için kısa AI isteği
         let turkishMeaning = "";
@@ -90,8 +90,8 @@ export async function POST(request) {
         model: "llama-3.1-8b-instant",
         messages: [{ 
           role: "user", 
-          content: `Translate the word "${clean}" to Turkish and provide up to 5 English academic synonyms and a short English definition.
-          Return ONLY valid JSON: {"en": "${clean}", "tr": "Türkçe karşılığı", "synonyms": "syn1, syn2, syn3", "definition": "short English definition"}`
+          content: `Translate the word "${clean}" to Turkish and provide up to 2 English academic synonyms and a short English definition.
+          Return ONLY valid JSON: {"en": "${clean}", "tr": "Türkçe karşılığı", "synonyms": "syn1, syn2", "definition": "short English definition"}`
         }],
         response_format: { type: "json_object" },
         temperature: 0.1

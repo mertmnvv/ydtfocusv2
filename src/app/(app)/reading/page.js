@@ -27,6 +27,25 @@ const TOPICS = [
   { id: "space", label: "Uzay" },
 ];
 
+const WIKI_TOPICS = [
+  { id: "random", label: "Rastgele" },
+  { id: "animals", label: "Hayvanlar Alemi" },
+  { id: "biography", label: "Biyografi" },
+  { id: "geography", label: "Coğrafya & Ülkeler" },
+  { id: "history", label: "Tarih" },
+  { id: "science", label: "Bilim" },
+  { id: "mythology", label: "Mitoloji" },
+  { id: "space", label: "Uzay" },
+  { id: "technology", label: "Teknoloji" },
+  { id: "art", label: "Sanat" },
+  { id: "music", label: "Müzik" },
+  { id: "cinema", label: "Sinema" },
+  { id: "sports", label: "Spor" },
+  { id: "landmarks", label: "Önemli Yapılar" },
+  { id: "food", label: "Dünya Mutfağı" },
+  { id: "inventions", label: "İcatlar" },
+];
+
 const YDT_ACADEMIC_WORDS = [
   "abandon", "abundant", "accelerate", "accumulate", "accuracy", "achieve", "acquire", "adapt",
   "adequate", "advocate", "allocate", "alter", "ambiguous", "amend", "analyze", "anticipate",
@@ -95,6 +114,9 @@ export default function ReadingPage() {
   const [isFlipped, setIsFlipped] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [streamMode, setStreamMode] = useState(false);
+  const [sourceMode, setSourceMode] = useState(null); // null=selection, "wikipedia", "ai"
+  const [wikiUrl, setWikiUrl] = useState("");
+  const [wikiThumbnail, setWikiThumbnail] = useState("");
   const [currentCardIdx, setCurrentCardIdx] = useState(0);
   const [logicLines, setLogicLines] = useState([]);
   const [conjunctions, setConjunctions] = useState([]);
@@ -372,6 +394,44 @@ export default function ReadingPage() {
     setIsFinished(false);
   }
 
+  async function generateWikipediaText(selectedTopic) {
+    if (!user) return requireAuth(() => {});
+    const t = selectedTopic || topic;
+    setTopic(t);
+    setGenerating(true);
+    setQuizQuestions([]);
+    setIsFlipped(false);
+    setCurrentCardIdx(0);
+    setLogicLines([]);
+    setConjunctions([]);
+    setTranslatedText("");
+    setWikiUrl("");
+    setWikiThumbnail("");
+    try {
+      const response = await fetch("/api/wikipedia", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: t }),
+      });
+      const data = await response.json();
+      if (data.error) {
+        showNotification(data.error, "error");
+        setText("");
+      } else {
+        setPassageTitle(data.title || "");
+        setText(data.text || "");
+        setTranslatedText(data.tr || "");
+        setWikiUrl(data.url || "");
+        setWikiThumbnail(data.thumbnail || "");
+      }
+    } catch (error) {
+      console.error(error);
+      showNotification("Wikipedia bağlantı hatası.", "error");
+    }
+    setGenerating(false);
+    setIsFinished(false);
+  }
+
   async function handleCompleteReading() {
     if (!user || finishing || isFinished) return;
     setFinishing(true);
@@ -609,9 +669,81 @@ export default function ReadingPage() {
 
   return (
     <div className={`reading-page ${sidebarCollapsed ? "zen-mode" : ""}`}>
+
+      {/* ───── SOURCE SELECTION SCREEN ───── */}
+      {!sourceMode ? (
+        <div className="source-selection-container">
+          <div className="source-selection-header">
+            <h2 className="section-title" style={{ margin: 0 }}>Metin Analizi</h2>
+            <p className="source-subtitle">Okuma pratiği için bir kaynak seçin</p>
+          </div>
+          <div className="source-cards-grid">
+            <button className="source-card" onClick={() => setSourceMode("wikipedia")}>
+              <div className="source-card-icon wiki-icon">
+                <i className="fa-brands fa-wikipedia-w"></i>
+              </div>
+              <h3>Wikipedia&apos;dan Oku</h3>
+              <p>Gerçek İngilizce makaleler ile pratik yap. Ücretsiz, sınırsız içerik.</p>
+              <div className="source-card-tags">
+                <span className="stag">Gerçek İçerik</span>
+                <span className="stag">Sınırsız</span>
+                <span className="stag">Ücretsiz</span>
+              </div>
+            </button>
+            <button className="source-card" onClick={() => setSourceMode("ai")}>
+              <div className="source-card-icon ai-icon">
+                <i className="fa-solid fa-wand-magic-sparkles"></i>
+              </div>
+              <h3>AI ile Üret</h3>
+              <p>Yapay zeka ile seviyene uygun akademik metin üret. YDT formatında.</p>
+              <div className="source-card-tags">
+                <span className="stag">Seviye Uyumlu</span>
+                <span className="stag">YDT Format</span>
+                <span className="stag">Çeviri</span>
+              </div>
+            </button>
+          </div>
+
+          <style jsx>{`
+            .source-selection-container { max-width: 700px; margin: 40px auto; padding: 0 16px; }
+            .source-selection-header { text-align: center; margin-bottom: 40px; }
+            .source-subtitle { color: #888; font-size: 0.95rem; margin-top: 8px; }
+            .source-cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+            .source-card {
+              background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+              border-radius: 24px; padding: 36px 28px; text-align: center; cursor: pointer;
+              transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; gap: 12px;
+            }
+            .source-card:hover { border-color: var(--accent); background: rgba(226,183,20,0.04); transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+            .source-card-icon { width: 72px; height: 72px; border-radius: 22px; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 8px; }
+            .wiki-icon { background: rgba(255,255,255,0.06); color: #fff; }
+            .ai-icon { background: rgba(226,183,20,0.1); color: var(--accent); }
+            .source-card h3 { font-size: 1.2rem; font-weight: 900; color: #fff; margin: 0; }
+            .source-card p { font-size: 0.82rem; color: #888; line-height: 1.5; margin: 0; }
+            .source-card-tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
+            .stag { font-size: 0.65rem; font-weight: 700; padding: 3px 10px; border-radius: 8px; background: rgba(255,255,255,0.04); color: #aaa; border: 1px solid rgba(255,255,255,0.06); text-transform: uppercase; letter-spacing: 0.3px; }
+            .source-card:hover .stag { border-color: rgba(226,183,20,0.2); color: var(--accent); }
+            @media (max-width: 600px) { .source-cards-grid { grid-template-columns: 1fr; } .source-card { padding: 28px 20px; } }
+          `}</style>
+        </div>
+      ) : (
+      <>
+
+      {/* ───── READING INTERFACE ───── */}
       <div className="header-split" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <h2 className="section-title" style={{ margin: 0 }}>Metin Analizi</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button 
+            onClick={() => { setSourceMode(null); setText(""); setPassageTitle(""); setQuizQuestions([]); setWikiUrl(""); setWikiThumbnail(""); }}
+            className="btn-ghost"
+            style={{ padding: '8px 12px', borderRadius: '12px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 6 }}
+          >
+            <i className="fa-solid fa-arrow-left"></i>
+          </button>
+          <h2 className="section-title" style={{ margin: 0 }}>
+            {sourceMode === "wikipedia" ? "Wikipedia Okuma" : "Metin Analizi"}
+          </h2>
+          {sourceMode === "wikipedia" && <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '3px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: '#aaa', textTransform: 'uppercase' }}>Wikipedia</span>}
+          {sourceMode === "ai" && <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '3px 10px', borderRadius: '8px', background: 'rgba(226,183,20,0.1)', color: 'var(--accent)', textTransform: 'uppercase' }}>AI</span>}
           {text.trim() && <ShareButton item={{ text: text, title: topic }} type="reading" />}
         </div>
         <div className="reading-controls" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -631,31 +763,35 @@ export default function ReadingPage() {
             <i className={`fa-solid ${sidebarCollapsed ? "fa-expand-arrows-alt" : "fa-compress-arrows-alt"}`} style={{ marginRight: 8 }}></i>
             {sidebarCollapsed ? " Kenar Çubuğunu Göster" : " Odak Modu"}
           </button>
-          <select value={level} onChange={e => setLevel(e.target.value)} className="reading-select">
-            <option value="A2">A2</option><option value="B1">B1</option>
-            <option value="B2">B2</option><option value="C1">C1</option>
-          </select>
+          {sourceMode === "ai" && (
+            <select value={level} onChange={e => setLevel(e.target.value)} className="reading-select">
+              <option value="A2">A2</option><option value="B1">B1</option>
+              <option value="B2">B2</option><option value="C1">C1</option>
+            </select>
+          )}
         </div>
       </div>
 
       <div className="topic-chips">
-        {TOPICS.map(t => (
+        {(sourceMode === "wikipedia" ? WIKI_TOPICS : TOPICS).map(t => (
           <button 
             key={t.id} 
             className={`topic-chip ${topic === t.id ? "active" : ""}`}
-            onClick={() => generateAIText(t.id)}
+            onClick={() => sourceMode === "wikipedia" ? generateWikipediaText(t.id) : generateAIText(t.id)}
             disabled={generating}
           >
             <span className="chip-label">{t.label}</span>
           </button>
         ))}
-        <button 
-          className={`topic-chip special-chip ${topic === "Kelimelerim" ? "active" : ""}`}
-          onClick={generateStoryFromMyWords}
-          disabled={generating}
-        >
-          <span className="chip-label"><i className="fa-solid fa-magic-wand-sparkles" style={{ marginRight: 6 }}></i> Kelimelerimle Yaz</span>
-        </button>
+        {sourceMode === "ai" && (
+          <button 
+            className={`topic-chip special-chip ${topic === "Kelimelerim" ? "active" : ""}`}
+            onClick={generateStoryFromMyWords}
+            disabled={generating}
+          >
+            <span className="chip-label"><i className="fa-solid fa-magic-wand-sparkles" style={{ marginRight: 6 }}></i> Kelimelerimle Yaz</span>
+          </button>
+        )}
       </div>
 
       <div className={`reading-grid ${sidebarCollapsed ? "collapsed-sidebar" : ""}`}>
@@ -782,6 +918,19 @@ export default function ReadingPage() {
           )}
         </div>
       </div>
+
+      {/* Wikipedia Source Link */}
+      {sourceMode === "wikipedia" && wikiUrl && text.trim() && (
+        <div style={{ textAlign: 'center', marginTop: 12, marginBottom: 12 }}>
+          <a href={wikiUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.75rem', color: '#888', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <i className="fa-brands fa-wikipedia-w"></i> Kaynak: Wikipedia — {passageTitle}
+            <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: '0.6rem' }}></i>
+          </a>
+        </div>
+      )}
+
+      </>
+      )}
 
       {showResultCard && (
         <div className="responsive-lookup-overlay" onClick={() => setShowResultCard(false)}>
