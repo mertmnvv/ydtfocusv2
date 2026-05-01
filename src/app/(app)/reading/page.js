@@ -772,27 +772,29 @@ export default function ReadingPage() {
         </div>
       </div>
 
-      <div className="topic-chips">
-        {(sourceMode === "wikipedia" ? WIKI_TOPICS : TOPICS).map(t => (
-          <button 
-            key={t.id} 
-            className={`topic-chip ${topic === t.id ? "active" : ""}`}
-            onClick={() => sourceMode === "wikipedia" ? generateWikipediaText(t.id) : generateAIText(t.id)}
-            disabled={generating}
-          >
-            <span className="chip-label">{t.label}</span>
-          </button>
-        ))}
-        {sourceMode === "ai" && (
-          <button 
-            className={`topic-chip special-chip ${topic === "Kelimelerim" ? "active" : ""}`}
-            onClick={generateStoryFromMyWords}
-            disabled={generating}
-          >
-            <span className="chip-label"><i className="fa-solid fa-magic-wand-sparkles" style={{ marginRight: 6 }}></i> Kelimelerimle Yaz</span>
-          </button>
-        )}
-      </div>
+      {!sidebarCollapsed && (
+        <div className="topic-chips">
+          {(sourceMode === "wikipedia" ? WIKI_TOPICS : TOPICS).map(t => (
+            <button 
+              key={t.id} 
+              className={`topic-chip ${topic === t.id ? "active" : ""}`}
+              onClick={() => sourceMode === "wikipedia" ? generateWikipediaText(t.id) : generateAIText(t.id)}
+              disabled={generating}
+            >
+              <span className="chip-label">{t.label}</span>
+            </button>
+          ))}
+          {sourceMode === "ai" && (
+            <button 
+              className={`topic-chip special-chip ${topic === "Kelimelerim" ? "active" : ""}`}
+              onClick={generateStoryFromMyWords}
+              disabled={generating}
+            >
+              <span className="chip-label"><i className="fa-solid fa-magic-wand-sparkles" style={{ marginRight: 6 }}></i> Kelimelerimle Yaz</span>
+            </button>
+          )}
+        </div>
+      )}
 
       <div className={`reading-grid ${sidebarCollapsed ? "collapsed-sidebar" : ""}`}>
         {!sidebarCollapsed && (
