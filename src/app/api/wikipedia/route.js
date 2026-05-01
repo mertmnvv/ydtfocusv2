@@ -118,7 +118,12 @@ const TOPIC_SEARCH_MAP = {
   ]
 };
 
-const HEADERS = { "Api-User-Agent": "YDTFocus/1.0 (https://ydtfocus.com)" };
+export const runtime = "edge";
+
+const HEADERS = { 
+  "User-Agent": "YDTFocusBot/1.0 (https://ydtfocus.com; mertmanav@gmail.com)",
+  "Api-User-Agent": "YDTFocusBot/1.0 (https://ydtfocus.com; mertmanav@gmail.com)" 
+};
 
 function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
