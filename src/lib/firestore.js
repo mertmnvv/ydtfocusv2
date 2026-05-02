@@ -711,3 +711,50 @@ export async function getFeedbacks() {
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
+
+// ===== GLOBAL DICTIONARY (FLASHCARDS) =====
+
+export async function getGlobalWordsByLevel(level, limitCount = 50) {
+  const globalRef = collection(db, "globalDictionary");
+  const q = query(globalRef, where("level", "==", level), limit(limitCount));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+export async function addGlobalWords(words) {
+  const batch = writeBatch(db);
+  for (const word of words) {
+    const docId = `${word.word.toLowerCase()}_${word.level}`;
+    const docRef = doc(db, "globalDictionary", docId);
+    batch.set(docRef, { ...word, addedAt: serverTimestamp() }, { merge: true });
+  }
+  await batch.commit();
+}
+
+// ===== USER FLASHCARD DECKS =====
+
+export async function getUserDecks(uid) {
+  const decksRef = collection(db, "users", uid, "flashcardDecks");
+  const q = query(decksRef, orderBy("createdAt", "desc"));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+export async function createUserDeck(uid, deckData) {
+  const decksRef = collection(db, "users", uid, "flashcardDecks");
+  const docRef = await addDoc(decksRef, {
+    ...deckData,
+    createdAt: serverTimestamp()
+  });
+  return docRef.id;
+}
+
+export async function updateUserDeck(uid, deckId, updates) {
+  const deckRef = doc(db, "users", uid, "flashcardDecks", deckId);
+  await updateDoc(deckRef, updates);
+}
+
+export async function deleteUserDeck(uid, deckId) {
+  const deckRef = doc(db, "users", uid, "flashcardDecks", deckId);
+  await deleteDoc(deckRef);
+}

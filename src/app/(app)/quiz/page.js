@@ -137,11 +137,7 @@ export default function QuizPage() {
       setSessionKey(Date.now());
       quizActiveRef.current = true;
 
-      if (selectedMode === "flash") {
-        setFlashIdx(0);
-        setFlashFlipped(false);
-        return;
-      }
+
 
       const count = selectedMode === "hybrid" ? 20 : Math.min(pool.length, 20);
       const qs = [];
@@ -248,15 +244,7 @@ export default function QuizPage() {
                 <p className="quiz-mode-desc">Yanlış bildiklerini tekrar et ve bankadan temizle</p>
               </div>
             </button>
-            <button className="glass-card quiz-mode-btn" onClick={() => startQuiz("flash")}>
-              <div className="quiz-mode-icon" style={{ color: "var(--primary)" }}>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-              </div>
-              <div className="quiz-mode-content">
-                <div className="quiz-mode-title">Flash Cards</div>
-                <p className="quiz-mode-desc">Hızlı görsel ve anlam tekrarı için kartlar</p>
-              </div>
-            </button>
+
         </div>
         <p className="hint-text" style={{ textAlign: "center", marginTop: 20 }}>Bankanda {words.length} kelime var</p>
 
@@ -296,59 +284,7 @@ export default function QuizPage() {
     }
   }
 
-  // FLASH CARDS
-  if (mode === "flash") {
-    if (words.length === 0) return <p className="hint-text" style={{ textAlign: "center", padding: 40 }}>Bankanız boş.</p>;
-    const safeIdx = Math.min(flashIdx, words.length - 1);
-    const card = words[safeIdx];
-    return (
-      <div style={{ maxWidth: 400, margin: "0 auto", textAlign: "center" }}>
-        <div className="header-split" style={{ marginBottom: 30 }}>
-          <button className="flash-back-btn" onClick={() => setMode(null)}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            Geri
-          </button>
-          <span className="hint-text" style={{ fontWeight: 800 }}>{safeIdx + 1} / {words.length}</span>
-        </div>
-        
-        <div className="flash-scene" onClick={() => setFlashFlipped(!flashFlipped)}>
-          <div className={`flash-card-inner ${flashFlipped ? "flipped" : ""}`}>
-            <div className="flash-front">
-              <div className="flash-word-text">{card.word}</div>
-              <button className="flash-audio-trigger" onClick={(e) => playAudio(card.word, e)} title="Dinle">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-              </button>
-              <span className="flash-hint">Çevirmek için tıkla</span>
-            </div>
-            <div className="flash-back">
-              <div className="flash-meaning-text">{card.meaning}</div>
-              {card.syn && card.syn !== "-" && <div className="flash-syn">{card.syn}</div>}
-              <span className="flash-hint">Kelimelere dön</span>
-            </div>
-          </div>
-        </div>
 
-        <div className="flash-nav-controls">
-          <button 
-            className="flash-nav-btn prev" 
-            disabled={safeIdx <= 0} 
-            onClick={() => { setFlashIdx(Math.max(0, safeIdx - 1)); setFlashFlipped(false); }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-            Önceki
-          </button>
-          <button 
-            className="flash-nav-btn next" 
-            disabled={safeIdx >= words.length - 1} 
-            onClick={() => { if (safeIdx < words.length - 1) { setFlashIdx(safeIdx + 1); setFlashFlipped(false); } }}
-          >
-            Sonraki
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   // SONUÇ EKRANI
   if (finished) {

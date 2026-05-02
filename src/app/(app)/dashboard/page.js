@@ -194,20 +194,32 @@ export default function DashboardPage() {
       <div className="dash-divider"></div>
 
       <div className="daily-focus-container">
-        <div className="glass-card daily-focus-card">
+        <div className="glass-card daily-focus-card minimal">
           <div className="focus-content">
             <div className="focus-label">BUGÜNÜN HEDEFİ</div>
-            <h2 className="focus-title">
-              {dueCount > 0 ? `${dueCount} Kelime Seni Bekliyor` : "Harika! Bugün her şey taze."}
-            </h2>
-            <p className="focus-desc">
-              {dueCount > 0
-                ? "Unutma eğrisine yenik düşmeden kelimelerini tekrar etmelisin."
-                : "Tüm kelimelerin şu an güvende. Yeni kelimeler ekleyerek ilerleyebilirsin."}
-            </p>
+            {dueCount > 0 ? (
+              <>
+                <h2 className="focus-title">{dueCount} Kelime Seni Bekliyor</h2>
+                <p className="focus-desc">Unutma eğrisine yenik düşmeden kelimelerini şimdi tazelemelisin.</p>
+              </>
+            ) : (
+              <>
+                <h2 className="focus-title">Harika! Bugün her şey taze.</h2>
+                <p className="focus-desc">Tüm kelimelerin şu an güvende. Yeni kelimeler ekleyerek ilerleyebilirsin.</p>
+              </>
+            )}
           </div>
-          <Link href={dueCount > 0 ? "/srs" : "/archive"} className={`focus-btn ${dueCount > 0 ? "pulse-animation" : ""}`}>
-            {dueCount > 0 ? "Akıllı Tekrarı Başlat" : "Sözlüğe Göz At"}
+          <Link 
+            href={dueCount > 0 ? "/srs" : "/archive"} 
+            className={`focus-btn ${dueCount > 0 ? 'quiz-btn pulse-animation' : 'archive-btn'}`}
+          >
+            {dueCount > 0 ? (
+              <>
+                <i className="fa-solid fa-bolt"></i> Focus Quiz'e Başla
+              </>
+            ) : (
+              "Sözlüğe Göz At"
+            )}
           </Link>
         </div>
       </div>
@@ -325,27 +337,35 @@ export default function DashboardPage() {
         .daily-focus-container { margin-bottom: 32px; }
         .daily-focus-card {
           display: flex; align-items: center; justify-content: space-between; gap: 24px;
-          background: linear-gradient(135deg, rgba(226, 183, 20, 0.1), rgba(10, 132, 255, 0.05));
+          background: linear-gradient(135deg, rgba(226, 183, 20, 0.1), rgba(48, 209, 88, 0.05));
           border: 1px solid rgba(226, 183, 20, 0.3); padding: 32px; border-radius: 24px;
         }
+        .daily-focus-card.minimal { padding: 32px 40px; }
         .focus-content { flex: 1; }
-        .focus-label { font-size: 0.7rem; font-weight: 800; color: var(--accent); letter-spacing: 1.5px; margin-bottom: 8px; }
-        .focus-title { font-size: 1.6rem; font-weight: 900; margin-bottom: 8px; color: var(--text); letter-spacing: -0.5px; }
-        .focus-desc { font-size: 0.95rem; color: var(--text-muted); line-height: 1.5; max-width: 400px; }
+        .focus-label { font-size: 0.75rem; font-weight: 800; color: var(--accent); letter-spacing: 2px; margin-bottom: 12px; }
+        .focus-title { font-size: 1.8rem; font-weight: 900; margin-bottom: 8px; color: var(--text); letter-spacing: -1px; }
+        .focus-desc { font-size: 1rem; color: var(--text-muted); line-height: 1.5; max-width: 460px; }
+        
         .focus-btn {
-          background: var(--accent); color: #000; padding: 16px 32px; border-radius: 16px;
+          display: flex; align-items: center; justify-content: center; gap: 10px;
+          padding: 18px 32px; border-radius: 20px;
           font-weight: 800; font-size: 1rem; text-decoration: none; transition: all 0.3s;
-          box-shadow: 0 10px 30px rgba(226, 183, 20, 0.3); white-space: nowrap;
+          white-space: nowrap; border: 1px solid transparent;
         }
-        .focus-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 40px rgba(226, 183, 20, 0.4); }
+        .focus-btn:hover { transform: translateY(-4px); }
+        .focus-btn.quiz-btn { background: var(--accent); color: #000; box-shadow: 0 10px 25px rgba(226, 183, 20, 0.2); }
+        .focus-btn.quiz-btn:hover { background: #fff; transform: translateY(-5px); box-shadow: 0 15px 35px rgba(226, 183, 20, 0.3); }
+        .focus-btn.archive-btn { background: var(--glass); border-color: var(--border); color: var(--text); }
+        .focus-btn.archive-btn:hover { background: rgba(255,255,255,0.1); }
+        
         .pulse-animation { animation: pulse-glow 2s infinite; }
         @keyframes pulse-glow {
-          0% { transform: scale(1); box-shadow: 0 10px 30px rgba(226, 183, 20, 0.3); }
-          50% { transform: scale(1.05); box-shadow: 0 15px 50px rgba(226, 183, 20, 0.6); }
-          100% { transform: scale(1); box-shadow: 0 10px 30px rgba(226, 183, 20, 0.3); }
+          0% { box-shadow: 0 0 0 0 rgba(226, 183, 20, 0.4); }
+          70% { box-shadow: 0 0 0 15px rgba(226, 183, 20, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(226, 183, 20, 0); }
         }
         @media (max-width: 768px) {
-          .daily-focus-card { flex-direction: column; text-align: center; padding: 24px; }
+          .daily-focus-card { flex-direction: column; text-align: center; padding: 32px 24px !important; }
           .focus-btn { width: 100%; }
           .focus-desc { margin: 0 auto; }
         }

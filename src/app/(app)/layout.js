@@ -22,6 +22,7 @@ const navItems = [
   { id: "grammar", label: "Gramer", href: "/grammar" },
   { id: "achievements", label: "Rozetler", href: "/achievements" },
   { id: "archive", label: "Sözlük", href: "/archive" },
+  { id: "flashcards-hub", label: "Flashcards", href: "/flashcards-hub" },
   { id: "mistakes", label: "Hatalar", href: "/mistakes" },
 ];
 
@@ -257,8 +258,8 @@ export default function AppLayout({ children }) {
         {[
           { id: "reading", label: "Read", href: "/reading", icon: "fa-book-open" },
           { id: "quiz", label: "Quiz", href: "/quiz", icon: "fa-bolt" },
+          { id: "flashcards-hub", label: "Cards", href: "/flashcards-hub", icon: "fa-layer-group" },
           { id: "grammar", label: "Grammar", href: "/grammar", icon: "fa-spell-check" },
-          { id: "achievements", label: "Rozetler", href: "/achievements", icon: "fa-trophy" },
           { id: "hero", label: "Hero", href: "/hero", icon: "fa-arrow-trend-up" },
         ].map(item => (
           <Link
