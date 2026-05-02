@@ -5,7 +5,6 @@ import { useAuth } from "@/context/AuthContext";
 import { getUserWords, updateUserWord, updateUserStats, refreshUserStreak } from "@/lib/firestore";
 import Link from "next/link";
 import { playSuccessSound, playErrorSound } from "@/lib/sounds";
-import ShareButton from "@/components/ShareButton";
 
 const FALLBACK_DISTRACTORS = [
   "vurgulamak", "anlamına gelmek", "iddia etmek", "kolaylaştırmak", "engellemek",
@@ -177,7 +176,6 @@ export default function SRSPage() {
                 <div className="quiz-sim-body">
                   <div className="quiz-sim-header-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, marginBottom: 40 }}>
                     <div className="quiz-sim-word" style={{ marginBottom: 0 }}>{q.word}</div>
-                    <ShareButton item={{...q, correctMeaning: q.meaning}} type="question" />
                   </div>
                   <div className="quiz-sim-options">
                     {q.options.map((opt, i) => {

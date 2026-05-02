@@ -5,7 +5,6 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { useSearchParams } from "next/navigation";
 import { subscribeToUserWords, addUserWord, completeReadingPassage, getUserMistakes, checkDailyLimit, incrementDailyLimit } from "@/lib/firestore";
-import ShareButton from "@/components/ShareButton";
 import PremiumModal from "@/components/PremiumModal";
 
 const TOPICS = [
@@ -162,11 +161,14 @@ export default function ReadingPage() {
   useEffect(() => {
     const sharedText = searchParams.get("loadText");
     const generateMode = searchParams.get("generate");
+    const sourceParam = searchParams.get("source");
 
     if (sharedText) {
       setText(decodeURIComponent(sharedText));
+      setSourceMode(sourceParam || "ai"); // Doğrudan analiz ekranına geç
       setQuizQuestions([]);
     } else if (generateMode === "special") {
+      setSourceMode("ai");
       // AI'ya tetikleyici gönder (2 sn gecikme asistanın hazır olması için)
       const timer = setTimeout(() => {
         window.dispatchEvent(new CustomEvent("focus-generate-special"));
@@ -744,7 +746,6 @@ export default function ReadingPage() {
           </h2>
           {sourceMode === "wikipedia" && <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '3px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: '#aaa', textTransform: 'uppercase' }}>Wikipedia</span>}
           {sourceMode === "ai" && <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '3px 10px', borderRadius: '8px', background: 'rgba(226,183,20,0.1)', color: 'var(--accent)', textTransform: 'uppercase' }}>AI</span>}
-          {text.trim() && <ShareButton item={{ text: text, title: topic }} type="reading" />}
         </div>
         <div className="reading-controls" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <button 

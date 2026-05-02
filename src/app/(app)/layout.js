@@ -8,7 +8,6 @@ import FloatingBank from "@/components/FloatingBank";
 import GlobalAI from "@/components/GlobalAI";
 import AuthModal from "@/components/AuthModal";
 import Onboarding from "@/components/Onboarding";
-import ChatHub from "@/components/ChatHub";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import PremiumModal from "@/components/PremiumModal";
 import PremiumPaywall from "@/components/PremiumPaywall";
@@ -246,12 +245,9 @@ export default function AppLayout({ children }) {
         </div>
       )}
 
-      {/* Page Content */}
       <main className="app-main">
         {children}
       </main>
-
-      <ChatHub />
 
       {/* Mobile Bottom Pill Nav (Pinned to Bottom) */}
       <nav className="mobile-bottom-nav">

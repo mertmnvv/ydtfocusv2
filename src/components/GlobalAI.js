@@ -391,16 +391,24 @@ Quizlerde bu kelimelere öncelik ver.
 
         /* ─── MOBILE FULLSCREEN ─── */
         @media (max-width: 768px) {
-          .global-ai-fab { bottom: 85px; left: 16px; width: 50px; height: 50px; }
-          .global-ai-panel { inset: 0; width: 100%; height: 100%; border-radius: 0; bottom: 0; left: 0; border: none; }
-          .global-ai-header { padding: 16px; padding-top: max(16px, env(safe-area-inset-top)); }
-          .global-ai-messages { padding: 16px; }
+          .global-ai-fab { bottom: 100px; left: 16px; width: 50px; height: 50px; }
+          .global-ai-panel { inset: 0; width: 100%; height: 100%; border-radius: 0; bottom: 0; left: 0; border: none; z-index: 10001; }
+          .global-ai-header { padding: 16px; padding-top: max(20px, env(safe-area-inset-top)); }
+          .global-ai-messages { padding: 16px; padding-bottom: 100px; }
           .ai-bubble { max-width: 92%; font-size: 1rem; padding: 14px 16px; }
           .ai-quiz-panel { padding: 20px 16px; top: 65px; }
           .quiz-question { font-size: 1rem; }
           .quiz-opt { padding: 16px; font-size: 1rem; }
           .suggestion-chip { padding: 12px 16px; font-size: 0.9rem; }
-          .global-ai-input { padding: 14px 16px; padding-bottom: max(14px, env(safe-area-inset-bottom)); }
+          .global-ai-input { 
+            padding: 16px; 
+            padding-bottom: max(24px, calc(env(safe-area-inset-bottom) + 16px));
+            background: rgba(28, 28, 30, 0.98);
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+          }
           .global-ai-input input { padding: 14px 16px; font-size: 1rem; }
           .global-ai-input button { width: 50px; height: 50px; }
         }

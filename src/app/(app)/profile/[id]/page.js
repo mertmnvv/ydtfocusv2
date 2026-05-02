@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { getDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { sendFriendRequest, getOrCreateChat } from "@/lib/firestore";
 import { useNotification } from "@/context/NotificationContext";
 
 export default function UserProfilePage() {
@@ -28,26 +27,6 @@ export default function UserProfilePage() {
     fetchProfile();
   }, [id]);
 
-  const handleAddFriend = async () => {
-    try {
-      await sendFriendRequest(user.uid, id);
-      showNotification("Arkadaşlık isteği gönderildi!", "success");
-    } catch (err) {
-      showNotification("İstek gönderilemedi.", "error");
-    }
-  };
-
-  const handleMessage = async () => {
-    try {
-      const chatId = await getOrCreateChat(user.uid, id);
-      // Mesajlar kutusunu açmak için bir state tetiklenebilir veya sayfaya gidilebilir
-      showNotification("Sohbet başlatıldı!", "success");
-      router.push(`/messages?chat=${chatId}`);
-    } catch (err) {
-      showNotification("Sohbet başlatılamadı.", "error");
-    }
-  };
-
   if (loading) return <div className="page-loading"><div className="spinner-ring"></div></div>;
   if (!profile) return <div className="page-error">Kullanıcı bulunamadı.</div>;
 
@@ -67,12 +46,7 @@ export default function UserProfilePage() {
               {stats.streak || 0} Günlük Seri
             </div>
           </div>
-          {user.uid !== id && (
-            <div className="profile-actions">
-              <button className="btn-primary" onClick={handleMessage}>Mesaj At</button>
-              <button className="btn-ghost" onClick={handleAddFriend}>Arkadaş Ekle</button>
-            </div>
-          )}
+          </div>
         </div>
 
         <div className="profile-stats-grid">

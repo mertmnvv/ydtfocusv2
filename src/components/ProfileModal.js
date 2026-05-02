@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { sendFriendRequest, getOrCreateChat } from "@/lib/firestore";
 import { useNotification } from "@/context/NotificationContext";
 import { BADGES } from "@/constants/badges";
 import PremiumModal from "./PremiumModal";
@@ -43,34 +42,6 @@ export default function ProfileModal({ userId, onClose }) {
     };
     fetchProfile();
   }, [userId]);
-
-  const handleAddFriend = async () => {
-    if (!isPremium) {
-      setIsPremiumModalOpen(true);
-      return;
-    }
-    try {
-      await sendFriendRequest(user.uid, userId);
-      showNotification("Arkadaşlık isteği gönderildi!", "success");
-    } catch (err) {
-      showNotification("İstek gönderilemedi.", "error");
-    }
-  };
-
-  const handleMessage = async () => {
-    if (!isPremium) {
-      setIsPremiumModalOpen(true);
-      return;
-    }
-    try {
-      const chatId = await getOrCreateChat(user.uid, userId);
-      showNotification("Sohbet merkezine gidiliyor...", "success");
-      onClose(); 
-      window.dispatchEvent(new CustomEvent("focus-open-chat", { detail: { chatId } }));
-    } catch (err) {
-      showNotification("Sohbet başlatılamadı.", "error");
-    }
-  };
 
   if (!userId) return null;
 
@@ -178,17 +149,6 @@ export default function ProfileModal({ userId, onClose }) {
                     );
                   })}
                 </div>
-              </div>
-            )}
-
-            {user.uid !== userId && (
-              <div className="p-modal-actions">
-                <button className="p-modal-btn-primary" onClick={handleMessage}>
-                  <i className="fa-solid fa-paper-plane"></i> Mesaj At
-                </button>
-                <button className="p-modal-btn-ghost" onClick={handleAddFriend}>
-                  <i className="fa-solid fa-user-plus"></i> Arkadaş Ekle
-                </button>
               </div>
             )}
           </div>
