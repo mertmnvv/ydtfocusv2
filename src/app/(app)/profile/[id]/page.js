@@ -9,7 +9,7 @@ import { useNotification } from "@/context/NotificationContext";
 
 export default function UserProfilePage() {
   const { id } = useParams();
-  const { user, userProfile } = useAuth();
+  const { user } = useAuth();
   const { showNotification } = useNotification();
   const router = useRouter();
   const [profile, setProfile] = useState(null);
@@ -45,7 +45,6 @@ export default function UserProfilePage() {
               <span className="status-dot"></span>
               {stats.streak || 0} Günlük Seri
             </div>
-          </div>
           </div>
         </div>
 
