@@ -411,6 +411,25 @@ export async function deleteGrammarTopic(topicId) {
   await deleteDoc(topicRef);
 }
 
+// ===== GRAMER AÇIKLAMALARI (PERSISTENT) =====
+
+export async function getGrammarExplanation(title) {
+  const docId = title.toLowerCase().trim().replace(/\s+/g, "_");
+  const ref = doc(db, "grammarExplanations", docId);
+  const snap = await getDoc(ref);
+  return snap.exists() ? snap.data() : null;
+}
+
+export async function saveGrammarExplanation(title, data) {
+  const docId = title.toLowerCase().trim().replace(/\s+/g, "_");
+  const ref = doc(db, "grammarExplanations", docId);
+  await setDoc(ref, {
+    title,
+    ...data,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+}
+
 // ===== TOPLU VERİ YÜKLEME (SEED) =====
 
 export async function batchAddArchiveWords(wordsArray) {

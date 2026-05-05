@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { useSearchParams } from "next/navigation";
-import { subscribeToUserWords, addUserWord, completeReadingPassage, getUserMistakes, checkDailyLimit, incrementDailyLimit } from "@/lib/firestore";
+import { subscribeToUserWords, addUserWord, completeReadingPassage, getUserMistakes, checkDailyLimit, incrementDailyLimit, getGrammarExplanation, saveGrammarExplanation } from "@/lib/firestore";
 import PremiumModal from "@/components/PremiumModal";
 
 const TOPICS = [
@@ -121,6 +121,23 @@ export default function ReadingPage() {
   const [conjunctions, setConjunctions] = useState([]);
   const [hoveredRef, setHoveredRef] = useState(null);
   const [hoveredConj, setHoveredConj] = useState(null);
+  const [keyVocab, setKeyVocab] = useState([]);
+  const [grammarPatterns, setGrammarPatterns] = useState([]);
+  const [isStudyFlipped, setIsStudyFlipped] = useState(false);
+  const [studyHighlight, setStudyHighlight] = useState(null);
+  const [flippedGrammarCards, setFlippedGrammarCards] = useState({});
+
+  // Audio Player States
+  const [isReading, setIsReading] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [readSpeed, setReadSpeed] = useState(1);
+  const [autoHighlight, setAutoHighlight] = useState(true);
+  const [spokenWordIndex, setSpokenWordIndex] = useState(-1);
+  const [currentSentenceIdx, setCurrentSentenceIdx] = useState(0);
+  const [processedPassage, setProcessedPassage] = useState([]); // { sentence: string, words: string[] }
+  const audioRef = useRef(null);
+  const [isBuffering, setIsBuffering] = useState(false);
+  const [availableVoices, setAvailableVoices] = useState([]);
 
   function speakWord(w) {
     if (!w) return;
@@ -207,6 +224,40 @@ export default function ReadingPage() {
   // Sayfa içeriğini Focus AI'ya bildir
   useEffect(() => {
     if (text) {
+      const paras = text.split(/\n\s*\n/).filter(p => p.trim());
+      const structure = [];
+      let globalSentenceIdx = 0;
+
+      paras.forEach((para, pi) => {
+        const sentences = para.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [para];
+        const paraSentences = [];
+        sentences.forEach(s => {
+          // Google TTS limiti (~200 karakter) için uzun cümleleri böl
+          const chunks = s.length > 180 ? s.match(/.{1,180}(?:\s|$)|.{1,180}/g) || [s] : [s];
+          
+          chunks.forEach(chunk => {
+            paraSentences.push({
+              original: chunk,
+              globalIdx: globalSentenceIdx++,
+              tokens: chunk.split(/(\s+)/).map(t => ({
+                text: t,
+                isWord: t.trim() && !/^[^a-zA-Z0-9]+$/.test(t.trim())
+              }))
+            });
+          });
+        });
+        structure.push(paraSentences);
+      });
+      setProcessedPassage(structure);
+    } else {
+      setProcessedPassage([]);
+    }
+    // Yeni metne geçince sesi durdur ve sıfırla
+    stopReading();
+  }, [text]);
+
+  useEffect(() => {
+    if (text) {
       const event = new CustomEvent("focus-page-context", {
         detail: {
           type: "reading_passage",
@@ -218,6 +269,153 @@ export default function ReadingPage() {
       window.dispatchEvent(event);
     }
   }, [text, topic]);
+
+  useEffect(() => {
+    const loadVoices = () => {
+      const voices = window.speechSynthesis.getVoices();
+      setAvailableVoices(voices);
+    };
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+    return () => { window.speechSynthesis.cancel(); };
+  }, []);
+
+  // Sesli Okuma Fonksiyonları (Edge-TTS API)
+  async function startReading(startIdx = -1) {
+    const allSentences = processedPassage.flat();
+    const idx = startIdx >= 0 ? startIdx : currentSentenceIdx;
+    
+    if (idx >= allSentences.length) {
+      stopReading();
+      return;
+    }
+
+    if (isPaused && startIdx === -1 && audioRef.current) {
+      audioRef.current.play();
+      setIsPaused(false);
+      setIsReading(true);
+      return;
+    }
+
+    // Durdur ve temizle
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+
+    setIsBuffering(true);
+    setCurrentSentenceIdx(idx);
+
+    try {
+      const sentenceObj = allSentences[idx];
+      const response = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          text: sentenceObj.original,
+          voice: 'en-US-AndrewNeural' // Yüksek kaliteli erkek sesi
+        })
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "TTS sunucusuna ulaşılamadı");
+      }
+
+      const contentType = response.headers.get('Content-Type');
+      if (!contentType || !contentType.includes('audio')) {
+        throw new Error("Sunucu geçerli bir ses dosyası döndürmedi");
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.playbackRate = readSpeed;
+      audioRef.current = audio;
+
+      audio.ontimeupdate = () => {
+        if (autoHighlight && audio.duration) {
+          const progress = audio.currentTime / audio.duration;
+          const wordTokens = sentenceObj.tokens.filter(t => t.isWord);
+          const currentWordIdx = Math.floor(progress * wordTokens.length);
+          setSpokenWordIndex(currentWordIdx);
+        }
+      };
+
+      audio.onplay = () => {
+        setIsReading(true);
+        setIsPaused(false);
+        setIsBuffering(false);
+      };
+
+      audio.onended = () => {
+        setSpokenWordIndex(-1);
+        if (idx < allSentences.length - 1) {
+          startReading(idx + 1);
+        } else {
+          stopReading();
+        }
+      };
+
+      audio.onerror = () => {
+        console.error("Ses çalma hatası");
+        setIsBuffering(false);
+        stopReading();
+      };
+
+      audio.play();
+    } catch (err) {
+      console.error(err);
+      setIsBuffering(false);
+      showNotification("Ses yüklenemedi", "error");
+    }
+  }
+
+  function pauseReading() {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setIsPaused(true);
+      setIsReading(false);
+    }
+  }
+
+  function stopReading() {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setIsReading(false);
+    setIsPaused(false);
+    setIsBuffering(false);
+    setSpokenWordIndex(-1);
+    setCurrentSentenceIdx(0);
+  }
+
+  function seekAudio(direction) {
+    const allSentences = processedPassage.flat();
+    let newIdx = currentSentenceIdx + direction;
+    if (newIdx < 0) newIdx = 0;
+    if (newIdx >= allSentences.length) newIdx = allSentences.length - 1;
+    
+    stopReading();
+    setCurrentSentenceIdx(newIdx);
+    setTimeout(() => startReading(newIdx), 50);
+  }
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = readSpeed;
+    }
+  }, [readSpeed]);
+
+  useEffect(() => {
+    if (isReading && !isPaused) {
+      // Hız değişirse yeniden başlat
+      const wasReading = isReading;
+      stopReading();
+      if (wasReading) startReading();
+    }
+  }, [readSpeed]);
 
   // Quiz Sonucunu Dinle ve Başarıyı Tetikle
   useEffect(() => {
@@ -268,6 +466,12 @@ export default function ReadingPage() {
       ],
       "conjunctions": [
         {"word": "however/when/etc", "type": "contrast/time/etc", "tr": "Türkçe anlamı"}
+      ],
+      "key_vocabulary": [
+        {"word": "string", "type": "noun/verb/adj", "tr": "Turkish meaning"}
+      ],
+      "grammar_patterns": [
+        {"title": "string", "description": "English desc", "description_tr": "Türkçe açıklama", "found_in_text": "EXACT sentence from text", "examples": [{"en": "string", "tr": "string"}]}
       ]
     Important: The 'target' MUST match a substring in the 'en' text exactly.
     Length: 150-200 words.`;
@@ -289,10 +493,21 @@ export default function ReadingPage() {
         setPassageTitle(parsed.title || "");
         setText(parsed.en || "");
         setTranslatedText(parsed.tr || "");
+        const rawGrammar = parsed.grammar_patterns || [];
+        const finalizedGrammar = await Promise.all(rawGrammar.map(async (g) => {
+          const cached = await getGrammarExplanation(g.title);
+          if (cached) return { ...g, description: cached.description, description_tr: cached.description_tr };
+          await saveGrammarExplanation(g.title, { description: g.description, description_tr: g.description_tr });
+          return g;
+        }));
+
         setLogicLines(parsed.logic_lines || []);
         setConjunctions(parsed.conjunctions || []);
+        setKeyVocab(parsed.key_vocabulary || []);
+        setGrammarPatterns(finalizedGrammar);
         setQuizQuestions([]); 
         setIsFlipped(false);
+        setIsStudyFlipped(false);
         setCurrentCardIdx(0);
 
         // Başarılı ise limiti artır
@@ -359,7 +574,13 @@ export default function ReadingPage() {
       Format: Return ONLY a valid JSON object with keys: 
         "title": "Academic Title",
         "en": "English text (Sophisticated, professional, words in **bold**)",
-        "tr": "Accurate academic Turkish translation"
+        "tr": "Accurate academic Turkish translation",
+        "key_vocabulary": [
+          {"word": "string", "type": "noun/verb/adj", "tr": "Turkish meaning"}
+        ],
+        "grammar_patterns": [
+          {"title": "string", "description": "English desc", "description_tr": "Türkçe açıklama", "found_in_text": "EXACT sentence from text", "examples": [{"en": "string", "tr": "string"}]}
+        ]
       
       Length: 150-200 words.`;
       
@@ -376,12 +597,23 @@ export default function ReadingPage() {
       const data = await response.json();
       if (data.choices?.[0]?.message?.content) {
         const parsed = JSON.parse(data.choices[0].message.content);
+        const rawGrammar = parsed.grammar_patterns || [];
+        const finalizedGrammar = await Promise.all(rawGrammar.map(async (g) => {
+          const cached = await getGrammarExplanation(g.title);
+          if (cached) return { ...g, description: cached.description, description_tr: cached.description_tr };
+          await saveGrammarExplanation(g.title, { description: g.description, description_tr: g.description_tr });
+          return g;
+        }));
+
         setPassageTitle(parsed.title || "");
         setText(parsed.en || "");
         setTranslatedText(parsed.tr || "");
         setTopic("Kelimelerim");
+        setKeyVocab(parsed.key_vocabulary || []);
+        setGrammarPatterns(finalizedGrammar);
         setQuizQuestions([]);
         setIsFlipped(false);
+        setIsStudyFlipped(false);
         showNotification(`Hikaye oluşturuldu! Kullanılan kelimeler: ${selectedWords.join(", ")}`, "success");
 
         // Başarılı ise limiti artır
@@ -410,28 +642,82 @@ export default function ReadingPage() {
     setWikiUrl("");
     setWikiThumbnail("");
     try {
-      const response = await fetch("/api/wikipedia", {
+      const wikiResp = await fetch("/api/wikipedia", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topic: t }),
       });
-      const data = await response.json();
+      const data = await wikiResp.json();
       if (data.error) {
         showNotification(data.error, "error");
         setText("");
+        setGenerating(false);
       } else {
         setPassageTitle(data.title || "");
         setText(data.text || "");
         setTranslatedText(data.tr || "");
         setWikiUrl(data.url || "");
         setWikiThumbnail(data.thumbnail || "");
+
+        // Wikipedia Metni için AI Analizi (Kelime ve Gramer)
+        analyzeTextForStudyDeck(data.text);
       }
     } catch (error) {
       console.error(error);
       showNotification("Wikipedia bağlantı hatası.", "error");
+      setGenerating(false);
+    }
+    setIsFinished(false);
+  }
+
+  async function analyzeTextForStudyDeck(passage) {
+    if (!passage) return;
+    const prompt = `Analyze the following academic text for English learners (YDT level).
+    1. Extract 6-9 key academic words (Key Vocabulary).
+    2. Identify 2-3 important grammar patterns/structures used in the text. Provide the EXACT sentence from the text where this pattern is used.
+    
+    Format: Return ONLY a valid JSON object with keys:
+    "key_vocabulary": [{"word": "string", "type": "noun/verb/adj", "tr": "Turkish meaning"}],
+    "grammar_patterns": [{"title": "string", "description": "English description", "description_tr": "Türkçe detaylı açıklama", "found_in_text": "EXACT sentence from text", "examples": [{"en": "string", "tr": "string"}]}]
+    
+    Text: ${passage}`;
+
+    try {
+      const response = await fetch("/api/groq", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "llama-3.1-8b-instant",
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.1,
+          response_format: { type: "json_object" },
+        }),
+      });
+      const data = await response.json();
+      const parsed = JSON.parse(data.choices[0].message.content);
+      const rawGrammar = parsed.grammar_patterns || [];
+      
+      // Gramer açıklamalarını DB'den kontrol et veya kaydet
+      const finalizedGrammar = await Promise.all(rawGrammar.map(async (g) => {
+        const cached = await getGrammarExplanation(g.title);
+        if (cached) {
+          return { ...g, description: cached.description, description_tr: cached.description_tr };
+        } else {
+          // Henüz yoksa kaydet
+          await saveGrammarExplanation(g.title, { 
+            description: g.description, 
+            description_tr: g.description_tr 
+          });
+          return g;
+        }
+      }));
+
+      setKeyVocab(parsed.key_vocabulary || []);
+      setGrammarPatterns(finalizedGrammar);
+    } catch (err) {
+      console.error("Analysis error:", err);
     }
     setGenerating(false);
-    setIsFinished(false);
   }
 
   async function handleCompleteReading() {
@@ -557,6 +843,15 @@ export default function ReadingPage() {
               const isCurrentTarget = hoveredRef && hoveredRef.target.toLowerCase().includes(clean);
               
               const isActiveRef = hoveredRef && hoveredRef.ref.toLowerCase() === clean;
+              
+              // Study Highlight: Kelime veya cümle eşleşmesi
+              const isStudyActive = studyHighlight && (
+                clean === studyHighlight.toLowerCase() || 
+                studyHighlight.toLowerCase().includes(clean) && clean.length > 3
+              );
+
+              // Audio Highlight (Mavi Işık)
+              const isAudioActive = autoHighlight && ti === spokenWordIndex;
 
               return (
                 <span 
@@ -566,6 +861,8 @@ export default function ReadingPage() {
                     ${isConj ? "conj-ref" : ""} 
                     ${isActiveRef || isCurrentTarget ? "connection-active" : ""} 
                     ${hoveredConj && hoveredConj.word.toLowerCase() === clean ? "conj-active" : ""}
+                    ${isStudyActive ? "study-highlight-active" : ""}
+                    ${isAudioActive ? "audio-highlight-active" : ""}
                   `}
                   style={{ cursor: 'pointer' }}
                   onMouseEnter={() => {
@@ -641,32 +938,55 @@ export default function ReadingPage() {
   }
 
   function renderAnalysis() {
-    if (!text.trim()) return null;
+    if (!processedPassage.length) return null;
     
-    // Paragraflara böl
-    const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim());
-    
-    return paragraphs.map((para, pi) => {
-      // Cümlelere böl
-      const sentences = para.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [para];
-      
-      return (
-        <div key={pi} className="reading-paragraph">
-          {para.split(/(\s+)/).map((token, ti) => {
-            const clean = token.replace(/[^\p{L}]/gu, "").toLowerCase().trim();
-            if (!clean || clean.length < 2) return <span key={ti}>{token}</span>;
-            const isSaved = myWords.some(w => w.word?.toLowerCase() === clean);
-            const isAcademic = YDT_ACADEMIC_WORDS.includes(clean);
-            return (
-              <span key={ti} className={`hover-word ${isSaved ? "is-saved" : ""} ${isAcademic ? "academic-word" : ""}`}
-                onClick={() => lookupWord(clean)}>
-                {token}
-              </span>
-            );
-          })}
-        </div>
-      );
-    });
+    return (
+      <div className="reading-content-wrapper">
+        {processedPassage.map((paraSentences, pi) => (
+          <div key={pi} className="reading-paragraph">
+            {paraSentences.map((sObj) => {
+              const si = sObj.globalIdx;
+              const isCurrentSentence = isReading || isPaused ? si === currentSentenceIdx : false;
+              let wordCounter = 0;
+
+              return (
+                <span key={si} className={`reading-sentence ${isCurrentSentence && autoHighlight ? 'sentence-active' : ''}`}>
+                  {sObj.tokens.map((token, ti) => {
+                    if (!token.isWord) return <span key={ti}>{token.text}</span>;
+                    
+                    const clean = token.text.replace(/[^\p{L}]/gu, "").toLowerCase().trim();
+                    const isSaved = myWords.some(w => w.word?.toLowerCase() === clean);
+                    const isAcademic = YDT_ACADEMIC_WORDS.includes(clean);
+                    
+                    const currentWordIdx = wordCounter;
+                    wordCounter++;
+
+                    const isStudyActive = studyHighlight && (
+                      clean === studyHighlight.toLowerCase() || 
+                      studyHighlight.toLowerCase().includes(clean) && clean.length > 3
+                    );
+
+                    const isAudioActive = isCurrentSentence && autoHighlight && currentWordIdx === spokenWordIndex;
+
+                    return (
+                      <span key={ti} className={`hover-word 
+                        ${isSaved ? "is-saved" : ""} 
+                        ${isAcademic ? "academic-word" : ""} 
+                        ${isStudyActive ? "study-highlight-active" : ""}
+                        ${isAudioActive ? "audio-highlight-active" : ""}
+                      `}
+                        onClick={() => lookupWord(clean)}>
+                        {token.text}
+                      </span>
+                    );
+                  })}
+                </span>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    );
   }
 
   return (
@@ -706,27 +1026,6 @@ export default function ReadingPage() {
             </button>
           </div>
 
-          <style jsx>{`
-            .source-selection-container { max-width: 700px; margin: 40px auto; padding: 0 16px; }
-            .source-selection-header { text-align: center; margin-bottom: 40px; }
-            .source-subtitle { color: #888; font-size: 0.95rem; margin-top: 8px; }
-            .source-cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-            .source-card {
-              background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
-              border-radius: 24px; padding: 36px 28px; text-align: center; cursor: pointer;
-              transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; gap: 12px;
-            }
-            .source-card:hover { border-color: var(--accent); background: rgba(226,183,20,0.04); transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
-            .source-card-icon { width: 72px; height: 72px; border-radius: 22px; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 8px; }
-            .wiki-icon { background: rgba(255,255,255,0.06); color: #fff; }
-            .ai-icon { background: rgba(226,183,20,0.1); color: var(--accent); }
-            .source-card h3 { font-size: 1.2rem; font-weight: 900; color: #fff; margin: 0; }
-            .source-card p { font-size: 0.82rem; color: #888; line-height: 1.5; margin: 0; }
-            .source-card-tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
-            .stag { font-size: 0.65rem; font-weight: 700; padding: 3px 10px; border-radius: 8px; background: rgba(255,255,255,0.04); color: #aaa; border: 1px solid rgba(255,255,255,0.06); text-transform: uppercase; letter-spacing: 0.3px; }
-            .source-card:hover .stag { border-color: rgba(226,183,20,0.2); color: var(--accent); }
-            @media (max-width: 600px) { .source-cards-grid { grid-template-columns: 1fr; } .source-card { padding: 28px 20px; } }
-          `}</style>
         </div>
       ) : (
       <>
@@ -850,6 +1149,54 @@ export default function ReadingPage() {
                     <div className="reading-display">
                       {streamMode ? renderStreamMode() : renderAnalysis()}
                     </div>
+                    
+                    {/* AUDIO PLAYER CONTROLS */}
+                    {!streamMode && text.trim() && (
+                      <div className="audio-player-bar animate-slideUp">
+                        <div className="audio-player-content">
+                          <div className="player-main-ctrls">
+                            <button className="player-btn-secondary" onClick={() => seekAudio(-1)} title="Geri Al">
+                              <i className="fa-solid fa-backward-step"></i>
+                            </button>
+                            <button className="player-btn-main" onClick={isReading ? pauseReading : () => startReading()}>
+                              <i className={`fa-solid ${isReading ? "fa-pause" : "fa-play"}`}></i>
+                            </button>
+                            <button className="player-btn-secondary" onClick={() => seekAudio(1)} title="İleri Al">
+                              <i className="fa-solid fa-forward-step"></i>
+                            </button>
+                            
+                            <div className="speed-control-wrapper">
+                              <i className="fa-solid fa-gauge-high speed-icon"></i>
+                              <select value={readSpeed} onChange={e => setReadSpeed(parseFloat(e.target.value))} className="speed-select-premium">
+                                <option value="0.5">0.5x</option>
+                                <option value="0.75">0.75x</option>
+                                <option value="1">1.0x</option>
+                                <option value="1.25">1.25x</option>
+                                <option value="1.5">1.5x</option>
+                                <option value="2">2.0x</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="player-extra-ctrls">
+                             <button 
+                               className={`premium-toggle-btn ${autoHighlight ? 'active' : ''}`}
+                               onClick={() => {
+                                 const next = !autoHighlight;
+                                 setAutoHighlight(next);
+                                 showNotification(next ? "Otomatik İşaretleme Açıldı" : "İşaretleme Kapatıldı", "info");
+                               }}
+                             >
+                               <div className="toggle-dot"></div>
+                               <span className="toggle-text">İşaretle</span>
+                             </button>
+                             <div className="player-status-tag">
+                                {isBuffering ? "YÜKLENİYOR..." : isReading ? <span className="status-pulse">OKUNUYOR</span> : isPaused ? "DURAKLATILDI" : "HAZIR"}
+                             </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* BACK: TURKISH TRANSLATION */}
@@ -912,6 +1259,128 @@ export default function ReadingPage() {
                   ))}
                 </div>
               )}
+
+              {/* STUDY DECK (VOCAB & GRAMMAR) */}
+              {(keyVocab.length > 0 || grammarPatterns.length > 0) && (
+                <div className="study-deck-wrapper animate-fadeIn" style={{ marginTop: 40, marginBottom: 40 }}>
+                  <div className="study-deck-header">
+                    <div className="study-deck-title">
+                      <i className={`fa-solid ${isStudyFlipped ? 'fa-book-open' : 'fa-list-check'}`}></i>
+                      <span>{isStudyFlipped ? 'Grammar Patterns' : 'Key Vocabulary'}</span>
+                    </div>
+                    <button className="study-flip-toggle" onClick={() => setIsStudyFlipped(!isStudyFlipped)}>
+                      {isStudyFlipped ? 'Kelime Kartlarına Dön' : 'Gramer Yapılarına Bak'}
+                      <i className="fa-solid fa-rotate"></i>
+                    </button>
+                  </div>
+
+                  <div className={`study-deck-scene ${isStudyFlipped ? 'is-flipped' : ''}`}>
+                    <div className="study-deck-inner">
+                      {/* FRONT: KEY VOCABULARY */}
+                      <div className="study-deck-front">
+                        <div className="vocab-grid">
+                          {keyVocab.map((v, i) => (
+                            <div key={i} className={`vocab-item-card animate-slideIn ${studyHighlight === v.word ? 'active-highlight' : ''}`} 
+                                 style={{ animationDelay: `${i * 0.05}s`, cursor: 'pointer' }}
+                                 onClick={() => {
+                                   const targetWord = v.word;
+                                   setStudyHighlight(prev => prev === targetWord ? null : targetWord);
+                                   
+                                   // Vurgulanan kelimeye yumuşak geçiş yap
+                                   setTimeout(() => {
+                                     const activeEl = document.querySelector('.study-highlight-active');
+                                     if (activeEl) {
+                                       activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                     }
+                                   }, 100);
+                                 }}>
+                              <div className="vocab-card-header">
+                                <button className="v-icon-btn" onClick={() => speakWord(v.word)}>
+                                  <i className="fa-solid fa-volume-high"></i>
+                                </button>
+                                <button className="v-icon-btn" onClick={() => {
+                                  setWordInput(v.word);
+                                  setMeaningInput(v.tr);
+                                  setSynInput("-");
+                                  setShowResultCard(true);
+                                }}>
+                                  <i className="fa-solid fa-bookmark"></i>
+                                </button>
+                              </div>
+                              <div className="vocab-card-body">
+                                <div className="v-word-row">
+                                  <span className="v-type">{v.type}</span>
+                                  <h3 className="v-word">{v.word}</h3>
+                                </div>
+                                <p className="v-meaning">{v.tr}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* BACK: GRAMMAR PATTERNS */}
+                      <div className="study-deck-back">
+                        <div className="grammar-list">
+                          {grammarPatterns.map((g, i) => (
+                            <div key={i} className={`grammar-card-scene ${flippedGrammarCards[i] ? 'g-is-flipped' : ''}`}
+                                 onClick={(e) => {
+                                   if (e.target.closest('.g-found-tag')) return;
+                                   setFlippedGrammarCards(prev => ({...prev, [i]: !prev[i]}));
+                                 }}>
+                              <div className="grammar-card-inner">
+                                {/* G-FRONT: ENGLISH & EXAMPLES */}
+                                <div className="grammar-card-front grammar-item-card">
+                                  <div className="grammar-card-header">
+                                    <h3 className="g-title">{g.title}</h3>
+                                    <span className="g-flip-hint"><i className="fa-solid fa-language"></i> Tıkla: Açıklama</span>
+                                  </div>
+                                  <p className="g-desc">{g.description}</p>
+                                  <div className="g-examples">
+                                    {g.examples?.map((ex, ei) => (
+                                      <div key={ei} className="g-example-item">
+                                        <p className="ex-en">{ex.en}</p>
+                                        <p className="ex-tr">{ex.tr}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  {g.found_in_text && (
+                                    <div className="g-found-tag" onClick={(e) => {
+                                      e.stopPropagation();
+                                      const targetText = g.found_in_text;
+                                      setStudyHighlight(prev => prev === targetText ? null : targetText);
+                                      
+                                      // Vurgulanan gramer yapısına yumuşak geçiş yap
+                                      setTimeout(() => {
+                                        const activeEl = document.querySelector('.study-highlight-active');
+                                        if (activeEl) {
+                                          activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        }
+                                      }, 100);
+                                    }}>
+                                      <i className="fa-solid fa-magnifying-glass"></i> Metinde Göster
+                                    </div>
+                                  )}
+                                </div>
+                                {/* G-BACK: TURKISH EXPLANATION */}
+                                <div className="grammar-card-back grammar-item-card academic-tr-bg">
+                                  <div className="grammar-card-header">
+                                    <h3 className="g-title" style={{ color: 'var(--accent)' }}>{g.title} (Açıklama)</h3>
+                                    <span className="g-flip-hint">Geri Dön <i className="fa-solid fa-rotate"></i></span>
+                                  </div>
+                                  <div className="g-tr-content">
+                                    <p>{g.description_tr || "Açıklama hazırlanıyor..."}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           ) : (
             <div className="empty-analysis-state">
@@ -934,6 +1403,238 @@ export default function ReadingPage() {
 
       </>
       )}
+
+      <style jsx>{`
+        /* Source Selection */
+        .source-selection-container { max-width: 700px; margin: 40px auto; padding: 0 16px; }
+        .source-selection-header { text-align: center; margin-bottom: 40px; }
+        .source-subtitle { color: #888; font-size: 0.95rem; margin-top: 8px; }
+        .source-cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .source-card {
+          background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 24px; padding: 36px 28px; text-align: center; cursor: pointer;
+          transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; gap: 12px;
+        }
+        .source-card:hover { border-color: var(--accent); background: rgba(226,183,20,0.04); transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+        .source-card-icon { width: 72px; height: 72px; border-radius: 22px; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 8px; }
+        .wiki-icon { background: rgba(255,255,255,0.06); color: #fff; }
+        .ai-icon { background: rgba(226,183,20,0.1); color: var(--accent); }
+        .source-card h3 { font-size: 1.2rem; font-weight: 900; color: #fff; margin: 0; }
+        .source-card p { font-size: 0.82rem; color: #888; line-height: 1.5; margin: 0; }
+        .source-card-tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
+        .stag { font-size: 0.65rem; font-weight: 700; padding: 3px 10px; border-radius: 8px; background: rgba(255,255,255,0.04); color: #aaa; border: 1px solid rgba(255,255,255,0.06); text-transform: uppercase; letter-spacing: 0.3px; }
+        .source-card:hover .stag { border-color: rgba(226,183,20,0.2); color: var(--accent); }
+
+        /* Study Deck */
+        .study-deck-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .study-deck-title { display: flex; align-items: center; gap: 10px; font-weight: 900; color: #fff; font-size: 1.1rem; }
+        .study-deck-title i { color: var(--accent); }
+        .study-flip-toggle { 
+          background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); 
+          color: #fff; padding: 8px 16px; border-radius: 12px; font-size: 0.75rem; font-weight: 700;
+          display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;
+        }
+        .study-flip-toggle:hover { background: rgba(255,255,255,0.1); border-color: var(--accent); }
+        .study-flip-toggle i { font-size: 0.8rem; }
+
+        .study-deck-scene { perspective: 1500px; display: grid; position: relative; margin-bottom: 40px; }
+        .study-deck-inner { 
+          display: grid;
+          grid-template-columns: 1fr;
+          transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); 
+          transform-style: preserve-3d; 
+        }
+        .study-deck-scene.is-flipped .study-deck-inner { transform: rotateY(180deg); }
+
+        .study-deck-front, .study-deck-back { 
+          grid-area: 1 / 1;
+          backface-visibility: hidden; 
+          border-radius: 24px; 
+          height: fit-content;
+        }
+        .study-deck-back { transform: rotateY(180deg); }
+
+        /* Vocabulary Cards */
+        .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+        .vocab-item-card { 
+          background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); 
+          border-radius: 20px; padding: 20px; transition: all 0.3s ease;
+        }
+        .vocab-item-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); }
+        .vocab-card-header { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 12px; }
+        .v-icon-btn { 
+          background: none; border: none; color: #666; cursor: pointer; font-size: 0.9rem; transition: color 0.2s;
+        }
+        .v-icon-btn:hover { color: var(--accent); }
+        .v-word-row { margin-bottom: 8px; }
+        .v-type { font-size: 0.65rem; color: #888; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; }
+        .v-word { font-size: 1.2rem; font-weight: 900; color: #fff; margin: 2px 0; }
+        .v-meaning { font-size: 0.9rem; color: #aaa; margin: 0; line-height: 1.4; }
+
+        /* Grammar Cards */
+        /* Grammar Cards Flip */
+        .grammar-card-scene { perspective: 1000px; min-height: 250px; cursor: pointer; }
+        .grammar-card-inner {
+          position: relative; width: 100%; height: 100%; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+          transform-style: preserve-3d;
+        }
+        .grammar-card-scene.g-is-flipped .grammar-card-inner { transform: rotateX(180deg); }
+        .grammar-card-front, .grammar-card-back {
+          position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
+          border-radius: 20px;
+        }
+        .grammar-card-back { transform: rotateX(180deg); }
+        .academic-tr-bg { background: rgba(226, 183, 20, 0.05) !important; border-color: rgba(226, 183, 20, 0.2) !important; }
+        .g-flip-hint { font-size: 0.65rem; color: var(--accent); font-weight: 700; text-transform: uppercase; }
+        .g-tr-content { font-size: 0.95rem; color: #fff; line-height: 1.6; padding: 10px 0; }
+
+        .grammar-list { display: flex; flex-direction: column; gap: 20px; }
+        .grammar-item-card { 
+          background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); 
+          border-radius: 20px; padding: 24px; position: relative;
+        }
+        .grammar-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .g-title { font-size: 1.1rem; font-weight: 900; color: #fff; margin: 0; }
+        .g-save-btn { background: none; border: none; color: #666; cursor: pointer; }
+        .g-save-btn:hover { color: var(--accent); }
+        .g-desc { font-size: 0.9rem; color: #aaa; line-height: 1.6; margin-bottom: 20px; }
+        .g-examples { display: flex; flex-direction: column; gap: 12px; }
+        .g-example-item { padding-left: 12px; border-left: 3px solid var(--accent); }
+        .ex-en { font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
+        .ex-tr { font-size: 0.85rem; color: #888; font-style: italic; }
+
+        .g-found-tag { 
+          display: inline-flex; align-items: center; gap: 6px; font-size: 0.7rem; font-weight: 800;
+          color: var(--accent); background: rgba(226,183,20,0.1); padding: 4px 10px; border-radius: 8px;
+          margin-top: 8px; text-transform: uppercase;
+        }
+
+        /* Highlight Styles */
+        :global(.study-highlight-active) {
+          background: rgba(226,183,20,0.3) !important;
+          color: #fff !important;
+          border-radius: 4px;
+          box-shadow: 0 0 15px rgba(226,183,20,0.4);
+          transition: all 0.3s ease;
+          padding: 2px 0;
+        }
+        .vocab-item-card.active-highlight, .grammar-item-card.active-highlight {
+          border-color: var(--accent);
+          background: rgba(226,183,20,0.08);
+          transform: scale(1.02);
+        }
+
+        /* Audio Player Styles */
+        .audio-player-bar {
+          margin-top: 20px;
+          background: rgba(0,0,0,0.2);
+          border: 1px solid rgba(255,255,255,0.05);
+          border-radius: 20px;
+          padding: 12px 20px;
+        }
+        .audio-player-content { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+        .player-main-ctrls { display: flex; align-items: center; gap: 12px; }
+        .player-btn-main { 
+          width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: #000; 
+          border: none; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center;
+          transition: transform 0.2s;
+        }
+        .player-btn-main:hover { transform: scale(1.1); }
+        .player-btn-secondary { 
+          background: rgba(255,255,255,0.05); color: #fff; border: none; width: 36px; height: 36px; 
+          border-radius: 50%; cursor: pointer; transition: background 0.2s;
+        }
+        .player-btn-secondary:hover { background: rgba(255,255,255,0.1); color: var(--accent); }
+        
+        .speed-control-wrapper { 
+          display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); 
+          padding: 4px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
+        }
+        .speed-icon { font-size: 0.8rem; color: var(--accent); }
+        .speed-select-premium {
+          background: transparent; border: none; color: #fff; font-size: 0.8rem; font-weight: 800; 
+          cursor: pointer; outline: none; padding-right: 5px;
+        }
+        .speed-select-premium option { background: #1a1a1a; color: #fff; }
+
+        .player-extra-ctrls { display: flex; align-items: center; gap: 20px; }
+        .toggle-highlight-box { display: flex; align-items: center; gap: 10px; }
+        .toggle-label { font-size: 0.75rem; font-weight: 800; color: #aaa; }
+        
+        .player-status-tag { 
+          font-size: 0.65rem; font-weight: 900; letter-spacing: 1px; color: var(--accent);
+          background: rgba(226,183,20,0.1); padding: 4px 12px; border-radius: 8px;
+        }
+        .status-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        /* Custom Switch */
+        .toggle-switch { position: relative; display: inline-block; width: 34px; height: 20px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { 
+          position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; 
+          background-color: rgba(255,255,255,0.1); transition: .4s; border-radius: 20px; 
+        }
+        .slider:before { 
+          position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; 
+          background-color: white; transition: .4s; border-radius: 50%; 
+        }
+        input:checked + .slider { background-color: var(--accent); }
+        input:checked + .slider:before { transform: translateX(14px); }
+
+        /* Premium Toggle Button */
+        .premium-toggle-btn {
+          display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 6px 14px;
+          cursor: pointer; transition: all 0.3s ease;
+        }
+        .premium-toggle-btn.active {
+          background: rgba(0, 162, 255, 0.1); border-color: rgba(0, 162, 255, 0.4);
+        }
+        .toggle-dot {
+          width: 12px; height: 12px; border-radius: 50%; background: #555;
+          transition: all 0.3s ease; box-shadow: 0 0 0 rgba(0, 162, 255, 0);
+        }
+        .premium-toggle-btn.active .toggle-dot {
+          background: #00a2ff; box-shadow: 0 0 10px #00a2ff;
+        }
+        .toggle-text { font-size: 0.75rem; font-weight: 800; color: #aaa; transition: color 0.3s; }
+        .premium-toggle-btn.active .toggle-text { color: #fff; }
+
+        /* Unified Highlighting */
+        .reading-sentence { 
+          transition: background 0.3s ease; 
+          border-radius: 8px; 
+          padding: 4px 6px;
+          margin: 2px -4px;
+          display: inline;
+          line-height: 1.8;
+        }
+        .sentence-active { 
+          background: rgba(0, 162, 255, 0.15) !important; 
+          box-shadow: 0 0 0 2px rgba(0, 162, 255, 0.1);
+        }
+
+        /* Audio Highlighting (Strong Blue Light) */
+        :global(.audio-highlight-active) {
+          background: #00a2ff !important;
+          box-shadow: 0 0 20px rgba(0, 162, 255, 0.7);
+          border-radius: 4px;
+          color: #fff !important;
+          transition: all 0.05s ease;
+          position: relative;
+          z-index: 10;
+          padding: 0 4px;
+          margin: 0 -2px;
+        }
+
+        @media (max-width: 600px) {
+          .source-cards-grid { grid-template-columns: 1fr; }
+          .source-card { padding: 28px 20px; }
+          .vocab-grid { grid-template-columns: 1fr 1fr; }
+          .v-word { font-size: 1.1rem; }
+        }
+      `}</style>
 
       {showResultCard && (
         <div className="responsive-lookup-overlay" onClick={() => setShowResultCard(false)}>
