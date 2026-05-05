@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { useSearchParams } from "next/navigation";
@@ -101,6 +101,14 @@ const YDT_ACADEMIC_WORDS = [
 ];
 
 export default function ReadingPage() {
+  return (
+    <Suspense fallback={<div className="page-loading"><div className="spinner-ring"></div></div>}>
+      <ReadingContent />
+    </Suspense>
+  );
+}
+
+function ReadingContent() {
   const { user, requireAuth, isPremium, setPremiumModalOpen } = useAuth();
   const { showNotification } = useNotification();
   const [text, setText] = useState("");

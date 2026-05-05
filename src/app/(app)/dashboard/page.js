@@ -5,15 +5,12 @@ import { useAuth } from "@/context/AuthContext";
 import { getUserWords, getUserStats, updateLastReminderDate, checkAndGrantBadges, getUserHeroStats, subscribeToUserWords, subscribeToUserStats } from "@/lib/firestore";
 import { BADGES } from "@/constants/badges";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import Leaderboard from "@/components/Leaderboard";
 import CustomDialog from "@/components/CustomDialog";
 import PremiumModal from "@/components/PremiumModal";
 
 export default function DashboardPage() {
   const { user, userProfile, isAdmin, isPremium } = useAuth();
-  const searchParams = useSearchParams();
-  const activeTab = searchParams.get("tab") || "stats";
   const [words, setWords] = useState([]);
   const [stats, setStats] = useState({ correct: 0, wrong: 0, streak: 0, studyTime: 0, weeklyMinutes: 0 });
   const [loading, setLoading] = useState(true);

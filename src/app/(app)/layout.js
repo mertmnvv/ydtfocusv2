@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import FloatingBank from "@/components/FloatingBank";
 import GlobalAI from "@/components/GlobalAI";
@@ -29,25 +29,8 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { useFcmToken } from "@/hooks/useFcmToken";
 
 export default function AppLayout({ children }) {
-  const { user, userProfile, loading, logout, isAdmin, isPremium, premiumModalOpen, setPremiumModalOpen } = useAuth();
-  useFcmToken(user);
+  const { user, loading } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [switcherOpen, setSwitcherOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [showPaywall, setShowPaywall] = useState(false);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    if (!loading && user && !isPremium) {
-      const hasSeenSession = sessionStorage.getItem("paywall_session_seen");
-      if (!hasSeenSession) {
-        setShowPaywall(true);
-      }
-    }
-  }, [user, loading, isPremium]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -68,16 +51,41 @@ export default function AppLayout({ children }) {
 
   if (!user) return null;
 
+  return (
+    <Suspense fallback={<div className="page-loading"><div className="spinner-ring"></div></div>}>
+      <AppContent children={children} />
+    </Suspense>
+  );
+}
+
+function AppContent({ children }) {
+  const { user, userProfile, logout, isAdmin, isPremium, premiumModalOpen, setPremiumModalOpen } = useAuth();
+  useFcmToken(user);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+
+  useEffect(() => {
+    if (user && !isPremium) {
+      const hasSeenSession = sessionStorage.getItem("paywall_session_seen");
+      if (!hasSeenSession) {
+        setShowPaywall(true);
+      }
+    }
+  }, [user, isPremium]);
+
   const currentTabParam = searchParams.get("tab");
   
   let activeTab = navItems.find(item => pathname.startsWith(item.href))?.id || "dashboard";
   
-  // Dashboard içinde özel sekme kontrolü (Mobil Bot Bar için)
   if (activeTab === "dashboard" && currentTabParam === "leaderboard") {
     activeTab = "leaderboard";
   }
 
-  // Linefocus sayfasında navbar gösterme (standalone)
   if (pathname === "/linefocus") {
     return <>{children}</>;
   }
@@ -140,63 +148,56 @@ export default function AppLayout({ children }) {
           </div>
           <div className="nav-user">
             <ThemeToggle />
-            {user ? (
-              <div className="profile-menu-wrapper">
-                <button
-                  className={`profile-mini-trigger ${profileOpen ? "active" : ""}`}
-                  onClick={() => setProfileOpen(!profileOpen)}
-                >
-                  <div className="profile-avatar">
-                    {userProfile?.photoURL ? (
-                      <img src={userProfile.photoURL} alt="Profil" className="avatar-img" />
-                    ) : (
-                      userProfile?.displayName?.[0] || user.email?.[0] || "U"
-                    )}
-                  </div>
-                  <div className="profile-info">
-                    <span className="profile-name">
-                      {userProfile?.displayName || "Kullanıcı"}
-                      {isAdmin ? (
-                        <i className="fa-solid fa-user-shield" style={{ color: "#ff453a", marginLeft: 6, fontSize: "0.7rem" }} title="Yönetici"></i>
-                      ) : isPremium ? (
-                        <i className="fa-solid fa-crown" style={{ color: "var(--accent)", marginLeft: 6, fontSize: "0.7rem" }} title="Premium Üye"></i>
-                      ) : null}
-                    </span>
-                    <span className="profile-sub-text">Hesabım <i className="fa-solid fa-chevron-down"></i></span>
-                  </div>
-                </button>
+            <div className="profile-menu-wrapper">
+              <button
+                className={`profile-mini-trigger ${profileOpen ? "active" : ""}`}
+                onClick={() => setProfileOpen(!profileOpen)}
+              >
+                <div className="profile-avatar">
+                  {userProfile?.photoURL ? (
+                    <img src={userProfile.photoURL} alt="Profil" className="avatar-img" />
+                  ) : (
+                    userProfile?.displayName?.[0] || user.email?.[0] || "U"
+                  )}
+                </div>
+                <div className="profile-info">
+                  <span className="profile-name">
+                    {userProfile?.displayName || "Kullanıcı"}
+                    {isAdmin ? (
+                      <i className="fa-solid fa-user-shield" style={{ color: "#ff453a", marginLeft: 6, fontSize: "0.7rem" }} title="Yönetici"></i>
+                    ) : isPremium ? (
+                      <i className="fa-solid fa-crown" style={{ color: "var(--accent)", marginLeft: 6, fontSize: "0.7rem" }} title="Premium Üye"></i>
+                    ) : null}
+                  </span>
+                  <span className="profile-sub-text">Hesabım <i className="fa-solid fa-chevron-down"></i></span>
+                </div>
+              </button>
 
-                {profileOpen && (
-                  <>
-                    <div className="switcher-overlay" onClick={() => setProfileOpen(false)} />
-                    <div className="profile-dropdown">
-                      <Link href="/dashboard" className="profile-drop-item" onClick={() => setProfileOpen(false)}>
-                        <i className="fa-solid fa-chart-line"></i>
-                        <span>Profilim</span>
-                      </Link>
-                      <Link href="/mistakes" className="profile-drop-item" onClick={() => setProfileOpen(false)}>
-                        <i className="fa-solid fa-circle-xmark"></i>
-                        <span>Hatalarım</span>
-                      </Link>
-                      <button className="profile-drop-item" onClick={() => { setShowFeedback(true); setProfileOpen(false); }}>
-                        <i className="fa-solid fa-comments"></i>
-                        <span>Geri Bildirim</span>
-                      </button>
-                      <div className="drop-divider"></div>
-                      <button onClick={() => { logout(); setProfileOpen(false); }} className="profile-drop-item logout-red">
-                        <i className="fa-solid fa-right-from-bracket"></i>
-                        <span>Çıkış Yap</span>
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            ) : (
-              <>
-                <Link href="/login" className="nav-btn">Giriş</Link>
-                <Link href="/register" className="nav-btn nav-btn-primary" style={{ background: "var(--accent)", color: "#000" }}>Kayıt Ol</Link>
-              </>
-            )}
+              {profileOpen && (
+                <>
+                  <div className="switcher-overlay" onClick={() => setProfileOpen(false)} />
+                  <div className="profile-dropdown">
+                    <Link href="/dashboard" className="profile-drop-item" onClick={() => setProfileOpen(false)}>
+                      <i className="fa-solid fa-chart-line"></i>
+                      <span>Profilim</span>
+                    </Link>
+                    <Link href="/mistakes" className="profile-drop-item" onClick={() => setProfileOpen(false)}>
+                      <i className="fa-solid fa-circle-xmark"></i>
+                      <span>Hatalarım</span>
+                    </Link>
+                    <button className="profile-drop-item" onClick={() => { setShowFeedback(true); setProfileOpen(false); }}>
+                      <i className="fa-solid fa-comments"></i>
+                      <span>Geri Bildirim</span>
+                    </button>
+                    <div className="drop-divider"></div>
+                    <button onClick={() => { logout(); setProfileOpen(false); }} className="profile-drop-item logout-red">
+                      <i className="fa-solid fa-right-from-bracket"></i>
+                      <span>Çıkış Yap</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
           {/* Mobile Hamburger Button */}
           <button className="mobile-hamburger" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
@@ -232,23 +233,12 @@ export default function AppLayout({ children }) {
                 <span className="mobile-menu-label">Admin</span>
               </Link>
             )}
-            {user ? (
-              <button
-                className="mobile-menu-item logout"
-                onClick={() => { logout(); setMobileMenuOpen(false); }}
-              >
-                <span className="mobile-menu-label">Çıkış</span>
-              </button>
-            ) : (
-              <>
-                <Link href="/login" className="mobile-menu-item" onClick={() => setMobileMenuOpen(false)}>
-                  <span className="mobile-menu-label">Giriş Yap</span>
-                </Link>
-                <Link href="/register" className="mobile-menu-item" style={{ borderColor: "var(--accent)" }} onClick={() => setMobileMenuOpen(false)}>
-                  <span className="mobile-menu-label" style={{ color: "var(--accent)" }}>Kayıt Ol</span>
-                </Link>
-              </>
-            )}
+            <button
+              className="mobile-menu-item logout"
+              onClick={() => { logout(); setMobileMenuOpen(false); }}
+            >
+              <span className="mobile-menu-label">Çıkış</span>
+            </button>
           </div>
         </div>
       )}
@@ -257,7 +247,7 @@ export default function AppLayout({ children }) {
         {children}
       </main>
 
-      {/* Mobile Bottom Pill Nav (Pinned to Bottom) */}
+      {/* Mobile Bottom Pill Nav */}
       <nav className="mobile-bottom-nav">
         {[
           { id: "reading", label: "Read", href: "/reading", icon: "fa-book-open" },
@@ -289,7 +279,6 @@ export default function AppLayout({ children }) {
               <i className="fa-solid fa-user" style={{ fontSize: '0.9rem', color: 'var(--accent)' }}></i>
             )}
           </div>
-          {/* Küçük bir gösterge ikonu */}
           <i className="fa-solid fa-circle-user" style={{ 
             position: 'absolute', 
             bottom: '10px', 
@@ -302,7 +291,7 @@ export default function AppLayout({ children }) {
         </button>
       </nav>
 
-      {/* Mobil Profil Menüsü (Kapsül Popup) */}
+      {/* Mobil Profil Menüsü */}
       {profileOpen && (
         <div className="mobile-profile-popup-overlay hide-desktop" onClick={() => setProfileOpen(false)}>
           <div className="mobile-profile-popup" onClick={e => e.stopPropagation()}>
@@ -354,39 +343,31 @@ export default function AppLayout({ children }) {
         </div>
       )}
 
-      {/* Footer (Desktop only) */}
+      {/* Footer */}
       <footer className="app-footer hide-mobile">
         <div className="footer-content">
           <span className="footer-brand">ydt<span>focus</span></span>
           <span className="footer-copy">© 2026 YDT Focus | Mert Manav</span>
         </div>
       </footer>
-      {/* Floating Bank */}
       <FloatingBank />
-      {/* Global AI Assistant */}
       <GlobalAI />
-      {/* Global Auth Modal */}
       <AuthModal />
-      {/* Premium Paywall (Full Screen for non-premium) */}
       <PremiumPaywall 
         isOpen={showPaywall} 
         onClose={() => {
           setShowPaywall(false);
           sessionStorage.setItem("paywall_session_seen", "true");
         }} 
-        onUpgrade={(plan) => {
+        onUpgrade={() => {
           setShowPaywall(false);
           sessionStorage.setItem("paywall_session_seen", "true");
           setPremiumModalOpen(true);
         }}
       />
-      {/* Onboarding Tour */}
       <Onboarding onOpenPremium={() => setPremiumModalOpen(true)} />
-      {/* Premium Modal */}
       <PremiumModal isOpen={premiumModalOpen} onClose={() => setPremiumModalOpen(false)} />
-      {/* Feedback Modal */}
       <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
-      {/* PWA Mobile App Prompt */}
       <PWAInstallPrompt />
     </div>
   );
