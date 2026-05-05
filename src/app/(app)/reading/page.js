@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { useSearchParams } from "next/navigation";
-import { subscribeToUserWords, addUserWord, completeReadingPassage, getUserMistakes, checkDailyLimit, incrementDailyLimit, getGrammarExplanation, saveGrammarExplanation } from "@/lib/firestore";
+import { subscribeToUserWords, addUserWord, completeReadingPassage, getUserMistakes, checkDailyLimit, incrementDailyLimit } from "@/lib/firestore";
 import PremiumModal from "@/components/PremiumModal";
 
 const TOPICS = [
@@ -493,18 +493,10 @@ export default function ReadingPage() {
         setPassageTitle(parsed.title || "");
         setText(parsed.en || "");
         setTranslatedText(parsed.tr || "");
-        const rawGrammar = parsed.grammar_patterns || [];
-        const finalizedGrammar = await Promise.all(rawGrammar.map(async (g) => {
-          const cached = await getGrammarExplanation(g.title);
-          if (cached) return { ...g, description: cached.description, description_tr: cached.description_tr };
-          await saveGrammarExplanation(g.title, { description: g.description, description_tr: g.description_tr });
-          return g;
-        }));
-
         setLogicLines(parsed.logic_lines || []);
         setConjunctions(parsed.conjunctions || []);
         setKeyVocab(parsed.key_vocabulary || []);
-        setGrammarPatterns(finalizedGrammar);
+        setGrammarPatterns(parsed.grammar_patterns || []);
         setQuizQuestions([]); 
         setIsFlipped(false);
         setIsStudyFlipped(false);
@@ -597,20 +589,12 @@ export default function ReadingPage() {
       const data = await response.json();
       if (data.choices?.[0]?.message?.content) {
         const parsed = JSON.parse(data.choices[0].message.content);
-        const rawGrammar = parsed.grammar_patterns || [];
-        const finalizedGrammar = await Promise.all(rawGrammar.map(async (g) => {
-          const cached = await getGrammarExplanation(g.title);
-          if (cached) return { ...g, description: cached.description, description_tr: cached.description_tr };
-          await saveGrammarExplanation(g.title, { description: g.description, description_tr: g.description_tr });
-          return g;
-        }));
-
         setPassageTitle(parsed.title || "");
         setText(parsed.en || "");
         setTranslatedText(parsed.tr || "");
         setTopic("Kelimelerim");
         setKeyVocab(parsed.key_vocabulary || []);
-        setGrammarPatterns(finalizedGrammar);
+        setGrammarPatterns(parsed.grammar_patterns || []);
         setQuizQuestions([]);
         setIsFlipped(false);
         setIsStudyFlipped(false);
@@ -695,25 +679,8 @@ export default function ReadingPage() {
       });
       const data = await response.json();
       const parsed = JSON.parse(data.choices[0].message.content);
-      const rawGrammar = parsed.grammar_patterns || [];
-      
-      // Gramer açıklamalarını DB'den kontrol et veya kaydet
-      const finalizedGrammar = await Promise.all(rawGrammar.map(async (g) => {
-        const cached = await getGrammarExplanation(g.title);
-        if (cached) {
-          return { ...g, description: cached.description, description_tr: cached.description_tr };
-        } else {
-          // Henüz yoksa kaydet
-          await saveGrammarExplanation(g.title, { 
-            description: g.description, 
-            description_tr: g.description_tr 
-          });
-          return g;
-        }
-      }));
-
       setKeyVocab(parsed.key_vocabulary || []);
-      setGrammarPatterns(finalizedGrammar);
+      setGrammarPatterns(parsed.grammar_patterns || []);
     } catch (err) {
       console.error("Analysis error:", err);
     }
@@ -1472,27 +1439,53 @@ export default function ReadingPage() {
         .v-meaning { font-size: 0.9rem; color: #aaa; margin: 0; line-height: 1.4; }
 
         /* Grammar Cards */
-        /* Grammar Cards Flip */
-        .grammar-card-scene { perspective: 1000px; min-height: 250px; cursor: pointer; }
+        /* Grammar Cards - Compact & Stable Grid Version */
+        .grammar-card-scene { 
+          perspective: 1200px; 
+          cursor: pointer; 
+          margin-bottom: 8px; /* Boşluk azaltıldı */
+        }
         .grammar-card-inner {
-          position: relative; width: 100%; height: 100%; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+          display: grid;
+          grid-template-areas: "stack";
+          transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
           transform-style: preserve-3d;
         }
-        .grammar-card-scene.g-is-flipped .grammar-card-inner { transform: rotateX(180deg); }
+        .grammar-card-scene.g-is-flipped .grammar-card-inner { transform: rotateY(180deg); }
+        
         .grammar-card-front, .grammar-card-back {
-          position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
-          border-radius: 20px;
+          grid-area: stack;
+          width: 100%; 
+          backface-visibility: hidden; 
+          border-radius: 16px;
         }
-        .grammar-card-back { transform: rotateX(180deg); }
+        
+        .grammar-card-front {
+          z-index: 2;
+          transform: rotateY(0deg);
+        }
+        
+        .grammar-card-back {
+          transform: rotateY(180deg);
+          z-index: 1;
+          background: rgba(226, 183, 20, 0.08) !important;
+        }
+
+        .grammar-list { 
+          display: flex; 
+          flex-direction: column; 
+          gap: 10px; /* Kartlar arası boşluk daraltıldı */
+        }
+        .grammar-item-card { 
+          background: rgba(255,255,255,0.03); 
+          border: 1px solid rgba(255,255,255,0.08); 
+          border-radius: 16px; 
+          padding: 16px 20px; /* İç boşluklar optimize edildi */
+          position: relative;
+        }
         .academic-tr-bg { background: rgba(226, 183, 20, 0.05) !important; border-color: rgba(226, 183, 20, 0.2) !important; }
         .g-flip-hint { font-size: 0.65rem; color: var(--accent); font-weight: 700; text-transform: uppercase; }
         .g-tr-content { font-size: 0.95rem; color: #fff; line-height: 1.6; padding: 10px 0; }
-
-        .grammar-list { display: flex; flex-direction: column; gap: 20px; }
-        .grammar-item-card { 
-          background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); 
-          border-radius: 20px; padding: 24px; position: relative;
-        }
         .grammar-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .g-title { font-size: 1.1rem; font-weight: 900; color: #fff; margin: 0; }
         .g-save-btn { background: none; border: none; color: #666; cursor: pointer; }
@@ -1628,11 +1621,65 @@ export default function ReadingPage() {
           margin: 0 -2px;
         }
 
-        @media (max-width: 600px) {
-          .source-cards-grid { grid-template-columns: 1fr; }
-          .source-card { padding: 28px 20px; }
-          .vocab-grid { grid-template-columns: 1fr 1fr; }
-          .v-word { font-size: 1.1rem; }
+        /* --- MOBILE OPTIMIZATION --- */
+        @media (max-width: 1024px) {
+          .analysis-layout { 
+            grid-template-columns: 1fr !important; 
+            height: auto !important; 
+            overflow: visible !important; 
+            padding: 20px !important; 
+            gap: 20px;
+          }
+          .study-panel { 
+            height: auto !important; 
+            overflow: visible !important; 
+          }
+          .study-scroll-area {
+            max-height: 500px;
+          }
+          .content-container {
+            padding-bottom: 100px; /* Nav bar space */
+          }
+          .source-selection-container {
+            padding: 20px 16px;
+          }
+          .source-cards-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .text-header-card {
+            padding: 15px 20px;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+          }
+          .header-actions {
+            width: 100%;
+            justify-content: flex-end;
+          }
+          .passage-card {
+            padding: 25px 20px;
+          }
+          .passage-text {
+            font-size: 1.15rem !important;
+          }
+          .audio-dock {
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+          }
+          .audio-meta {
+            width: 100%;
+            justify-content: center;
+          }
+          .speed-slider {
+            flex: 1;
+          }
+          .vocab-grid {
+            grid-template-columns: 1fr;
+          }
         }
       `}</style>
 

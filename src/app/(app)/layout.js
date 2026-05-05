@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import FloatingBank from "@/components/FloatingBank";
@@ -38,6 +38,7 @@ export default function AppLayout({ children }) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (!loading && user && !isPremium) {
@@ -67,7 +68,14 @@ export default function AppLayout({ children }) {
 
   if (!user) return null;
 
-  const activeTab = navItems.find(item => pathname.startsWith(item.href))?.id || "dashboard";
+  const currentTabParam = searchParams.get("tab");
+  
+  let activeTab = navItems.find(item => pathname.startsWith(item.href))?.id || "dashboard";
+  
+  // Dashboard içinde özel sekme kontrolü (Mobil Bot Bar için)
+  if (activeTab === "dashboard" && currentTabParam === "leaderboard") {
+    activeTab = "leaderboard";
+  }
 
   // Linefocus sayfasında navbar gösterme (standalone)
   if (pathname === "/linefocus") {
@@ -256,13 +264,14 @@ export default function AppLayout({ children }) {
           { id: "quiz", label: "Quiz", href: "/quiz", icon: "fa-bolt" },
           { id: "flashcards-hub", label: "Cards", href: "/flashcards-hub", icon: "fa-layer-group" },
           { id: "grammar", label: "Grammar", href: "/grammar", icon: "fa-spell-check" },
-          { id: "hero", label: "Hero", href: "/hero", icon: "fa-arrow-trend-up" },
+          { id: "achievements", label: "Rozetler", href: "/achievements", icon: "fa-medal" },
         ].map(item => (
           <Link
             key={item.id}
             href={item.href}
             className={`bottom-nav-item ${activeTab === item.id ? "active" : ""}`}
             onClick={() => setProfileOpen(false)}
+            title={item.label}
           >
             <i className={`fa-solid ${item.icon}`}></i>
           </Link>
@@ -271,14 +280,25 @@ export default function AppLayout({ children }) {
         <button
           className={`bottom-nav-item profile ${profileOpen ? "active" : ""}`}
           onClick={() => setProfileOpen(!profileOpen)}
+          style={{ position: 'relative' }}
         >
           <div className="bottom-nav-avatar-mini">
             {userProfile?.photoURL ? (
               <img src={userProfile.photoURL} alt="Profil" className="avatar-img" />
             ) : (
-              userProfile?.displayName?.[0] || user?.email?.[0] || "U"
+              <i className="fa-solid fa-user" style={{ fontSize: '0.9rem', color: 'var(--accent)' }}></i>
             )}
           </div>
+          {/* Küçük bir gösterge ikonu */}
+          <i className="fa-solid fa-circle-user" style={{ 
+            position: 'absolute', 
+            bottom: '10px', 
+            right: '12px', 
+            fontSize: '0.6rem', 
+            color: profileOpen ? 'var(--accent)' : '#86868b',
+            background: 'var(--bg)',
+            borderRadius: '50%'
+          }}></i>
         </button>
       </nav>
 

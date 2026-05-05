@@ -180,34 +180,76 @@ export async function incrementStudyMinutes(uid, minutes) {
   const userRef = doc(db, "users", uid);
   
   const now = new Date();
+  const today = now.toLocaleDateString('tr-TR');
   const weekNumber = getWeekNumber(now);
   
   const snap = await getDoc(statsRef);
   const data = snap.exists() ? snap.data() : {};
   
+  // Haftalık Sıfırlama Mantığı
   let weeklyMinutes = data.weeklyMinutes || 0;
+  let weeklyReadings = data.weeklyReadings || 0;
   if (data.lastWeekNumber !== weekNumber) {
     weeklyMinutes = minutes;
+    weeklyReadings = 0;
   } else {
     weeklyMinutes += minutes;
   }
 
+  // Günlük Sıfırlama Mantığı
+  let dailyMinutes = data.dailyMinutes || 0;
+  if (data.lastDate !== today) {
+    dailyMinutes = minutes;
+  } else {
+    dailyMinutes += minutes;
+  }
+
   await updateDoc(statsRef, { 
-    dailyMinutes: increment(minutes),
+    dailyMinutes: dailyMinutes,
     weeklyMinutes: weeklyMinutes,
-    lastWeekNumber: weekNumber
+    weeklyReadings: weeklyReadings,
+    lastWeekNumber: weekNumber,
+    lastDate: today
   });
 
   await updateDoc(userRef, { 
     "publicStats.totalMinutes": increment(minutes),
-    "publicStats.weeklyMinutes": weeklyMinutes
+    "publicStats.weeklyMinutes": weeklyMinutes,
+    "publicStats.dailyMinutes": dailyMinutes,
+    "publicStats.lastWeekNumber": weekNumber,
+    "publicStats.lastDate": today
   });
 }
 
 export async function completeReadingPassage(uid) {
+  const statsRef = doc(db, "users", uid, "data", "stats");
   const userRef = doc(db, "users", uid);
+  const now = new Date();
+  const weekNumber = getWeekNumber(now);
+  const today = now.toLocaleDateString('tr-TR');
+
+  const statsSnap = await getDoc(statsRef);
+  const statsData = statsSnap.exists() ? statsSnap.data() : {};
+
+  let weeklyReadings = statsData.weeklyReadings || 0;
+  if (statsData.lastWeekNumber !== weekNumber) {
+    weeklyReadings = 1;
+  } else {
+    weeklyReadings += 1;
+  }
+
+  await updateDoc(statsRef, {
+    weeklyReadings: weeklyReadings,
+    lastWeekNumber: weekNumber,
+    lastDate: today
+  });
+
   await updateDoc(userRef, {
-    readingsCompleted: increment(1)
+    readingsCompleted: increment(1),
+    "publicStats.readingsCompleted": increment(1),
+    "publicStats.weeklyReadings": weeklyReadings,
+    "publicStats.lastWeekNumber": weekNumber,
+    "publicStats.lastDate": today
   });
 }
 
@@ -367,12 +409,37 @@ export async function getAllUsers() {
 export async function getLeaderboard(category = "streak", limitCount = 10) {
   const usersRef = collection(db, "users");
   const field = `publicStats.${category}`;
-  const q = query(
-    usersRef, 
-    where(field, ">", 0), 
-    orderBy(field, "desc"), 
-    limit(limitCount)
-  );
+  
+  const now = new Date();
+  const today = now.toLocaleDateString('tr-TR');
+  const weekNumber = getWeekNumber(now);
+
+  let q;
+  if (category === "weeklyMinutes" || category === "weeklyReadings") {
+    q = query(
+      usersRef,
+      where("publicStats.lastWeekNumber", "==", weekNumber),
+      where(field, ">", 0),
+      orderBy(field, "desc"),
+      limit(limitCount)
+    );
+  } else if (category === "dailyMinutes") {
+    q = query(
+      usersRef,
+      where("publicStats.lastDate", "==", today),
+      where(field, ">", 0),
+      orderBy(field, "desc"),
+      limit(limitCount)
+    );
+  } else {
+    q = query(
+      usersRef, 
+      where(field, ">", 0), 
+      orderBy(field, "desc"), 
+      limit(limitCount)
+    );
+  }
+
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }

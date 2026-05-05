@@ -17,26 +17,33 @@ Platformun ana amacı, akademik kelime dağarcığını geliştirmek, okuduğunu
 
 ## Son Güncellemeler ve İnovasyonlar
 
-### AI-Native Sözlük ve Çeviri Motoru
-Geleneksel sözlük servislerinin yerini alan, tamamen yapay zeka tabanlı yeni nesil sözlük sistemi. 
-- **Hata Denetimi:** Hiçbir kelime cevapsız kalmaz; en temelden en akademiğe tüm terimler AI tarafından anında analiz edilir.
-- **Seri Arama:** Sözlük paneli içindeki yeni arama barı ile paneli kapatmadan arka arkaya kelime aratabilme.
+### SmartStream Reading v2 & Dinamik Gramer
+Okuma modülü, statik yapılardan arınarak tamamen dinamik bir yapıya kavuşturuldu.
+- **Context-Aware Gramer:** Her metin için yapay zeka tarafından o an üretilen, bağlama özel gramer açıklamaları. Statik veritabanı yerine metnin ruhuna uygun analizler.
+- **Modern Animasyonlar:** Kart dönüşlerinde "yukarıdan aşağı" yerine daha modern ve akıcı olan "sağdan sola" (`rotateY`) flip animasyonları.
+- **Tam Mobil Optimizasyon:** Okuma paneli, mobilde dikey akışa (stacked) uyumlu, kart bazlı bir yapıya dönüştürüldü.
 
-### YDT Pro Metin Mühendisliği
-Okuma metni üretim algoritması profesyonel akademik yayın standartlarına yükseltildi.
-- **Kompleks Sözdizimi:** Yan cümlecikli, edilgen çatılı ve akademik bağlaçlarla örülmüş zengin pasajlar.
-- **Mantıksal Akış:** Cümleler arası kusursuz geçişler ve profesyonel argüman yapıları.
+### Mobil Navigasyon ve Deneyim (Botbar)
+Masaüstü ve mobil deneyimi birbirinden ayıran, modern bir navigasyon mimarisi kuruldu.
+- **MobileBotBar:** Uygulamayı bir mobil uygulama (Native App) hissiyatına kavuşturan, parmak ucunda erişilebilir navigasyon barı.
+- **Hızlı Erişim:** İstatistikler, Okuma, Quiz, Kelime Kartları ve Rozetler arasında tek dokunuşla geçiş.
 
-### LineFocus Aydınlık Mod ve Kullanıcı Deneyimi
-- **Premium Aydınlık Tema:** Yüksek okunabilirlik sunan profesyonel aydınlık tema desteği.
-- **Veri Filtreleme:** Kelime bankasından teknik verilerin sızmasını engelleyen veri temizleme algoritması.
+### Oyunlaştırma ve Rozet (Achievements) Sistemi
+Öğrencinin motivasyonunu ve sürekliliğini ödüllendiren kapsamlı bir rozet ekosistemi.
+- **Kategorik Rozetler:** Çalışma serisi (Streak), bilinen kelime sayısı, okunan metin adedi gibi 30'dan fazla farklı başarı kriteri.
+- **Görsel Başarılar:** Kullanıcı profilinde sergilenen şık ikonlar ve özel Elite rozetleri.
+
+### Bütünleşik Liderlik ve Analitik
+Sıralama sistemi, Dashboard'un kalbine entegre edildi.
+- **Çoklu Kategoriler:** Sadece doğru sayısı değil; Haftalık Vakit, Seri, Günlük İlerleme gibi 5 farklı kategoride rekabet imkanı.
+- **Dashboard Entegrasyonu:** Liderlik tablosu artık profilin (Dashboard) en altında, istatistiklerle bir bütün halinde sunuluyor.
 
 ---
 
 ## Fonksiyonel Modüller
 
 ### 1. Akıllı Dashboard ve Analitik
-Günlük kelime hedeflerini, çalışma serisini, seviye ilerlemesini ve öğrenilen kelime sayısını gösteren merkezi kontrol paneli.
+Günlük kelime hedeflerini, çalışma serisini ve seviye ilerlemesini gösteren, Glassmorphism butonlarla zenginleştirilmiş merkezi kontrol paneli.
 
 ### 2. Focus AI (Yapay Zeka Asistanı)
 Öğrenim süreci boyunca rehberlik eden uzman sistem. Kelime analizi yapar, metinleri açıklar ve kullanıcıya özel çalışma rotası belirler.
@@ -47,24 +54,13 @@ CEFR seviyelerine göre üretilen akademik metinler, otomatik kelime tespiti ve 
 ### 4. Aralıklı Tekrar Sistemi (SRS)
 Unutma eğrisini minimize eden 5 kademeli tekrar algoritması. Kelimelerin bir sonraki gösterim zamanını otomatik olarak hesaplar.
 
-### 5. Linefocus (Odaklı Yazım)
-Yazım tabanlı, mekanik geri bildirimlerle zenginleştirilmiş, metne derinlemesine odaklanmayı sağlayan çalışma modülü.
-
-### 6. Topluluk ve Sıralama
-Kullanıcıların çalışma performanslarına göre birbirleriyle yarıştığı, rollerin özel göstergelerle belirtildiği sosyal katman.
-
 ---
 
 ## Elite (Premium) Üyelik Modeli
 
 YDT Focus, sürdürülebilir bir yapay zeka deneyimi sunmak için katmanlı bir üyelik yapısı kullanır:
 
-### Standart Üye (Ücretsiz)
-- Günlük 3 akademik metin/seans üretimi.
-- Temel kelime bankası özellikleri.
-- Topluluk sıralamasına katılım.
-
-### Elite Üye (Aylık ₺99 / Yıllık ₺799)
+### Elite Üye Özellikleri
 - **Sınırsız AI Metin Üretimi:** Limitlere takılmadan sınırsız çalışma.
 - **İleri Analizler:** Hatalardan kişiselleştirilmiş metin üretme önceliği.
 - **Gold Profil:** Sıralama ve sosyal alanlarda özel Elite rozeti ve Gold görünüm.
@@ -78,7 +74,7 @@ YDT Focus, sürdürülebilir bir yapay zeka deneyimi sunmak için katmanlı bir 
 
 *   **Frontend:** Next.js 14 (App Router), React 18, Vanilla CSS.
 *   **Backend:** Firebase (Auth, Firestore).
-*   **Yapay Zeka:** Groq Cloud API (Llama 3.1 modelleri).
+*   **Yapay Zeka:** Groq Cloud API (Llama 3.1 & 3.2 modelleri).
 *   **PWA:** Tüm cihazlara uygulama olarak kurulabilen Progressive Web App desteği.
 
 ---

@@ -5,12 +5,15 @@ import { useAuth } from "@/context/AuthContext";
 import { getUserWords, getUserStats, updateLastReminderDate, checkAndGrantBadges, getUserHeroStats, subscribeToUserWords, subscribeToUserStats } from "@/lib/firestore";
 import { BADGES } from "@/constants/badges";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import Leaderboard from "@/components/Leaderboard";
 import CustomDialog from "@/components/CustomDialog";
 import PremiumModal from "@/components/PremiumModal";
 
 export default function DashboardPage() {
   const { user, userProfile, isAdmin, isPremium } = useAuth();
+  const searchParams = useSearchParams();
+  const activeTab = searchParams.get("tab") || "stats";
   const [words, setWords] = useState([]);
   const [stats, setStats] = useState({ correct: 0, wrong: 0, streak: 0, studyTime: 0, weeklyMinutes: 0 });
   const [loading, setLoading] = useState(true);
@@ -228,66 +231,75 @@ export default function DashboardPage() {
         <h2 className="dash-title">Level Up</h2>
         <p className="dash-subtitle">Kişisel gelişim ve istatistiklerin.</p>
       </div>
+      
+      <div className="stats-view-container animate-fadeIn">
+        <div className="dash-bento-stats">
+          <div className="dash-bento-card" style={{ background: "linear-gradient(135deg, rgba(255,159,10,0.1), transparent)", borderColor: "rgba(255,159,10,0.2)" }}>
+            <div className="dash-bento-value" style={{ color: "#ff9f0a" }}>{stats.streak || 0} Gün</div>
+            <div className="dash-bento-label">Çalışma Serisi</div>
+          </div>
+          <div className="dash-bento-card" style={{ background: "linear-gradient(135deg, rgba(48,209,88,0.1), transparent)", borderColor: "rgba(48,209,88,0.2)" }}>
+            <div className="dash-bento-value" style={{ color: "var(--primary)" }}>{total}</div>
+            <div className="dash-bento-label">Toplam Kelime</div>
+          </div>
+          <div className="dash-bento-card" style={{ gridColumn: "span 2", background: "linear-gradient(135deg, rgba(191,90,242,0.1), transparent)", borderColor: "rgba(191,90,242,0.2)" }}>
+            <div className="dash-bento-value" style={{ color: "#bf5af2" }}>{stats.weeklyMinutes || 0} dk</div>
+            <div className="dash-bento-label">Haftalık Çalışma Süresi</div>
+          </div>
+        </div>
 
-      <div className="dash-bento-stats">
-        <div className="dash-bento-card" style={{ background: "linear-gradient(135deg, rgba(255,159,10,0.1), transparent)", borderColor: "rgba(255,159,10,0.2)" }}>
-          <div className="dash-bento-value" style={{ color: "#ff9f0a" }}>{stats.streak || 0} Gün</div>
-          <div className="dash-bento-label">Çalışma Serisi</div>
+        <div className="glass-card dash-goal-card">
+          <div className="dash-goal-top">
+            <span className="dash-goal-label">Bilinen Kelime Sayısı</span>
+            <span className="dash-goal-numbers">{masteredCount} / {total}</span>
+          </div>
+          <div className="dash-goal-bar">
+            <div className="dash-goal-fill" style={{ width: `${Math.min(pct, 100)}%` }}></div>
+          </div>
+          <div className="dash-goal-footer">
+            <span className="dash-goal-pct">Kelimelerin %{pct} kadarı kalıcı hafızada</span>
+          </div>
         </div>
-        <div className="dash-bento-card" style={{ background: "linear-gradient(135deg, rgba(48,209,88,0.1), transparent)", borderColor: "rgba(48,209,88,0.2)" }}>
-          <div className="dash-bento-value" style={{ color: "var(--primary)" }}>{total}</div>
-          <div className="dash-bento-label">Toplam Kelime</div>
-        </div>
-        <div className="dash-bento-card" style={{ gridColumn: "span 2", background: "linear-gradient(135deg, rgba(191,90,242,0.1), transparent)", borderColor: "rgba(191,90,242,0.2)" }}>
-          <div className="dash-bento-value" style={{ color: "#bf5af2" }}>{stats.weeklyMinutes || 0} dk</div>
-          <div className="dash-bento-label">Haftalık Çalışma Süresi</div>
-        </div>
-      </div>
 
-      <div className="glass-card dash-goal-card">
-        <div className="dash-goal-top">
-          <span className="dash-goal-label">Bilinen Kelime Sayısı</span>
-          <span className="dash-goal-numbers">{masteredCount} / {total}</span>
-        </div>
-        <div className="dash-goal-bar">
-          <div className="dash-goal-fill" style={{ width: `${Math.min(pct, 100)}%` }}></div>
-        </div>
-        <div className="dash-goal-footer">
-          <span className="dash-goal-pct">Kelimelerin %{pct} kadarı kalıcı hafızada</span>
-        </div>
-      </div>
-
-      <div className="glass-card">
-        <h3 className="dash-section-title">Kelime Seviyeleri</h3>
-        <p className="hint-text">Seviyeye tıklayıp kelimelerini görüntüle.</p>
-        <div className="dash-levels">
-          {levels.map(lv => {
-            const count = levelWords[lv.key].length;
-            const isExpanded = expandedLevel === lv.key;
-            return (
-              <div key={lv.key} className="dash-level-container">
-                <div className="dash-level-row" onClick={() => setExpandedLevel(isExpanded ? null : lv.key)} style={{ cursor: "pointer" }}>
-                  <span className="dash-level-badge" style={{ background: `${lv.color}22`, color: lv.color }}>{lv.name}</span>
-                  <div className="dash-level-bar-bg">
-                    <div className="dash-level-bar-fill" style={{ width: `${(count / maxLevel) * 100}%`, background: lv.color }}></div>
+        <div className="glass-card">
+          <h3 className="dash-section-title">Kelime Seviyeleri</h3>
+          <p className="hint-text">Seviyeye tıklayıp kelimelerini görüntüle.</p>
+          <div className="dash-levels">
+            {levels.map(lv => {
+              const count = levelWords[lv.key].length;
+              const isExpanded = expandedLevel === lv.key;
+              return (
+                <div key={lv.key} className="dash-level-container">
+                  <div className="dash-level-row" onClick={() => setExpandedLevel(isExpanded ? null : lv.key)} style={{ cursor: "pointer" }}>
+                    <span className="dash-level-badge" style={{ background: `${lv.color}22`, color: lv.color }}>{lv.name}</span>
+                    <div className="dash-level-bar-bg">
+                      <div className="dash-level-bar-fill" style={{ width: `${(count / maxLevel) * 100}%`, background: lv.color }}></div>
+                    </div>
+                    <span className="dash-level-count">{count}</span>
+                    <span style={{ marginLeft: 8, fontSize: "0.8rem", color: "var(--text-muted)", transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
                   </div>
-                  <span className="dash-level-count">{count}</span>
-                  <span style={{ marginLeft: 8, fontSize: "0.8rem", color: "var(--text-muted)", transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
+                  {isExpanded && (
+                    <div className="dash-level-words">
+                      {count === 0 ? <div className="dash-level-word-empty">Henüz kelime yok.</div> : levelWords[lv.key].map((w, i) => (
+                        <div key={i} className="dash-level-word-item"><b>{w.word}</b> <span style={{ color: "var(--text-muted)" }}>{w.meaning}</span></div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                {isExpanded && (
-                  <div className="dash-level-words">
-                    {count === 0 ? <div className="dash-level-word-empty">Henüz kelime yok.</div> : levelWords[lv.key].map((w, i) => (
-                      <div key={i} className="dash-level-word-item"><b>{w.word}</b> <span style={{ color: "var(--text-muted)" }}>{w.meaning}</span></div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Leaderboard integrated at the bottom */}
+        <div className="dash-header" style={{ marginTop: 40 }}>
+          <h2 className="dash-title">Liderlik Tablosu</h2>
+          <p className="dash-subtitle">En iyi öğrenciler arasındaki yerini gör.</p>
+        </div>
+        <div className="leaderboard-view-container" style={{ paddingBottom: 40 }}>
+          <Leaderboard />
         </div>
       </div>
-
-      <Leaderboard />
 
 
 
@@ -371,6 +383,53 @@ export default function DashboardPage() {
         }
         .dash-level-word-item { padding: 12px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
         .dash-level-word-item:hover { background: rgba(255,255,255,0.05); }
+
+        /* --- Glassmorphism Dashboard Tabs --- */
+        .dash-tabs-nav { 
+          display: flex !important; 
+          gap: 12px !important; 
+          margin: 0 20px 24px !important; 
+          justify-content: center;
+        }
+        .dash-tab-btn { 
+          flex: 1; 
+          display: flex !important;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 14px !important; 
+          border-radius: 16px !important; 
+          font-size: 0.8rem !important; 
+          font-weight: 600 !important; 
+          text-decoration: none !important; 
+          color: rgba(255, 255, 255, 0.4) !important;
+          background: rgba(255, 255, 255, 0.02) !important;
+          backdrop-filter: blur(10px) !important;
+          -webkit-backdrop-filter: blur(10px) !important;
+          border: 1px solid rgba(255, 255, 255, 0.06) !important;
+          transition: all 0.2s ease;
+        }
+        .dash-tab-btn.active { 
+          background: rgba(226, 183, 20, 0.1) !important; 
+          color: var(--accent) !important; 
+          border-color: rgba(226, 183, 20, 0.3) !important;
+          font-weight: 800 !important;
+        }
+        .dash-tab-btn i { font-size: 0.9rem; opacity: 0.8; }
+
+        @media (max-width: 640px) {
+          .dash-bento-stats { 
+            grid-template-columns: 1fr; 
+            margin: 0 20px 24px;
+          }
+          .profile-header.minimal { padding: 20px 20px 0; }
+          .dash-tabs-nav { gap: 10px !important; margin: 0 20px 24px !important; }
+          .glass-card {
+            margin: 0 20px 16px;
+            padding: 20px !important;
+            border-radius: 24px !important;
+          }
+        }
       `}</style>
     </div>
   );
