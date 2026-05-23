@@ -54,7 +54,13 @@ export default function FlashcardsHubPage() {
   const [newCardSentence, setNewCardSentence] = useState("");
   const [magicLoading, setMagicLoading] = useState(false);
 
-  useEffect(() => { if (user) loadDecks(); }, [user]);
+  useEffect(() => { 
+    if (user) {
+      loadDecks(); 
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
 
   const loadDecks = async () => {
     try { 
@@ -201,7 +207,19 @@ export default function FlashcardsHubPage() {
     return 9; // up to 9 layers for very thick decks
   };
 
-  if (loading) return <div className="page-loading"><div className="spinner-ring"></div></div>;
+  const { loading: authLoading } = useAuth();
+  if (authLoading || loading) return <div className="page-loading"><div className="spinner-ring"></div></div>;
+
+  if (!user) {
+    return (
+      <div className="glass-card" style={{ textAlign: "center", padding: "60px 20px", marginTop: 40, maxWidth: 500, margin: "40px auto" }}>
+        <i className="fa-solid fa-lock" style={{ fontSize: '3rem', color: 'var(--accent)', marginBottom: 20 }}></i>
+        <h3 style={{ fontWeight: 800, marginBottom: 12, fontSize: '1.5rem' }}>Flashcard Destelerine Erişmek İçin Kayıt Olmalısın</h3>
+        <p className="hint-text" style={{ marginBottom: 24 }}>Kendi kelime destelerinizi oluşturmak ve AI ile pratik yapmak için giriş yapmalısınız.</p>
+        <button onClick={() => window.location.href='/login'} className="btn-primary" style={{ padding: '14px 32px' }}>Giriş Yap / Kayıt Ol</button>
+      </div>
+    );
+  }
 
   return (
     <div className="fh-page">

@@ -164,14 +164,36 @@ export async function updateUserStats(uid, stats) {
   const level2Count = words.filter(w => w.level === 2).length;
   const level3Count = words.filter(w => w.level === 3).length;
 
+  // Haftalık kelime (puan) mantığı
+  const now = new Date();
+  const weekNumber = getWeekNumber(now);
+  const today = now.toLocaleDateString('tr-TR');
+
+  let weeklyWords = newStats.weeklyWords || 0;
+  if (newStats.lastWeekNumber !== weekNumber) {
+    weeklyWords = (stats.correct || 0);
+  } else {
+    weeklyWords += (stats.correct || 0);
+  }
+
+  // Bu yeni haftalık skoru veritabanına da yazıyoruz
+  await setDoc(statsRef, {
+    weeklyWords,
+    lastWeekNumber: weekNumber,
+    lastDate: today
+  }, { merge: true });
+
   await updateDoc(userRef, {
     "publicStats.totalWords": totalWords,
     "publicStats.masteryCount": masteryCount,
+    "publicStats.weeklyWords": weeklyWords,
     "publicStats.weeklyMinutes": newStats.weeklyMinutes || 0,
     "publicStats.streak": newStats.streak || 0,
     "publicStats.correct": newStats.correct || 0,
     "publicStats.wrong": newStats.wrong || 0,
-    "publicStats.lastTestTime": stats.lastTestTime || 0
+    "publicStats.lastTestTime": stats.lastTestTime || 0,
+    "publicStats.lastWeekNumber": weekNumber,
+    "publicStats.lastDate": today
   });
 }
 
@@ -415,7 +437,7 @@ export async function getLeaderboard(category = "streak", limitCount = 10) {
   const weekNumber = getWeekNumber(now);
 
   let q;
-  if (category === "weeklyMinutes" || category === "weeklyReadings") {
+  if (category === "weeklyMinutes" || category === "weeklyReadings" || category === "weeklyWords") {
     q = query(
       usersRef,
       where("publicStats.lastWeekNumber", "==", weekNumber),
@@ -442,6 +464,45 @@ export async function getLeaderboard(category = "streak", limitCount = 10) {
 
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+export function subscribeToLeaderboard(category = "streak", limitCount = 10, callback) {
+  const usersRef = collection(db, "users");
+  const field = `publicStats.${category}`;
+  
+  const now = new Date();
+  const today = now.toLocaleDateString('tr-TR');
+  const weekNumber = getWeekNumber(now);
+
+  let q;
+  if (category === "weeklyMinutes" || category === "weeklyReadings" || category === "weeklyWords") {
+    q = query(
+      usersRef,
+      where("publicStats.lastWeekNumber", "==", weekNumber),
+      where(field, ">", 0),
+      orderBy(field, "desc"),
+      limit(limitCount)
+    );
+  } else if (category === "dailyMinutes") {
+    q = query(
+      usersRef,
+      where("publicStats.lastDate", "==", today),
+      where(field, ">", 0),
+      orderBy(field, "desc"),
+      limit(limitCount)
+    );
+  } else {
+    q = query(
+      usersRef, 
+      where(field, ">", 0), 
+      orderBy(field, "desc"), 
+      limit(limitCount)
+    );
+  }
+
+  return onSnapshot(q, (snapshot) => {
+    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+  });
 }
 
 export async function updateUserRole(uid, role) {

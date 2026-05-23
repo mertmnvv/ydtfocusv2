@@ -439,17 +439,6 @@ function ReadingContent() {
 
 
   async function generateAIText(selectedTopic) {
-    if (!user) return requireAuth(() => {});
-
-    // Limit Kontrolü
-    if (!isPremium) {
-      const { limitReached } = await checkDailyLimit(user.uid, "reading");
-      if (limitReached) {
-        setPremiumModalOpen(true);
-        return;
-      }
-    }
-
     const t = selectedTopic || topic;
     setTopic(t);
     setGenerating(true);
@@ -510,10 +499,8 @@ function ReadingContent() {
         setIsStudyFlipped(false);
         setCurrentCardIdx(0);
 
-        // Başarılı ise limiti artır
-        if (!isPremium) {
-          await incrementDailyLimit(user.uid, "reading");
-        }
+        // Başarılı
+
       }
     } catch (error) {
       console.error(error);
@@ -525,15 +512,6 @@ function ReadingContent() {
 
   async function generateStoryFromMyWords() {
     if (!user) return requireAuth(() => {});
-
-    // Limit Kontrolü
-    if (!isPremium) {
-      const { limitReached } = await checkDailyLimit(user.uid, "reading");
-      if (limitReached) {
-        setPremiumModalOpen(true);
-        return;
-      }
-    }
 
     setGenerating(true);
     try {
@@ -607,11 +585,6 @@ function ReadingContent() {
         setIsFlipped(false);
         setIsStudyFlipped(false);
         showNotification(`Hikaye oluşturuldu! Kullanılan kelimeler: ${selectedWords.join(", ")}`, "success");
-
-        // Başarılı ise limiti artır
-        if (!isPremium) {
-          await incrementDailyLimit(user.uid, "reading");
-        }
       }
     } catch (err) {
       showNotification("Hikaye üretilirken hata oluştu.", "error");
@@ -621,7 +594,6 @@ function ReadingContent() {
   }
 
   async function generateWikipediaText(selectedTopic) {
-    if (!user) return requireAuth(() => {});
     const t = selectedTopic || topic;
     setTopic(t);
     setGenerating(true);
@@ -736,6 +708,10 @@ function ReadingContent() {
   }
 
   function saveWord() {
+    if (!user) {
+      setShowResultCard(false);
+      return requireAuth(() => {});
+    }
     requireAuth(async () => {
       if (!wordInput || !meaningInput || meaningInput === "Aranıyor...") return;
       if (myWords.some(w => w.word?.toLowerCase() === wordInput.toLowerCase())) {

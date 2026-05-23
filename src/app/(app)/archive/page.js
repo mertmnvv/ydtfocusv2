@@ -9,7 +9,7 @@ const CEFR_LEVELS = ["Tümü", "A1", "A2", "B1", "B2", "C1", "C2"];
 const CEFR_COLORS = { A1: "#30d158", A2: "#e2b714", B1: "#ff9f0a", B2: "#bf5af2", C1: "#ff375f", C2: "#ff2d55" };
 
 export default function ArchivePage() {
-  const { user, requireAuth } = useAuth();
+  const { user, requireAuth, loading: authLoading } = useAuth();
   const { showNotification } = useNotification();
   const [words, setWords] = useState([]);
   const [myWords, setMyWords] = useState([]);
@@ -23,12 +23,15 @@ export default function ArchivePage() {
   useEffect(() => {
     if (user) {
       getUserWords(user.uid).then(uw => setMyWords(uw || [])).catch(console.error);
+      loadWords("Tümü");
+    } else {
+      setLoading(false);
     }
-    loadWords("Tümü");
   }, [user]);
 
   // When level tab changes
   async function loadWords(level) {
+    if (!user) return;
     setLoading(true);
     setActiveLevel(level);
     setSearch("");
@@ -50,7 +53,7 @@ export default function ArchivePage() {
   }
 
   async function loadMore() {
-    if (!lastDoc || activeLevel !== "Tümü") return;
+    if (!lastDoc || activeLevel !== "Tümü" || !user) return;
     setLoading(true);
     try {
       const r = await getArchiveWords(50, lastDoc);
@@ -106,6 +109,19 @@ export default function ArchivePage() {
       u.lang = "en-US";
       window.speechSynthesis.speak(u);
     }
+  }
+
+  if (authLoading || loading) return <div className="page-loading"><div className="spinner-ring"></div></div>;
+
+  if (!user) {
+    return (
+      <div className="glass-card" style={{ textAlign: "center", padding: "60px 20px", marginTop: 40, maxWidth: 500, margin: "40px auto" }}>
+        <i className="fa-solid fa-lock" style={{ fontSize: '3rem', color: 'var(--accent)', marginBottom: 20 }}></i>
+        <h3 style={{ fontWeight: 800, marginBottom: 12, fontSize: '1.5rem' }}>Akademik Sözlüğe Erişmek İçin Kayıt Olmalısın</h3>
+        <p className="hint-text" style={{ marginBottom: 24 }}>Kelime aramak ve kendi kelime bankanıza kelimeler eklemek için giriş yapmalısınız.</p>
+        <button onClick={() => window.location.href='/login'} className="btn-primary" style={{ padding: '14px 32px' }}>Giriş Yap / Kayıt Ol</button>
+      </div>
+    );
   }
 
   return (

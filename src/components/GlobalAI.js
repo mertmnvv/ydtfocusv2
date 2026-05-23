@@ -241,15 +241,9 @@ Quizlerde bu kelimelere öncelik ver.
 
   return (
     <>
-      <button className={`global-ai-fab ${isOpen ? "active" : ""}`} onClick={() => {
-        if (!isPremium) {
-          setIsPremiumModalOpen(true);
-          return;
-        }
-        setIsOpen(!isOpen);
-      }}>
+      <button className="global-ai-fab" onClick={() => setIsPremiumModalOpen(true)}>
         <div className="ai-glow"></div>
-        {isOpen ? <i className="fa-solid fa-xmark"></i> : <i className="fa-solid fa-wand-magic-sparkles"></i>}
+        <i className="fa-solid fa-wand-magic-sparkles"></i>
       </button>
 
       <PremiumModal isOpen={isPremiumModalOpen} onClose={() => setIsPremiumModalOpen(false)} />

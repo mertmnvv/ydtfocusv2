@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 
 export default function PremiumPaywall({ isOpen, onClose, onUpgrade }) {
+  return null;
+
   const { userProfile, isPremium } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState("yearly");
 

@@ -2022,7 +2022,7 @@ a {
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(8px);
-  z-index: 9999;
+  z-index: 10001;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -5484,7 +5484,7 @@ a {
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(8px);
-  z-index: 2100;
+  z-index: 10001;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -6249,7 +6249,7 @@ a {
   align-items: center;
   justify-content: center;
   color: #86868b;
-  font-size: 1.15rem; /* İkonlar küçültüldü */
+  font-size: 1.35rem; /* Sadece ikon kaldığı için büyütüldü */
   text-decoration: none;
   transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
   position: relative;
@@ -6266,19 +6266,19 @@ a {
 }
 
 .bottom-nav-item.active i {
-  transform: scale(1.15) translateY(-2px);
+  transform: scale(1.15); /* translateY kaldırıldı */
   text-shadow: 0 0 15px rgba(255, 214, 10, 0.5);
 }
 
 .bottom-nav-avatar-mini {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: var(--bg-elevated);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 800;
   color: var(--text);
   border: 1.5px solid rgba(255, 255, 255, 0.1);

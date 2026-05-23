@@ -7,7 +7,7 @@ import Link from "next/link";
 import { playSuccessSound, playErrorSound } from "@/lib/sounds";
 
 export default function SrsFlashcardsPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [words, setWords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -23,6 +23,8 @@ export default function SrsFlashcardsPage() {
   useEffect(() => {
     if (user) {
       loadWords();
+    } else {
+      setLoading(false);
     }
   }, [user]);
 
@@ -168,7 +170,18 @@ export default function SrsFlashcardsPage() {
     }
   };
 
-  if (loading) return <div className="page-loading"><div className="spinner-ring"></div></div>;
+  if (authLoading || loading) return <div className="page-loading"><div className="spinner-ring"></div></div>;
+
+  if (!user) {
+    return (
+      <div className="glass-card" style={{ textAlign: "center", padding: "60px 20px", marginTop: 40, maxWidth: 500, margin: "40px auto" }}>
+        <i className="fa-solid fa-lock" style={{ fontSize: '3rem', color: 'var(--accent)', marginBottom: 20 }}></i>
+        <h3 style={{ fontWeight: 800, marginBottom: 12, fontSize: '1.5rem' }}>Flashcardlara Erişmek İçin Kayıt Olmalısın</h3>
+        <p className="hint-text" style={{ marginBottom: 24 }}>Kelime bankanızdaki kelimelerle pratik yapmak için giriş yapmalısınız.</p>
+        <button onClick={() => window.location.href='/login'} className="btn-primary" style={{ padding: '14px 32px' }}>Giriş Yap / Kayıt Ol</button>
+      </div>
+    );
+  }
 
   if (words.length === 0 || currentIndex >= words.length) {
     return (

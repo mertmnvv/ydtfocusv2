@@ -33,9 +33,7 @@ export default function AppLayout({ children }) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login");
-    }
+    // Giriş zorunluluğu kaldırıldı, kullanıcılar serbestçe gezebilir.
   }, [user, loading, router]);
 
   if (loading) {
@@ -49,7 +47,7 @@ export default function AppLayout({ children }) {
     );
   }
 
-  if (!user) return null;
+  // if (!user) return null; engeli kaldırıldı
 
   return (
     <Suspense fallback={<div className="page-loading"><div className="spinner-ring"></div></div>}>
@@ -59,7 +57,7 @@ export default function AppLayout({ children }) {
 }
 
 function AppContent({ children }) {
-  const { user, userProfile, logout, isAdmin, isPremium, premiumModalOpen, setPremiumModalOpen } = useAuth();
+  const { user, userProfile, logout, isAdmin, isPremium, premiumModalOpen, setPremiumModalOpen, requireAuth } = useAuth();
   useFcmToken(user);
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -70,12 +68,7 @@ function AppContent({ children }) {
   const [showFeedback, setShowFeedback] = useState(false);
 
   useEffect(() => {
-    if (user && !isPremium) {
-      const hasSeenSession = sessionStorage.getItem("paywall_session_seen");
-      if (!hasSeenSession) {
-        setShowPaywall(true);
-      }
-    }
+    // Premium paywall session mantığı kaldırıldı.
   }, [user, isPremium]);
 
   const currentTabParam = searchParams.get("tab");
@@ -157,19 +150,19 @@ function AppContent({ children }) {
                   {userProfile?.photoURL ? (
                     <img src={userProfile.photoURL} alt="Profil" className="avatar-img" />
                   ) : (
-                    userProfile?.displayName?.[0] || user.email?.[0] || "U"
+                    userProfile?.displayName?.[0] || user?.email?.[0] || "U"
                   )}
                 </div>
                 <div className="profile-info">
                   <span className="profile-name">
-                    {userProfile?.displayName || "Kullanıcı"}
+                    {userProfile?.displayName || "Misafir"}
                     {isAdmin ? (
                       <i className="fa-solid fa-user-shield" style={{ color: "#ff453a", marginLeft: 6, fontSize: "0.7rem" }} title="Yönetici"></i>
                     ) : isPremium ? (
                       <i className="fa-solid fa-crown" style={{ color: "var(--accent)", marginLeft: 6, fontSize: "0.7rem" }} title="Premium Üye"></i>
                     ) : null}
                   </span>
-                  <span className="profile-sub-text">Hesabım <i className="fa-solid fa-chevron-down"></i></span>
+                  <span className="profile-sub-text">Menü <i className="fa-solid fa-chevron-down"></i></span>
                 </div>
               </button>
 
@@ -185,15 +178,26 @@ function AppContent({ children }) {
                       <i className="fa-solid fa-circle-xmark"></i>
                       <span>Hatalarım</span>
                     </Link>
+                    <Link href="/archive" className="profile-drop-item" onClick={() => setProfileOpen(false)}>
+                      <i className="fa-solid fa-language"></i>
+                      <span>Sözlük</span>
+                    </Link>
                     <button className="profile-drop-item" onClick={() => { setShowFeedback(true); setProfileOpen(false); }}>
                       <i className="fa-solid fa-comments"></i>
                       <span>Geri Bildirim</span>
                     </button>
                     <div className="drop-divider"></div>
-                    <button onClick={() => { logout(); setProfileOpen(false); }} className="profile-drop-item logout-red">
-                      <i className="fa-solid fa-right-from-bracket"></i>
-                      <span>Çıkış Yap</span>
-                    </button>
+                    {user ? (
+                      <button onClick={() => { logout(); setProfileOpen(false); }} className="profile-drop-item logout-red">
+                        <i className="fa-solid fa-right-from-bracket"></i>
+                        <span>Çıkış Yap</span>
+                      </button>
+                    ) : (
+                      <button onClick={() => { requireAuth(() => {}); setProfileOpen(false); }} className="profile-drop-item" style={{color: 'var(--accent)'}}>
+                        <i className="fa-solid fa-right-to-bracket"></i>
+                        <span>Giriş Yap / Kayıt Ol</span>
+                      </button>
+                    )}
                   </div>
                 </>
               )}
@@ -240,6 +244,9 @@ function AppContent({ children }) {
               <span className="mobile-menu-label">Çıkış</span>
             </button>
           </div>
+          <button className="mobile-menu-close" onClick={() => setMobileMenuOpen(false)}>
+            <i className="fa-solid fa-xmark"></i>
+          </button>
         </div>
       )}
 
@@ -267,28 +274,41 @@ function AppContent({ children }) {
           </Link>
         ))}
         {/* Profile Button */}
-        <button
-          className={`bottom-nav-item profile ${profileOpen ? "active" : ""}`}
-          onClick={() => setProfileOpen(!profileOpen)}
-          style={{ position: 'relative' }}
-        >
-          <div className="bottom-nav-avatar-mini">
-            {userProfile?.photoURL ? (
-              <img src={userProfile.photoURL} alt="Profil" className="avatar-img" />
-            ) : (
-              <i className="fa-solid fa-user" style={{ fontSize: '0.9rem', color: 'var(--accent)' }}></i>
-            )}
-          </div>
-          <i className="fa-solid fa-circle-user" style={{ 
-            position: 'absolute', 
-            bottom: '10px', 
-            right: '12px', 
-            fontSize: '0.6rem', 
-            color: profileOpen ? 'var(--accent)' : '#86868b',
-            background: 'var(--bg)',
-            borderRadius: '50%'
-          }}></i>
-        </button>
+        {/* Profile Button */}
+        {user ? (
+          <button
+            className={`bottom-nav-item profile ${profileOpen ? 'active' : ''}`}
+            onClick={() => setProfileOpen(!profileOpen)}
+            style={{ position: 'relative' }}
+          >
+            <div className="bottom-nav-avatar-mini">
+              {userProfile?.photoURL ? (
+                <img src={userProfile.photoURL} alt="Profil" className="avatar-img" />
+              ) : (
+                <i className="fa-solid fa-user" style={{ fontSize: '0.9rem', color: 'var(--accent)' }}></i>
+              )}
+            </div>
+            <i className="fa-solid fa-circle-user" style={{ 
+              position: 'absolute', 
+              bottom: '10px', 
+              right: '12px', 
+              fontSize: '0.6rem', 
+              color: profileOpen ? 'var(--accent)' : '#86868b',
+              background: 'var(--bg)',
+              borderRadius: '50%'
+            }}></i>
+          </button>
+        ) : (
+          <button
+            className="bottom-nav-item profile"
+            onClick={() => requireAuth(() => {})}
+            style={{ position: 'relative' }}
+          >
+            <div className="bottom-nav-avatar-mini" style={{ background: 'var(--accent)' }}>
+              <i className="fa-solid fa-right-to-bracket" style={{ fontSize: '0.9rem', color: '#000' }}></i>
+            </div>
+          </button>
+        )}
       </nav>
 
       {/* Mobil Profil Menüsü */}
@@ -297,7 +317,7 @@ function AppContent({ children }) {
           <div className="mobile-profile-popup" onClick={e => e.stopPropagation()}>
             <div className="popup-header">
               <div className="popup-name-group">
-                <div className="popup-name">{userProfile?.displayName || "Kullanıcı"}</div>
+                <div className="popup-name">{userProfile?.displayName || "Misafir"}</div>
                 <div className="popup-plan-tag" style={{
                   fontSize: '0.65rem',
                   fontWeight: 800,
@@ -334,10 +354,17 @@ function AppContent({ children }) {
                 </Link>
               )}
               <div className="popup-divider"></div>
-              <button onClick={() => { logout(); setProfileOpen(false); }} className="popup-link logout-red">
-                <i className="fa-solid fa-right-from-bracket"></i>
-                <span>Çıkış</span>
-              </button>
+              {user ? (
+                <button onClick={() => { logout(); setProfileOpen(false); }} className="popup-link logout-red">
+                  <i className="fa-solid fa-right-from-bracket"></i>
+                  <span>Çıkış</span>
+                </button>
+              ) : (
+                <button onClick={() => { requireAuth(() => {}); setProfileOpen(false); }} className="popup-link" style={{color: 'var(--accent)'}}>
+                  <i className="fa-solid fa-right-to-bracket"></i>
+                  <span>Giriş Yap / Kayıt Ol</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

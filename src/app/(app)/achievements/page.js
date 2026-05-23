@@ -6,13 +6,16 @@ import { subscribeToUserWords, subscribeToUserStats, getUserHeroStats, checkAndG
 import { BADGES } from "@/constants/badges";
 
 export default function AchievementsPage() {
-  const { user, userProfile } = useAuth();
+  const { user, userProfile, loading: authLoading } = useAuth();
   const [words, setWords] = useState([]);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     let isMounted = true;
     let unsubWords = () => {};
@@ -56,9 +59,20 @@ export default function AchievementsPage() {
         checkAndGrantBadges(user.uid, stats, words.length, h.levels, words);
       });
     }
-  }, [words, stats]);
+  }, [words, stats, user]);
 
-  if (loading) return <div className="page-loading"><div className="spinner-ring"></div></div>;
+  if (authLoading || loading) return <div className="page-loading"><div className="spinner-ring"></div></div>;
+
+  if (!user) {
+    return (
+      <div className="glass-card" style={{ textAlign: "center", padding: "60px 20px", marginTop: 40, maxWidth: 500, margin: "40px auto" }}>
+        <i className="fa-solid fa-lock" style={{ fontSize: '3rem', color: 'var(--accent)', marginBottom: 20 }}></i>
+        <h3 style={{ fontWeight: 800, marginBottom: 12, fontSize: '1.5rem' }}>Rozetlerini Görmek İçin Kayıt Olmalısın</h3>
+        <p className="hint-text" style={{ marginBottom: 24 }}>Sistemdeki ilerlemelerinize göre kazandığınız başarıları görüntülemek için giriş yapın.</p>
+        <button onClick={() => window.location.href='/login'} className="btn-primary" style={{ padding: '14px 32px' }}>Giriş Yap / Kayıt Ol</button>
+      </div>
+    );
+  }
 
   const earnedCount = userProfile?.badges?.length || 0;
   const totalCount = Object.keys(BADGES).length;

@@ -3,7 +3,12 @@
 import { useState, useEffect } from "react";
 import { getGrammarTopics } from "@/lib/firestore";
 
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+
 export default function GrammarPage() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState(null);
@@ -15,7 +20,18 @@ export default function GrammarPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="page-loading"><div className="spinner-ring"></div><p>Yükleniyor...</p></div>;
+  if (authLoading || loading) return <div className="page-loading"><div className="spinner-ring"></div><p>Yükleniyor...</p></div>;
+
+  if (!user) {
+    return (
+      <div className="glass-card" style={{ textAlign: "center", padding: "60px 20px", marginTop: 40, maxWidth: 500, margin: "40px auto" }}>
+        <i className="fa-solid fa-lock" style={{ fontSize: '3rem', color: 'var(--accent)', marginBottom: 20 }}></i>
+        <h3 style={{ fontWeight: 800, marginBottom: 12, fontSize: '1.5rem' }}>Bu İçeriği Görmek İçin Kayıt Olmalısın</h3>
+        <p className="hint-text" style={{ marginBottom: 24 }}>Kendi ilerlemenizi kaydetmek ve tüm içeriklere erişmek için ücretsiz hesap oluşturun.</p>
+        <button onClick={() => router.push('/login')} className="btn-primary" style={{ padding: '14px 32px' }}>Giriş Yap / Kayıt Ol</button>
+      </div>
+    );
+  }
 
   return (
     <div>

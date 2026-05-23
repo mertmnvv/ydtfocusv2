@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getLeaderboard } from "@/lib/firestore";
+import { subscribeToLeaderboard } from "@/lib/firestore";
 import ProfileModal from "./ProfileModal";
 
 export default function Leaderboard() {
@@ -12,17 +12,18 @@ export default function Leaderboard() {
 
   useEffect(() => {
     setLoading(true);
-    getLeaderboard(category, 10).then(data => {
+    const unsubscribe = subscribeToLeaderboard(category, 10, (data) => {
       setUsers(data || []);
       setLoading(false);
     });
+    return () => unsubscribe();
   }, [category]);
 
   const categories = [
     { id: "streak", label: "Seri", icon: "fa-fire" },
     { id: "weeklyMinutes", label: "Haftalık", icon: "fa-calendar-week" },
     { id: "dailyMinutes", label: "Günlük", icon: "fa-clock" },
-    { id: "masteryCount", label: "Kelime", icon: "fa-brain" },
+    { id: "weeklyWords", label: "Kelime", icon: "fa-brain" },
     { id: "weeklyReadings", label: "Metin", icon: "fa-book-open" },
   ];
 
@@ -30,7 +31,7 @@ export default function Leaderboard() {
     const val = u.publicStats?.[category] || 0;
     if (category === "streak") return `${val} Gün`;
     if (category.includes("Minutes")) return `${val} dk`;
-    if (category === "masteryCount") return `${val} Kelime`;
+    if (category === "weeklyWords") return `${val} Kelime`;
     if (category === "weeklyReadings") return `${val} Metin`;
     return val;
   };
