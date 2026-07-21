@@ -34,6 +34,25 @@ sayesinde çalışmaya devam ediyorlar, bu pivotta değiştirilmedi.
 `src/components/Onboarding.js`'deki tur içeriği (özellikle "dashboard" adımı)
 zaten önceki turdan beri güncel değildi — ayrı bir içerik gözden geçirme işi.
 
+## Sonraki tur: "her sayfa yeniden" — site genelinde uygulama turu
+
+Yukarıdaki bölümler tasarım *kararlarını* tanımlar; aşağıdaki tur bu
+kararları sitenin geri kalanına — o zamana kadar dokunulmamış tüm sayfalara —
+tutarlı şekilde uygulama işiydi. Ürün sahibinin talebi: mevcut koyu/altın
+yönü koru, ama her sayfayı gerçekten yeniden yaz (checkpoint'siz, tüm
+sayfalar tek seferde); Yönetici Paneli dahil, Linefocus hariç.
+
+Uygulama yöntemi: her sayfa `Write` ile tamamen yeniden yazıldı (satır
+içi `style={{}}` ve sabit hex renkler yerine component-scoped `<style jsx>`
+sınıfları + `docs/DESIGN.md`'deki token'lar), ama Firestore/AI çağrıları ve
+fonksiyon imzaları hiçbir dosyada değiştirilmedi — bu bilinçli bir kapsam
+sınırlaması: "yeniden kurmak" görsel katman için geçerli, iş mantığı için
+değil. İki yer regresyon riski nedeniyle kasıtlı olarak görsel açıdan da
+dokunulmadan bırakıldı: Hero'nun sürükle-bırak ders motoru (admin'e özel,
+"Çok Yakında" ile kapalı) ve Flashcards deste-oynatma ekranının Framer
+Motion kaydırma/çevirme fiziği. Tam liste ve etkilenen dosyalar için
+`TODO.md` → "7. Sitenin tamamı" bölümüne bak.
+
 ## Neden
 
 Mevcut arayüz aşırı yoğun: 9 öğeli üst nav + ayrı 5 ikonlu mobil alt bar + 9

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getGrammarTopics, addGrammarTopic, deleteGrammarTopic, updateGrammarTopic } from "@/lib/firestore";
+import { getGrammarTopics, addGrammarTopic, deleteGrammarTopic } from "@/lib/firestore";
 import { useNotification } from "@/context/NotificationContext";
+import CustomDialog from "@/components/CustomDialog";
 
 export default function AdminGrammarPage() {
   const { showNotification } = useNotification();
@@ -12,6 +13,7 @@ export default function AdminGrammarPage() {
   const [form, setForm] = useState({
     title: "", content: "", sortOrder: 0, tactics: "",
   });
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   useEffect(() => {
     loadTopics();
@@ -47,30 +49,31 @@ export default function AdminGrammarPage() {
     }
   }
 
-  // handleDelete logic with CustomDialog would need state, I'll keep it simple or add the dialog
-
-  async function handleDelete(id) {
-    if (!confirm("Bu konuyu silmek istediğinize emin misiniz?")) return;
+  async function handleDeleteConfirm() {
+    if (!deleteConfirm) return;
     try {
-      await deleteGrammarTopic(id);
-      setTopics(prev => prev.filter(t => t.id !== id));
+      await deleteGrammarTopic(deleteConfirm);
+      setTopics(prev => prev.filter(t => t.id !== deleteConfirm));
+      showNotification("Gramer konusu silindi.", "success");
     } catch (err) {
-      alert("Silme hatası.");
+      showNotification("Silme hatası.", "error");
+    } finally {
+      setDeleteConfirm(null);
     }
   }
 
   return (
-    <div>
+    <div className="admin-grammar-view">
       <div className="glass-card">
-        <div className="header-split">
-          <h3 className="section-title" style={{ marginBottom: 0 }}>Gramer Yönetimi</h3>
+        <div className="ag-header">
+          <h3 className="section-title">Gramer Yönetimi</h3>
           <button className="admin-btn" onClick={() => setShowForm(!showForm)}>
-            {showForm ? "✕ İptal" : "+ Konu Ekle"}
+            {showForm ? "İptal" : "Konu Ekle"}
           </button>
         </div>
 
         {showForm && (
-          <form onSubmit={handleAdd} className="admin-form" style={{ marginTop: 20, maxWidth: "100%" }}>
+          <form onSubmit={handleAdd} className="ag-form">
             <input
               placeholder="Konu Başlığı (ör: Tenses - Zamanlar)"
               value={form.title}
@@ -78,17 +81,17 @@ export default function AdminGrammarPage() {
               required
             />
             <textarea
+              className="ag-textarea-lg"
               placeholder="İçerik (HTML destekli)"
               value={form.content}
               onChange={(e) => setForm({ ...form, content: e.target.value })}
               required
-              style={{ minHeight: 150 }}
             />
             <textarea
+              className="ag-textarea-sm"
               placeholder="ÖSYM Taktikleri (opsiyonel)"
               value={form.tactics}
               onChange={(e) => setForm({ ...form, tactics: e.target.value })}
-              style={{ minHeight: 80 }}
             />
             <input
               type="number"
@@ -96,49 +99,31 @@ export default function AdminGrammarPage() {
               value={form.sortOrder}
               onChange={(e) => setForm({ ...form, sortOrder: e.target.value })}
             />
-            <button type="submit" className="admin-btn">✓ Kaydet</button>
+            <button type="submit" className="admin-btn">Kaydet</button>
           </form>
         )}
 
         {loading ? (
           <div className="page-loading"><div className="spinner-ring"></div></div>
         ) : (
-          <div style={{ marginTop: 20 }}>
+          <div className="ag-topic-list">
             {topics.length === 0 ? (
-              <p style={{ color: "var(--text-muted)", textAlign: "center", padding: 30 }}>
-                Henüz gramer konusu eklenmemiş.
-              </p>
+              <p className="ag-empty">Henüz gramer konusu eklenmemiş.</p>
             ) : (
-              topics.map((topic, i) => (
-                <div
-                  key={topic.id}
-                  style={{
-                    background: "rgba(255,255,255,0.03)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 16,
-                    padding: 20,
-                    marginBottom: 12,
-                  }}
-                >
-                  <div className="header-split">
-                    <h4 style={{ color: "var(--accent)", fontWeight: 700 }}>
-                      {topic.sortOrder}. {topic.title}
-                    </h4>
+              topics.map((topic) => (
+                <div key={topic.id} className="ag-topic-card">
+                  <div className="ag-topic-head">
+                    <h4 className="ag-topic-title">{topic.sortOrder}. {topic.title}</h4>
                     <button
-                      className="admin-btn admin-btn-danger"
-                      style={{ padding: "4px 12px", fontSize: "0.8rem" }}
-                      onClick={() => handleDelete(topic.id)}
+                      className="admin-btn admin-btn-danger ag-delete-btn"
+                      onClick={() => setDeleteConfirm(topic.id)}
                     >
                       Sil
                     </button>
                   </div>
-                  <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginTop: 8 }}>
-                    {topic.content?.substring(0, 200)}...
-                  </p>
+                  <p className="ag-topic-content">{topic.content?.substring(0, 200)}...</p>
                   {topic.tactics && (
-                    <p style={{ color: "var(--warning)", fontSize: "0.85rem", marginTop: 8 }}>
-                      Taktik: {topic.tactics?.substring(0, 100)}...
-                    </p>
+                    <p className="ag-topic-tactics">Taktik: {topic.tactics?.substring(0, 100)}...</p>
                   )}
                 </div>
               ))
@@ -146,6 +131,39 @@ export default function AdminGrammarPage() {
           </div>
         )}
       </div>
+
+      <style jsx>{`
+        .ag-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .ag-form { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; max-width: 100%; }
+        .ag-form input, .ag-form textarea {
+          background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+          padding: 12px 14px; color: var(--text); font-size: 0.95rem; outline: none; font-family: inherit;
+        }
+        .ag-form input:focus, .ag-form textarea:focus { border-color: var(--accent); }
+        .ag-textarea-lg { min-height: 150px; resize: vertical; }
+        .ag-textarea-sm { min-height: 80px; resize: vertical; }
+
+        .ag-topic-list { margin-top: 20px; }
+        .ag-empty { color: var(--text-muted); text-align: center; padding: 30px; }
+        .ag-topic-card {
+          background: var(--bg-elevated); border: 1px solid var(--border);
+          border-radius: 16px; padding: 20px; margin-bottom: 12px;
+        }
+        .ag-topic-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .ag-topic-title { color: var(--accent); font-weight: 700; }
+        .ag-delete-btn { padding: 4px 12px; font-size: 0.8rem; }
+        .ag-topic-content { color: var(--text-muted); font-size: 0.9rem; margin-top: 8px; }
+        .ag-topic-tactics { color: var(--warning); font-size: 0.85rem; margin-top: 8px; }
+      `}</style>
+
+      {deleteConfirm && (
+        <CustomDialog
+          title="Konuyu Sil"
+          message="Bu konuyu silmek istediğinize emin misiniz?"
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setDeleteConfirm(null)}
+        />
+      )}
     </div>
   );
 }

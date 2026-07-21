@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { batchAddArchiveWords, batchAddPhrasalVerbs, clearCollection } from "@/lib/firestore";
 import { useNotification } from "@/context/NotificationContext";
 import CustomDialog from "@/components/CustomDialog";
-import { useRef } from "react";
 
 export default function AdminSeedPage() {
   const { isAdmin } = useAuth();
@@ -105,46 +104,39 @@ export default function AdminSeedPage() {
   if (!isAdmin) return null;
 
   return (
-    <div>
+    <div className="admin-seed-view">
       <input
         type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
         accept=".js,.json"
-        style={{ display: "none" }}
+        className="as-hidden-input"
       />
 
       <div className="glass-card">
-        <h3 className="section-title" style={{ fontSize: "1.1rem" }}>Veri Yönetimi</h3>
-        <p className="hint-text" style={{ marginBottom: 24 }}>
+        <h3 className="section-title as-title">Veri Yönetimi</h3>
+        <p className="hint-text as-subtitle">
           Eski projeden gelen .js veya .json dosyalarınızı buraya yükleyerek veritabanını güncelleyebilirsiniz.
         </p>
 
-        <div className="admin-stats-grid" style={{ gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-          {/* Temizle ve Yükle */}
-          <div className="glass-card" style={{ 
-            textAlign: "center", border: "1px solid rgba(255,69,58,0.2)", background: "rgba(255,69,58,0.02)" 
-          }}>
-            <h4 style={{ color: "var(--error)", marginBottom: 12 }}>Sıfırla ve Yükle</h4>
-            <p className="hint-text" style={{ fontSize: "0.85rem", marginBottom: 20 }}>
+        <div className="as-actions-grid">
+          <div className="as-action-card as-danger">
+            <h4 className="as-action-title as-danger-title">Sıfırla ve Yükle</h4>
+            <p className="hint-text as-action-desc">
               Tüm mevcut verileri siler ve dosyayı sıfırdan yükler.
             </p>
-            <button 
-              className="btn-primary" 
-              style={{ background: "var(--error)" }} 
-              onClick={() => setShowConfirm(true)} 
+            <button
+              className="btn-primary as-danger-btn"
+              onClick={() => setShowConfirm(true)}
               disabled={seeding}
             >
               Dosya Seç
             </button>
           </div>
 
-          {/* Sadece Ekle */}
-          <div className="glass-card" style={{ 
-            textAlign: "center", border: "1px solid rgba(10,132,255,0.2)", background: "rgba(10,132,255,0.02)" 
-          }}>
-            <h4 style={{ color: "var(--primary)", marginBottom: 12 }}>Üzerine Ekle</h4>
-            <p className="hint-text" style={{ fontSize: "0.85rem", marginBottom: 20 }}>
+          <div className="as-action-card as-safe">
+            <h4 className="as-action-title as-safe-title">Üzerine Ekle</h4>
+            <p className="hint-text as-action-desc">
               Mevcut verileri korur ve dosyadaki yeni verileri ekler.
             </p>
             <button className="btn-primary" onClick={() => triggerUpload("add")} disabled={seeding}>
@@ -153,15 +145,9 @@ export default function AdminSeedPage() {
           </div>
         </div>
 
-        {/* Status */}
         {status && (
-          <div style={{
-            marginTop: 24, padding: 16,
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid var(--border)",
-            borderRadius: 14, fontWeight: 600, fontSize: "0.9rem", color: "var(--text)", textAlign: "center"
-          }}>
-            {seeding && <div className="spinner-ring" style={{ width: 16, height: 16, borderSize: 2, marginBottom: 8, display: "inline-block" }} />}
+          <div className="as-status">
+            {seeding && <div className="spinner-ring as-status-spinner" />}
             <div>{status}</div>
           </div>
         )}
@@ -180,6 +166,50 @@ export default function AdminSeedPage() {
           onCancel={() => setShowConfirm(false)}
         />
       )}
+
+      <style jsx>{`
+        .as-hidden-input { display: none; }
+        .as-title { font-size: 1.1rem; }
+        .as-subtitle { margin-bottom: 24px; }
+
+        .as-actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .as-action-card {
+          text-align: center;
+          background: var(--bg-elevated);
+          border: 1px solid var(--border);
+          border-radius: 16px;
+          padding: 20px;
+        }
+        .as-danger { border-color: rgba(255, 69, 58, 0.2); }
+        .as-safe { border-color: rgba(10, 132, 255, 0.2); }
+        .as-action-title { margin-bottom: 12px; }
+        .as-danger-title { color: var(--error); }
+        .as-safe-title { color: var(--primary); }
+        .as-action-desc { font-size: 0.85rem; margin-bottom: 20px; }
+        .as-danger-btn { background: var(--error); }
+
+        .as-status {
+          margin-top: 24px;
+          padding: 16px;
+          background: var(--bg-elevated);
+          border: 1px solid var(--border);
+          border-radius: 14px;
+          font-weight: 600;
+          font-size: 0.9rem;
+          color: var(--text);
+          text-align: center;
+        }
+        .as-status-spinner {
+          width: 16px;
+          height: 16px;
+          margin-bottom: 8px;
+          display: inline-block;
+        }
+
+        @media (max-width: 600px) {
+          .as-actions-grid { grid-template-columns: 1fr; }
+        }
+      `}</style>
     </div>
   );
 }

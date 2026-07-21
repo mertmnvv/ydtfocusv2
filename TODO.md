@@ -106,6 +106,59 @@ Reading-merkezli IA".
 - [x] "+ kelime ekle" satırı sadeleşti; AI örnek-cümle yardımcısı artık
       pinned ikon buton değil, ikincil "Örnek cümle öner" metin linki
 
+## 7. Sitenin tamamı — "her sayfa yeniden" turu — TAMAMLANDI
+
+Kullanıcı talebi: mevcut koyu/altın yönü koru ama her sayfayı tek tek
+sil ve tamamen kendi tasarımıyla yeniden kur (checkpoint'siz, tüm
+sayfalar tek seferde). Kapsam: Yönetici Paneli dahil, Linefocus hariç.
+Her sayfa `Write` ile tamamen yeniden yazıldı — iş mantığı (Firestore/AI
+çağrıları, fonksiyon imzaları) birebir korunarak, satır-içi `style={{}}`
+kullanımı ve sabit hex renkler component-scoped `<style jsx>` sınıflarına
+ve CSS değişkenlerine (`--bg`, `--text`, `--accent`, `--border`, vb.)
+taşındı.
+
+- [x] `login`, `register`, `privacy` — `.gate-*` / `.legal-*` yeni scoped
+      sınıflar (paylaşılan `.auth-*` globallerinden bağımsız)
+- [x] `grammar`, `mistakes`, `archive` — `.grammar-*` / `.mistakes-*` /
+      `.archive-*` scoped sınıflar, mevcut mantık korundu
+- [x] `hero` — sadece ders-dışı ekranlar temizlendi (renkler → CSS
+      değişkeni, satır-içi stiller → scoped sınıf); sürükle-bırak ders
+      motoru ve dairesel SVG ilerleme halkaları kasıtlı olarak
+      dokunulmadan bırakıldı (admin'e özel "Çok Yakında" özelliği,
+      yüksek regresyon riski)
+- [x] `srs` — Quiz (3a) ile aynı görsel dili yansıtacak şekilde
+      yeniden yazıldı (nokta ilerleme, tek sütun seçenekler, solid
+      yeşil/kırmızı geri bildirim, düz "%skor" dairesi)
+- [x] `achievements` — gradient hero kart kaldırıldı, düz header +
+      accent ilerleme çubuğu
+- [x] `exam` — `.exam-*` scoped sınıflarla yeniden yazıldı (placeholder)
+- [x] `profile/[id]` — `.profile-view-*` scoped sınıflar, kullanılmayan
+      importlar temizlendi
+- [x] `flashcards-hub/[deckId]` — sadece boş-deste ekranı temizlendi;
+      Framer Motion kaydırma/çevirme fiziği kasıtlı olarak dokunulmadan
+      bırakıldı (hassas etkileşim mekaniği, yüksek regresyon riski)
+- [x] Yönetici Paneli (`admin/layout.js`, `admin/page.js`,
+      `admin/words`, `admin/grammar`, `admin/users`, `admin/feedback`,
+      `admin/seed`) — gradient "bento grid" → düz paylaşılan
+      `.admin-stats-grid`/`.admin-stat-card`; mobil alt navdaki kırık
+      `.bottom-nav-icon` (tanımsız CSS, ana uygulamanın metin-only
+      barına hizalanarak düzeltildi); yönlendirme hedefi `/dashboard`
+      yerine doğrudan `/reading`; `.admin-badge-user`/`.admin-badge-premium`
+      arasındaki altın renk çakışması giderildi (free/standart artık
+      nötr); tüm CRUD mantığı (`addArchiveWord`, `getGrammarTopics`,
+      `updateUserRole`, `getFeedbacks`, `batchAddArchiveWords`, vb.)
+      birebir korundu
+- [x] `globals.css` — artık kullanılmayan `.admin-layout`/`.admin-header`/
+      `.admin-title`/`.admin-subtitle` ve önceki turlardan kalan diğer
+      ölü kurallar temizlendi (her silme öncesi `grep` ile doğrulandı)
+
+> Not: `npm run build` her toplu değişiklikten sonra çalıştırıldı;
+> sandbox'ta gerçek Firebase env değişkenleri olmadığı için
+> `/admin/*` sayfalarından birinin statik prerender'ı
+> `auth/invalid-api-key` hatasıyla düşüyor — bu, bu redesign turundan
+> bağımsız, bilinen ve beklenen bir durum (ilk build denemesinde de
+> mevcuttu).
+
 ---
 
 ## Sonraki adımlar (kapsam dışı, `docs/DESIGN.md`'de tanımlı değil)

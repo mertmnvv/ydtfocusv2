@@ -22,35 +22,35 @@ export default function AdminFeedbackPage() {
   }, []);
 
   if (loading) {
-    return <div className="admin-loading">Geri bildirimler yükleniyor...</div>;
+    return <div className="page-loading"><div className="spinner-ring"></div><p>Geri bildirimler yükleniyor...</p></div>;
   }
 
   return (
     <div className="admin-feedback-container">
-      <div className="admin-card">
-        <div className="card-header">
-          <h3>Geri Bildirimler ({feedbacks.length})</h3>
+      <div className="glass-card af-card">
+        <div className="af-header">
+          <h3 className="section-title">Geri Bildirimler ({feedbacks.length})</h3>
         </div>
-        <div className="feedback-list">
+        <div className="af-list">
           {feedbacks.length === 0 ? (
-            <p className="no-feedback">Henüz geri bildirim gelmedi.</p>
+            <p className="af-empty">Henüz geri bildirim gelmedi.</p>
           ) : (
             feedbacks.map((fb) => (
-              <div key={fb.id} className="feedback-item">
-                <div className="fb-user-info">
-                  <span className="fb-user-name">{fb.userName}</span>
-                  <span className="fb-user-email">{fb.userEmail}</span>
-                  <span className="fb-date">{new Date(fb.createdAt).toLocaleString("tr-TR")}</span>
+              <div key={fb.id} className="af-item">
+                <div className="af-user-info">
+                  <span className="af-user-name">{fb.userName}</span>
+                  <span className="af-user-email">{fb.userEmail}</span>
+                  <span className="af-date">{new Date(fb.createdAt).toLocaleString("tr-TR")}</span>
                 </div>
-                <div className="fb-rating">
+                <div className="af-rating">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <i 
-                      key={star} 
+                    <i
+                      key={star}
                       className={`fa-star ${star <= fb.rating ? "fa-solid active" : "fa-regular"}`}
                     ></i>
                   ))}
                 </div>
-                <div className="fb-comment">
+                <div className="af-comment">
                   {fb.comment}
                 </div>
               </div>
@@ -60,120 +60,52 @@ export default function AdminFeedbackPage() {
       </div>
 
       <style jsx>{`
-        .admin-feedback-container {
-          padding-bottom: 40px;
-        }
+        .admin-feedback-container { padding-bottom: 40px; }
+        .af-card { padding: 0; overflow: hidden; }
 
-        .admin-card {
-          background: #1c1c1e;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 24px;
-          overflow: hidden;
-        }
-
-        .card-header {
+        .af-header {
           padding: 24px 32px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          background: rgba(255, 255, 255, 0.02);
+          border-bottom: 1px solid var(--border);
         }
 
-        .card-header h3 {
-          margin: 0;
-          font-size: 1.2rem;
-          font-weight: 800;
-          color: #fff;
-        }
+        .af-list { display: flex; flex-direction: column; }
 
-        .feedback-list {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .feedback-item {
+        .af-item {
           padding: 24px 32px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-          transition: background 0.2s;
+          border-bottom: 1px solid var(--border);
         }
+        .af-item:last-child { border-bottom: none; }
 
-        .feedback-item:hover {
-          background: rgba(255, 255, 255, 0.01);
-        }
-
-        .feedback-item:last-child {
-          border-bottom: none;
-        }
-
-        .fb-user-info {
+        .af-user-info {
           display: flex;
           align-items: center;
           gap: 12px;
           margin-bottom: 12px;
           flex-wrap: wrap;
         }
+        .af-user-name { font-weight: 700; color: var(--text); font-size: 0.95rem; }
+        .af-user-email { color: var(--text-muted); font-size: 0.85rem; }
+        .af-date { margin-left: auto; color: var(--text-muted); font-size: 0.8rem; opacity: 0.7; }
 
-        .fb-user-name {
-          font-weight: 700;
-          color: #fff;
-          font-size: 0.95rem;
-        }
+        .af-rating { color: var(--border); margin-bottom: 12px; display: flex; gap: 4px; }
+        .af-rating i.active { color: var(--accent); }
 
-        .fb-user-email {
-          color: #86868b;
-          font-size: 0.85rem;
-        }
-
-        .fb-date {
-          margin-left: auto;
-          color: #48484a;
-          font-size: 0.8rem;
-        }
-
-        .fb-rating {
-          color: #3a3a3c;
-          margin-bottom: 12px;
-          display: flex;
-          gap: 4px;
-        }
-
-        .fb-rating i.active {
-          color: var(--accent);
-        }
-
-        .fb-comment {
-          color: #e2e2e2;
+        .af-comment {
+          color: var(--text);
           font-size: 1rem;
           line-height: 1.6;
           white-space: pre-wrap;
-          background: rgba(255, 255, 255, 0.02);
+          background: var(--bg-elevated);
           padding: 16px;
           border-radius: 12px;
           border-left: 3px solid var(--accent);
         }
 
-        .no-feedback {
-          padding: 60px;
-          text-align: center;
-          color: #86868b;
-          font-size: 1rem;
-        }
-
-        .admin-loading {
-          padding: 60px;
-          text-align: center;
-          color: var(--accent);
-          font-weight: 700;
-        }
+        .af-empty { padding: 60px; text-align: center; color: var(--text-muted); font-size: 1rem; }
 
         @media (max-width: 768px) {
-          .fb-user-info {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 4px;
-          }
-          .fb-date {
-            margin-left: 0;
-            margin-top: 4px;
-          }
+          .af-user-info { flex-direction: column; align-items: flex-start; gap: 4px; }
+          .af-date { margin-left: 0; margin-top: 4px; }
         }
       `}</style>
     </div>
