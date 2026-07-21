@@ -56,11 +56,22 @@ olarak da alınabilirler.
 - [x] `globals.css`: artık kullanılmayan stream/topic-chip/flip-kart/
       reading-grid kuralları temizlendi
 
-## 4. Quiz — "Nokta İlerleme, Büyük Geri Bildirim" (3a)
+## 4. Quiz — "Nokta İlerleme, Büyük Geri Bildirim" (3a) — TAMAMLANDI
 
-- [ ] Mod seçim kartlarından "YENİ" kurdelesi ve ikon SVG'lerini kaldır
-- [ ] Gradient progress bar'ı nokta/segment ilerlemesiyle değiştir
-- [ ] Sonuç ekranını dairede düz "%skor" + 3 istatistik karosuna indir
+- [x] Mod seçim kartlarından "YENİ" kurdelesi ve ikon SVG'leri kaldırıldı
+- [x] Gradient progress bar + sayısal sayaç → nokta/segment ilerlemesi (süre
+      sağda kaldı, ayrı sayaç yok)
+- [x] 4 seçenek 2 sütunlu grid yerine tam genişlik tek sütun; doğru seçenek
+      solid yeşil, seçilen yanlış solid kırmızı — shake/flash animasyonu
+      kaldırıldı, renk değişimi geri bildirimin kendisi
+- [x] Sonuç ekranı: ikon yerine dairede düz "%skor" + 3 istatistik karosu
+      (Doğru/Yanlış/Başarı), "Gözden Geçir" listesi ve 2 aksiyon değişmedi
+- [x] Kaydırmalı slide mekaniği kaldırıldı, tek aktif soru gösterimi
+      (mikro-etkileşim tercihi — veri/skor mantığı birebir korundu)
+
+> Not: `/srs` (Aralıklı Tekrar) sayfası aynı eski `.quiz-sim-*` bileşenlerini
+> kullanıyor ve tasarım dokümanının kapsamında değil — bu redesign turunda
+> dokunulmadı, ileride ayrı bir iş olarak değerlendirilebilir.
 
 ## 5. Flashcards — "Tek Oluşturma Akışı, Öne Çıkan Oynat" (4a)
 
