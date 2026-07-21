@@ -5,6 +5,10 @@ ele almadan önce ilgili `docs/DESIGN.md` bölümünü oku. Sırayla ilerlenmesi
 önerilir (Navigasyon önce — diğer 4 ekran ona bağlı çalışır), ama bağımsız
 olarak da alınabilirler.
 
+**Durum: `docs/DESIGN.md`'deki 5 ekranın (Navigasyon, Dashboard, Reading,
+Quiz, Flashcards) tamamı uygulandı.** Sıradaki olası işler için "Sonraki
+adımlar (kapsam dışı)" bölümüne bak.
+
 ## Altyapı (bu oturumda tamamlandı)
 
 - [x] `CLAUDE.md` / `AGENTS.md` — Türkçe-önce kuralı + proje/redesign
@@ -88,6 +92,18 @@ olarak da alınabilirler.
       pinned ikon buton değil, ikincil "Örnek cümle öner" metin linki
 
 ---
+
+## Sonraki adımlar (kapsam dışı, `docs/DESIGN.md`'de tanımlı değil)
+
+Bu redesign turu sırasında fark edilen ama kapsam dışı bırakılan noktalar:
+
+- `/srs` (Aralıklı Tekrar) sayfası eski `.quiz-sim-*` bileşenlerini
+  kullanıyor — Quiz ekranıyla görsel/etkileşim tutarlılığı için ayrı bir
+  iş olarak ele alınabilir.
+- `api/groq/route.js`, istemciden gelen `messages`/`systemPrompt`'u
+  doğrudan Groq'a ileten genel bir proxy — teorik olarak sunucunun API
+  anahtarıyla keyfi bir prompt gönderilebilir (bkz. `docs/AI_PROMPTS.md`
+  "Sonraki adımlar"). Rate-limit/allowlist eklenmesi değerlendirilebilir.
 
 İlerledikçe bu dosyayı güncel tut: bir maddeye başlarken not düş, bitirince
 işaretle. Detaylı kabul kriterleri için her zaman `docs/DESIGN.md`'ye
