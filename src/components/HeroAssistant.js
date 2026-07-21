@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { AI_MODELS, buildHeroAssistantPrompt } from "@/constants/prompts";
 
 export default function HeroAssistant({ lessonContext, level }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,21 +26,14 @@ export default function HeroAssistant({ lessonContext, level }) {
     setMessages(prev => [...prev, { role: "user", content: userMsg }]);
     setLoading(true);
 
-    // Bağlamı sınırla (Token tasarrufu için)
-    const truncatedContext = lessonContext?.length > 1500 ? lessonContext.substring(0, 1500) + "..." : lessonContext;
-
-    const prompt = `You are Focus AI, an English teaching assistant. 
-    CURRENT LESSON CONTEXT: "${truncatedContext}"
-    USER LEVEL: ${level}
-    TASK: Answer the user's question about this English lesson. Keep it helpful, simple, and encouraging.
-    USER QUESTION: ${userMsg}`;
+    const prompt = buildHeroAssistantPrompt({ lessonContext, level, question: userMsg });
 
     try {
       const resp = await fetch("/api/groq", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+          model: AI_MODELS.FAST,
           messages: [{ role: "user", content: prompt }],
           temperature: 0.6,
         }),

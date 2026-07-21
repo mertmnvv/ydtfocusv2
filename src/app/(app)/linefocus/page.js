@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import CustomDialog from "@/components/CustomDialog";
 import { getUserWords, getUserMistakes, checkDailyLimit, incrementDailyLimit } from "@/lib/firestore";
+import { AI_MODELS, buildLinefocusTopicPrompt, buildLinefocusStoryPrompt, buildLinefocusVocabPrompt } from "@/constants/prompts";
 
 // --- Sub-components for Optimization ---
 
@@ -153,28 +154,13 @@ export default function LinefocusPage() {
 
     setLoading(true);
     const seed = Math.floor(Math.random() * 10000);
-    const prompt = `Task: Write exactly 4 high-quality, professional academic English sentences about ${topic}.
-    Level: B1-B2 Academic.
-    
-    Linguistic Requirements:
-    - Style: Professional academic journal (e.g., Nature, The Economist).
-    - Sentence Structure: Use complex clauses, passive voice, and academic logical connectors.
-    - Cohesion: Ensure perfect logical flow between the 4 sentences.
-    - NO repetitive simplistic SVO sentences. NO typos.
-    
-    Turkish Translation Rules:
-    1. Natural, fluid Turkish SOV order (Verb at the end).
-    2. Professional academic translation, NOT word-for-word.
-    3. NO devrik sentences.
-    4. Relative clauses → Turkish participle forms (-en/-an/-dığı).
-    
-    Return ONLY a JSON array: [{"en": "Sentence 1", "tr": "Türkçe 1"}, ...]`;
+    const prompt = buildLinefocusTopicPrompt(topic);
 
     try {
       const resp = await fetch("/api/groq", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+          model: AI_MODELS.FAST,
           messages: [{ role: "user", content: prompt }],
           temperature: 0.2,
         }),
@@ -242,28 +228,13 @@ export default function LinefocusPage() {
     const chapter = parseInt(localStorage.getItem("ai_book_chapter") || "1");
     const bookHistory = localStorage.getItem("ai_book_history") || "In a dark and silent futuristic city, a young coder named Kael finds a strange, ancient machine.";
 
-    const prompt = `### ROLE: Expert Linguistics Professor.
-    ### TASK: Generate exactly 4 professional academic English sentences for Chapter ${chapter} of a story.
-    STORY HISTORY: "${bookHistory}"
-    
-    Linguistic Requirements:
-    - Style: High-end academic prose.
-    - Structure: Complex clauses and professional transitions.
-    - Cohesion: Logically continue the story with sophisticated links.
-    - NO simplistic SVO repetitions. NO typos.
-    
-    Turkish Translation Rules:
-    1. Natural, fluid Turkish SOV order (Verb at the end).
-    2. Professional academic rephrasing, NOT word-for-word.
-    3. Relative clauses → Turkish participle forms.
-    
-    Return ONLY raw JSON array: [{"en": "Sentence 1", "tr": "Doğal Türkçe 1"}, ...]`;
+    const prompt = buildLinefocusStoryPrompt({ chapter, history: bookHistory });
 
     try {
       const resp = await fetch("/api/groq", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+          model: AI_MODELS.FAST,
           messages: [{ role: "user", content: prompt }],
           temperature: 0.2,
         }),
@@ -348,27 +319,12 @@ export default function LinefocusPage() {
       const shuffled = combined.sort(() => 0.5 - Math.random());
       const selectedWords = shuffled.slice(0, 10);
 
-      const prompt = `### ROLE: Expert Academic English Professor.
-      ### TASK: Generate exactly 4 professional academic English sentences that logically integrate the following vocabulary.
-      KEYWORDS: ${selectedWords.join(", ")}
-      
-      Linguistic Requirements:
-      - Style: Professional academic journal (e.g., Nature, The Economist).
-      - Sentence Structure: Use complex clauses and passive voice.
-      - Cohesion: Ensure perfect logical flow and professional transitions between the 4 sentences.
-      - NO repetitive simplistic SVO sentences. NO typos.
-      
-      Turkish Translation Rules:
-      1. Natural, fluid Turkish SOV order (Verb at the end).
-      2. Professional academic rephrasing, NOT word-for-word.
-      3. Relative clauses → Turkish participle forms.
-      
-      Return ONLY raw JSON array: [{"en": "Sentence 1", "tr": "Türkçe 1"}, ...]`;
+      const prompt = buildLinefocusVocabPrompt(selectedWords);
 
       const resp = await fetch("/api/groq", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+          model: AI_MODELS.FAST,
           messages: [{ role: "user", content: prompt }],
           temperature: 0.2,
         }),

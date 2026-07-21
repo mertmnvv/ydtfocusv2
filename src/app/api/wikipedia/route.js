@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { AI_MODELS, buildPassageTranslationPrompt } from "@/constants/prompts";
 
 // Her konuda birden fazla arama sorgusu — her istekte rastgele biri seçilir
 const TOPIC_SEARCH_MAP = {
@@ -139,10 +140,10 @@ async function translateTextWithAI(text) {
         "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
-        messages: [{ 
-          role: "user", 
-          content: `Translate the following English academic text to professional Turkish. Provide ONLY the translation, nothing else.\n\nText:\n${text}`
+        model: AI_MODELS.FAST,
+        messages: [{
+          role: "user",
+          content: buildPassageTranslationPrompt(text)
         }],
         temperature: 0.1,
       }),

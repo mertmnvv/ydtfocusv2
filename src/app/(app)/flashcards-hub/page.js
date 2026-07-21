@@ -3,27 +3,27 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getUserDecks, createUserDeck, addGlobalWords, deleteUserDeck, updateUserDeck } from "@/lib/firestore";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AI_MODELS, buildExampleSentencePrompt } from "@/constants/prompts";
 
 const AI_CATEGORIES = [
-  { value: "YDT Çıkmış Kelimeler", label: "YDT Çıkmış Kelimeler", icon: "fa-bullseye" },
-  { value: "Phrasal Verbs", label: "Phrasal Verbs", icon: "fa-link" },
-  { value: "Akademik Kelimeler", label: "Akademik Kelimeler", icon: "fa-graduation-cap" },
-  { value: "Sık Kullanılan Bağlaçlar", label: "Bağlaçlar & Edatlar", icon: "fa-arrows-split-up-and-left" },
-  { value: "Sağlık ve Tıp", label: "Sağlık & Tıp", icon: "fa-heart-pulse" },
-  { value: "Teknoloji ve Bilim", label: "Teknoloji & Bilim", icon: "fa-microchip" },
-  { value: "Çevre ve Doğa", label: "Çevre & Doğa", icon: "fa-leaf" },
-  { value: "Tarih ve Kültür", label: "Tarih & Kültür", icon: "fa-landmark" },
-  { value: "Sanat ve Edebiyat", label: "Sanat & Edebiyat", icon: "fa-palette" },
-  { value: "Eğitim ve Psikoloji", label: "Eğitim & Psikoloji", icon: "fa-brain" },
-  { value: "Sosyal Hayat ve İlişkiler", label: "Sosyal Hayat & İlişkiler", icon: "fa-users" },
-  { value: "Ekonomi ve İş Dünyası", label: "Ekonomi & İş", icon: "fa-chart-pie" },
-  { value: "Hukuk ve Siyaset", label: "Hukuk & Siyaset", icon: "fa-scale-balanced" },
-  { value: "Medya ve İletişim", label: "Medya & İletişim", icon: "fa-bullhorn" },
-  { value: "Coğrafya ve Uzay", label: "Coğrafya & Uzay", icon: "fa-earth-americas" },
-  { value: "Seyahat ve Turizm", label: "Seyahat & Turizm", icon: "fa-plane" },
-  { value: "Günlük Yaşam", label: "Günlük Yaşam", icon: "fa-sun" }
+  { value: "YDT Çıkmış Kelimeler", label: "YDT Çıkmış Kelimeler" },
+  { value: "Phrasal Verbs", label: "Phrasal Verbs" },
+  { value: "Akademik Kelimeler", label: "Akademik Kelimeler" },
+  { value: "Sık Kullanılan Bağlaçlar", label: "Bağlaçlar & Edatlar" },
+  { value: "Sağlık ve Tıp", label: "Sağlık & Tıp" },
+  { value: "Teknoloji ve Bilim", label: "Teknoloji & Bilim" },
+  { value: "Çevre ve Doğa", label: "Çevre & Doğa" },
+  { value: "Tarih ve Kültür", label: "Tarih & Kültür" },
+  { value: "Sanat ve Edebiyat", label: "Sanat & Edebiyat" },
+  { value: "Eğitim ve Psikoloji", label: "Eğitim & Psikoloji" },
+  { value: "Sosyal Hayat ve İlişkiler", label: "Sosyal Hayat & İlişkiler" },
+  { value: "Ekonomi ve İş Dünyası", label: "Ekonomi & İş" },
+  { value: "Hukuk ve Siyaset", label: "Hukuk & Siyaset" },
+  { value: "Medya ve İletişim", label: "Medya & İletişim" },
+  { value: "Coğrafya ve Uzay", label: "Coğrafya & Uzay" },
+  { value: "Seyahat ve Turizm", label: "Seyahat & Turizm" },
+  { value: "Günlük Yaşam", label: "Günlük Yaşam" }
 ];
 
 export default function FlashcardsHubPage() {
@@ -31,20 +31,22 @@ export default function FlashcardsHubPage() {
   const router = useRouter();
   const [decks, setDecks] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // Modals
-  const [showModal, setShowModal] = useState(null); // 'ai' | 'manual' | null
+
+  // Create flow (tek modal, segmented control)
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createTab, setCreateTab] = useState("ai"); // "ai" | "manual"
   const [activeDeck, setActiveDeck] = useState(null); // the deck object currently being managed
-  
+  const [managerMenuOpen, setManagerMenuOpen] = useState(false);
+
   // AI Gen State
   const [aiTopic, setAiTopic] = useState("");
   const [aiLevel, setAiLevel] = useState("B1");
   const [aiCount, setAiCount] = useState(20);
   const [generating, setGenerating] = useState(false);
-  
+
   // Manual Create State
   const [manualName, setManualName] = useState("");
-  
+
   // Deck Manager State
   const [editName, setEditName] = useState("");
   const [isEditingName, setIsEditingName] = useState(false);
@@ -54,16 +56,17 @@ export default function FlashcardsHubPage() {
   const [newCardSentence, setNewCardSentence] = useState("");
   const [magicLoading, setMagicLoading] = useState(false);
 
-  useEffect(() => { 
+  useEffect(() => {
     if (user) {
-      loadDecks(); 
+      loadDecks();
     } else {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const loadDecks = async () => {
-    try { 
+    try {
       const d = await getUserDecks(user.uid);
       setDecks(d);
       if (activeDeck) {
@@ -96,7 +99,7 @@ export default function FlashcardsHubPage() {
         cards: flashcards.map(f => ({ ...f, status: "new" })),
         totalStudied: 0, lastStudied: null
       });
-      setShowModal(null);
+      setCreateOpen(false);
       setAiTopic("");
       await loadDecks();
     } catch (err) { alert("Hata: " + err.message); }
@@ -108,7 +111,7 @@ export default function FlashcardsHubPage() {
     if (!manualName.trim()) return;
     await createUserDeck(user.uid, { name: manualName.trim(), cards: [], totalStudied: 0, lastStudied: null });
     setManualName("");
-    setShowModal(null);
+    setCreateOpen(false);
     await loadDecks();
   };
 
@@ -149,14 +152,15 @@ export default function FlashcardsHubPage() {
     }
     setMagicLoading(true);
     try {
+      const { system, user: userContent } = buildExampleSentencePrompt({ word: newCardWord, meaning: newCardMeaning });
       const res = await fetch("/api/groq", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+          model: AI_MODELS.FAST,
           messages: [
-            { role: "system", content: "You are an English teacher." },
-            { role: "user", content: `Create a short, simple B1-B2 level English example sentence for the word "${newCardWord}" (meaning: ${newCardMeaning}). Return ONLY the sentence.` }
+            { role: "system", content: system },
+            { role: "user", content: userContent }
           ]
         })
       });
@@ -193,6 +197,7 @@ export default function FlashcardsHubPage() {
     setActiveDeck(deck);
     setEditName(deck.name);
     setIsEditingName(false);
+    setManagerMenuOpen(false);
     setNewCardWord("");
     setNewCardMeaning("");
     setNewCardSentence("");
@@ -227,16 +232,11 @@ export default function FlashcardsHubPage() {
       <div className="fh-header">
         <div>
           <h1 className="fh-title">Flashcards</h1>
-          <p className="fh-desc">Kendi destelerini oluştur, AI ile üret, swipe ile çalış.</p>
+          <p className="fh-desc">Kendi destelerini oluştur, swipe ile çalış.</p>
         </div>
-        <div className="fh-btns">
-          <button className="fh-btn primary" onClick={() => setShowModal("ai")}>
-            <i className="fa-solid fa-wand-magic-sparkles"></i> AI Üret
-          </button>
-          <button className="fh-btn ghost" onClick={() => setShowModal("manual")}>
-            <i className="fa-solid fa-plus"></i> Yeni Deste
-          </button>
-        </div>
+        <button className="fh-btn primary" onClick={() => { setCreateTab("ai"); setCreateOpen(true); }}>
+          <i className="fa-solid fa-plus"></i> Yeni Deste
+        </button>
       </div>
 
       {/* Decks Grid (Stacked Cards) */}
@@ -244,7 +244,7 @@ export default function FlashcardsHubPage() {
         <div className="glass-card fh-empty">
           <i className="fa-regular fa-layer-group fh-empty-ic"></i>
           <h3>Henüz bir desten yok</h3>
-          <p>Yukarıdaki butonlarla AI destesi üret veya elle oluştur.</p>
+          <p>Yukarıdaki butonla AI destesi üret veya elle oluştur.</p>
         </div>
       ) : (
         <div className="fh-grid">
@@ -253,14 +253,14 @@ export default function FlashcardsHubPage() {
             const layers = getStackLayers(cards.length);
             const knownCount = cards.filter(c => c.status === "known").length;
             const pct = cards.length > 0 ? Math.round((knownCount / cards.length) * 100) : 0;
-            
+
             return (
               <div key={deck.id} className="fh-stacked-deck" onClick={() => openDeckManager(deck)}>
                 {/* Background layers for thickness */}
                 {Array.from({ length: layers - 1 }).map((_, i) => {
                   const rot = i % 2 === 0 ? (i + 1) * -1.5 : (i + 1) * 1.5;
                   return (
-                    <div key={i} className="fh-stack-layer" style={{ 
+                    <div key={i} className="fh-stack-layer" style={{
                       transform: `translateY(${-(i+1)*5}px) scale(${1 - (i+1)*0.015}) rotate(${rot}deg)`,
                       zIndex: -(i+1),
                       opacity: 1 - (i+1)*0.08,
@@ -268,13 +268,12 @@ export default function FlashcardsHubPage() {
                     }}></div>
                   );
                 })}
-                
+
                 {/* Top Card */}
                 <div className="fh-stack-top">
                   <h3 className="fh-sd-name">{deck.name}</h3>
                   <div className="fh-sd-info">
-                    <span className="fh-sd-count"><i className="fa-solid fa-layer-group"></i> {cards.length} Kart</span>
-                    {cards.length > 0 && <span className="fh-sd-pct"><i className="fa-solid fa-circle-check"></i> %{pct}</span>}
+                    <span className="fh-sd-meta">{cards.length} kart{cards.length > 0 ? ` · %${pct}` : ""}</span>
                   </div>
                   {cards.length > 0 && (
                     <div className="fh-sd-bar">
@@ -305,37 +304,37 @@ export default function FlashcardsHubPage() {
                   <button type="button" onClick={() => setIsEditingName(true)} title="İsmi Düzenle"><i className="fa-solid fa-pen"></i></button>
                 </div>
               )}
-              <button type="button" className="fh-manager-close" onClick={() => setActiveDeck(null)}><i className="fa-solid fa-xmark"></i></button>
+              <div className="fh-manager-top-right">
+                <div className="fh-overflow-wrapper">
+                  <button type="button" className="fh-manager-overflow" onClick={() => setManagerMenuOpen(v => !v)}>
+                    <i className="fa-solid fa-ellipsis"></i>
+                  </button>
+                  {managerMenuOpen && (
+                    <>
+                      <div className="fh-overflow-backdrop" onClick={() => setManagerMenuOpen(false)} />
+                      <div className="fh-overflow-menu">
+                        <button type="button" onClick={() => { setManagerMenuOpen(false); setDeckToDelete(activeDeck); }}>
+                          <i className="fa-solid fa-trash-can"></i> Desteyi Sil
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+                <button type="button" className="fh-manager-close" onClick={() => setActiveDeck(null)}><i className="fa-solid fa-xmark"></i></button>
+              </div>
             </div>
 
             <div className="fh-manager-actions">
               <button type="button" className="fh-btn-play" onClick={() => router.push(`/flashcards-hub/${activeDeck.id}`)} disabled={(activeDeck.cards||[]).length === 0}>
                 <i className="fa-solid fa-play"></i> Hemen Oyna
               </button>
-              <button type="button" className="fh-btn-del" onClick={() => setDeckToDelete(activeDeck)}>
-                <i className="fa-solid fa-trash-can"></i>
-              </button>
+              <p className="fh-manager-meta">
+                {(activeDeck.cards||[]).length} kelime
+                {(activeDeck.cards||[]).length > 0 && ` · %${Math.round(((activeDeck.cards||[]).filter(c => c.status === "known").length / (activeDeck.cards||[]).length) * 100)} biliniyor`}
+              </p>
             </div>
 
             <div className="fh-manager-content">
-              {/* Add Card Form */}
-              <div className="fh-add-card">
-                <h4><i className="fa-solid fa-plus"></i> Yeni Kelime Ekle</h4>
-                <form onSubmit={handleAddCard}>
-                  <div className="fh-add-row">
-                    <input type="text" placeholder="Kelime (İngilizce)" value={newCardWord} onChange={e=>setNewCardWord(e.target.value)} required />
-                    <input type="text" placeholder="Anlam (Türkçe)" value={newCardMeaning} onChange={e=>setNewCardMeaning(e.target.value)} required />
-                  </div>
-                  <div className="fh-add-row ai-row">
-                    <input type="text" placeholder="Örnek Cümle (Opsiyonel)" value={newCardSentence} onChange={e=>setNewCardSentence(e.target.value)} className="sentence-input" />
-                    <button type="button" className="magic-btn" onClick={handleMagicWand} disabled={magicLoading} title="AI'dan Örnek Cümle İste">
-                      {magicLoading ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-solid fa-wand-magic-sparkles"></i>}
-                    </button>
-                  </div>
-                  <button type="submit" className="fh-add-submit">Listeye Ekle</button>
-                </form>
-              </div>
-
               {/* Cards List */}
               <div className="fh-cards-list">
                 <h4>Kelimeler ({(activeDeck.cards||[]).length})</h4>
@@ -356,69 +355,102 @@ export default function FlashcardsHubPage() {
                   )}
                 </div>
               </div>
+
+              {/* Add Card Row */}
+              <form onSubmit={handleAddCard} className="fh-add-card">
+                <div className="fh-add-row">
+                  <input type="text" placeholder="Kelime (İngilizce)" value={newCardWord} onChange={e=>setNewCardWord(e.target.value)} required />
+                  <input type="text" placeholder="Anlam (Türkçe)" value={newCardMeaning} onChange={e=>setNewCardMeaning(e.target.value)} required />
+                </div>
+                <input type="text" placeholder="Örnek Cümle (Opsiyonel)" value={newCardSentence} onChange={e=>setNewCardSentence(e.target.value)} className="fh-sentence-input" />
+                <div className="fh-add-footer">
+                  <button type="button" className="fh-magic-link" onClick={handleMagicWand} disabled={magicLoading}>
+                    {magicLoading ? "Cümle öneriliyor..." : "Örnek cümle öner"}
+                  </button>
+                  <button type="submit" className="fh-add-submit">+ kelime ekle</button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
       )}
 
-      {/* AI Modal */}
-      {showModal === "ai" && (
-        <div className="fh-overlay" onClick={() => !generating && setShowModal(null)}>
+      {/* CREATE MODAL (tek modal, segmented control) */}
+      {createOpen && (
+        <div className="fh-overlay" onClick={() => !generating && setCreateOpen(false)}>
           <div className="glass-card fh-modal" onClick={e => e.stopPropagation()}>
             <div className="fh-modal-head">
-              <h2><i className="fa-solid fa-wand-magic-sparkles"></i> AI Deste Üret</h2>
-              {!generating && <button className="fh-modal-x" onClick={() => setShowModal(null)}><i className="fa-solid fa-xmark"></i></button>}
+              <h2>Yeni Deste</h2>
+              {!generating && <button className="fh-modal-x" onClick={() => setCreateOpen(false)}><i className="fa-solid fa-xmark"></i></button>}
             </div>
-            {generating ? (
-              <div className="fh-gen">
-                <div className="spinner-ring"></div>
-                <h3>Kelimeler hazırlanıyor...</h3>
-                <p>{aiTopic} · {aiLevel} · {aiCount} kelime</p>
-                <span className="hint-text">Bu işlem 5-15 saniye sürebilir.</span>
-              </div>
+
+            <div className="fh-segmented">
+              <button
+                type="button"
+                className={`fh-segmented-btn ${createTab === "ai" ? "active" : ""}`}
+                onClick={() => setCreateTab("ai")}
+                disabled={generating}
+              >
+                AI ile Üret
+              </button>
+              <button
+                type="button"
+                className={`fh-segmented-btn ${createTab === "manual" ? "active" : ""}`}
+                onClick={() => setCreateTab("manual")}
+                disabled={generating}
+              >
+                Elle Oluştur
+              </button>
+            </div>
+
+            {createTab === "ai" ? (
+              generating ? (
+                <div className="fh-gen">
+                  <div className="spinner-ring"></div>
+                  <h3>Kelimeler hazırlanıyor...</h3>
+                  <p>{aiTopic} · {aiLevel} · {aiCount} kelime</p>
+                  <span className="hint-text">Bu işlem 5-15 saniye sürebilir.</span>
+                </div>
+              ) : (
+                <form onSubmit={handleGenerateAi} className="fh-form">
+                  <div className="form-group">
+                    <label>Kategori</label>
+                    <input
+                      type="text"
+                      list="fh-category-options"
+                      placeholder="Bir kategori yaz veya seç..."
+                      value={aiTopic}
+                      onChange={e => setAiTopic(e.target.value)}
+                      required
+                    />
+                    <datalist id="fh-category-options">
+                      {AI_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                    </datalist>
+                  </div>
+                  <div className="fh-form-row">
+                    <div className="form-group">
+                      <label>Seviye</label>
+                      <select value={aiLevel} onChange={e => setAiLevel(e.target.value)}>
+                        {["A1","A2","B1","B2","C1","C2"].map(l => <option key={l} value={l}>{l}</option>)}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Kart Sayısı</label>
+                      <input type="number" min="5" max="50" value={aiCount} onChange={e => setAiCount(e.target.value)} required />
+                    </div>
+                  </div>
+                  <button type="submit" className="fh-submit-btn">Üret ve Kaydet</button>
+                </form>
+              )
             ) : (
-              <form onSubmit={handleGenerateAi} className="fh-form">
+              <form onSubmit={handleCreateManual} className="fh-form">
                 <div className="form-group">
-                  <label>Kategori</label>
-                  <select value={aiTopic} onChange={e => setAiTopic(e.target.value)} required>
-                    <option value="" disabled>Bir kategori seç</option>
-                    {AI_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                  </select>
+                  <label>Deste Adı</label>
+                  <input type="text" placeholder="Örn: Zorlandığım Kelimeler" value={manualName} onChange={e => setManualName(e.target.value)} required autoFocus />
                 </div>
-                <div className="fh-form-row">
-                  <div className="form-group">
-                    <label>Seviye</label>
-                    <select value={aiLevel} onChange={e => setAiLevel(e.target.value)}>
-                      {["A1","A2","B1","B2","C1","C2"].map(l => <option key={l} value={l}>{l}</option>)}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Kelime Sayısı</label>
-                    <input type="number" min="5" max="50" value={aiCount} onChange={e => setAiCount(e.target.value)} required />
-                  </div>
-                </div>
-                <button type="submit" className="fh-submit-btn"><i className="fa-solid fa-bolt"></i> Üret ve Kaydet</button>
+                <button type="submit" className="fh-submit-btn">Oluştur</button>
               </form>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* Manual Modal */}
-      {showModal === "manual" && (
-        <div className="fh-overlay" onClick={() => setShowModal(null)}>
-          <div className="glass-card fh-modal" onClick={e => e.stopPropagation()}>
-            <div className="fh-modal-head">
-              <h2><i className="fa-solid fa-plus"></i> Yeni Deste</h2>
-              <button className="fh-modal-x" onClick={() => setShowModal(null)}><i className="fa-solid fa-xmark"></i></button>
-            </div>
-            <form onSubmit={handleCreateManual} className="fh-form">
-              <div className="form-group">
-                <label>Deste Adı</label>
-                <input type="text" placeholder="Örn: Zorlandığım Kelimeler" value={manualName} onChange={e => setManualName(e.target.value)} required autoFocus />
-              </div>
-              <button type="submit" className="fh-submit-btn"><i className="fa-solid fa-plus"></i> Oluştur</button>
-            </form>
           </div>
         </div>
       )}
@@ -443,11 +475,9 @@ export default function FlashcardsHubPage() {
         .fh-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; gap: 16px; flex-wrap: wrap; }
         .fh-title { font-size: 2rem; font-weight: 900; letter-spacing: -1px; color: var(--text); margin-bottom: 4px; }
         .fh-desc { color: var(--text-muted); font-size: .9rem; }
-        .fh-btns { display: flex; gap: 10px; }
         .fh-btn { padding: 11px 18px; border-radius: 14px; font-weight: 700; border: none; cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 8px; font-size: .88rem; font-family: var(--font); }
         .fh-btn:hover { transform: translateY(-2px); }
         .fh-btn.primary { background: var(--accent); color: #000; }
-        .fh-btn.ghost { background: var(--glass); border: 1px solid var(--border); color: var(--text); }
 
         .fh-empty { text-align: center; padding: 60px 20px; }
         .fh-empty-ic { font-size: 2.5rem; color: var(--text-muted); opacity: .35; margin-bottom: 16px; display: block; }
@@ -458,13 +488,13 @@ export default function FlashcardsHubPage() {
         .fh-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 32px 24px; padding-top: 20px; width: 100%; }
         .fh-stacked-deck { position: relative; cursor: pointer; transition: transform .3s cubic-bezier(0.34, 1.56, 0.64, 1); height: 260px; width: 100%; }
         .fh-stacked-deck:hover { transform: translateY(-10px); }
-        
+
         .fh-stack-layer {
-          position: absolute; inset: 0; 
-          background: var(--bg-elevated); border: 1px solid var(--border); 
+          position: absolute; inset: 0;
+          background: var(--bg-elevated); border: 1px solid var(--border);
           border-radius: 20px; transition: all .3s;
         }
-        
+
         .fh-stack-top {
           position: absolute; inset: 0;
           background: var(--bg-elevated); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
@@ -477,51 +507,51 @@ export default function FlashcardsHubPage() {
 
         .fh-sd-name { font-size: 1.25rem; font-weight: 800; color: var(--text); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; text-align: center; margin-top: 10px; }
         .fh-sd-info { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: auto; margin-bottom: 12px; }
-        .fh-sd-count, .fh-sd-pct { font-size: .85rem; font-weight: 700; display: flex; align-items: center; gap: 6px; }
-        .fh-sd-count { color: var(--text-muted); }
-        .fh-sd-pct { color: var(--accent); }
-        
+        .fh-sd-meta { font-size: .85rem; font-weight: 700; color: var(--text-muted); }
+
         .fh-sd-bar { height: 5px; background: var(--glass); border-radius: 3px; overflow: hidden; }
         .fh-sd-fill { height: 100%; background: var(--accent); border-radius: 3px; }
 
         /* DECK MANAGER MODAL */
-        /* (Margin auto added to fh-manager above to support flex-start overlay) */
         .fh-manager-top { padding: 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,.1); }
         .fh-manager-title { display: flex; align-items: center; gap: 12px; }
         .fh-manager-title h2 { font-size: 1.3rem; font-weight: 800; color: var(--text); }
         .fh-manager-title button { background: none; border: none; color: var(--text-muted); cursor: pointer; transition: .2s; }
         .fh-manager-title button:hover { color: var(--accent); }
+        .fh-manager-top-right { display: flex; align-items: center; gap: 4px; }
         .fh-manager-close { background: none; border: none; font-size: 1.4rem; color: var(--text-muted); cursor: pointer; }
         .fh-manager-close:hover { color: var(--text); }
-        
+
+        .fh-overflow-wrapper { position: relative; }
+        .fh-manager-overflow { background: none; border: none; font-size: 1.1rem; color: var(--text-muted); cursor: pointer; padding: 8px; }
+        .fh-manager-overflow:hover { color: var(--text); }
+        .fh-overflow-backdrop { position: fixed; inset: 0; z-index: 10; }
+        .fh-overflow-menu {
+          position: absolute; top: calc(100% + 4px); right: 0; z-index: 11;
+          background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 12px;
+          padding: 6px; min-width: 160px; box-shadow: 0 10px 30px rgba(0,0,0,.3);
+        }
+        .fh-overflow-menu button {
+          width: 100%; background: none; border: none; color: #ff453a; font-weight: 700; font-size: .85rem;
+          padding: 10px 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; text-align: left;
+        }
+        .fh-overflow-menu button:hover { background: rgba(255,69,58,.1); }
+
         .fh-manager-rename { display: flex; gap: 6px; align-items: center; flex: 1; margin-right: 16px; }
         .fh-manager-rename input { flex: 1; background: var(--glass); border: 1px solid var(--accent); padding: 8px 12px; border-radius: 10px; color: var(--text); font-weight: 700; outline: none; font-family: var(--font); }
         .fh-manager-rename button { background: var(--glass); border: 1px solid var(--border); border-radius: 8px; width: 36px; height: 36px; cursor: pointer; color: var(--text-muted); }
         .fh-manager-rename .save-btn { color: var(--accent); border-color: rgba(226,183,20,.3); }
         .fh-manager-rename .save-btn:hover { background: rgba(226,183,20,.1); }
 
-        .fh-manager-actions { padding: 20px 24px; display: flex; gap: 12px; border-bottom: 1px solid var(--border); }
-        .fh-btn-play { flex: 1; padding: 14px; border-radius: 12px; background: var(--accent); color: #000; font-weight: 800; font-size: 1rem; border: none; cursor: pointer; transition: .2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .fh-manager-actions { padding: 20px 24px; border-bottom: 1px solid var(--border); }
+        .fh-btn-play { width: 100%; padding: 16px; border-radius: 12px; background: var(--accent); color: #000; font-weight: 800; font-size: 1.05rem; border: none; cursor: pointer; transition: .2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
         .fh-btn-play:hover { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(226,183,20,.3); }
         .fh-btn-play:disabled { opacity: .4; pointer-events: none; box-shadow: none; }
-        .fh-btn-del { padding: 0 20px; border-radius: 12px; background: rgba(255,69,58,.1); border: 1px solid rgba(255,69,58,.2); color: #ff453a; font-size: 1.1rem; cursor: pointer; transition: .2s; }
-        .fh-btn-del:hover { background: #ff453a; color: #fff; }
+        .fh-manager-meta { text-align: center; margin-top: 10px; font-size: .8rem; color: var(--text-muted); font-weight: 600; }
 
         .fh-manager-content { padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 24px; }
-        
-        .fh-add-card h4, .fh-cards-list h4 { font-size: .85rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-        .fh-add-card form { display: flex; flex-direction: column; gap: 10px; }
-        .fh-add-row { display: flex; gap: 10px; }
-        .fh-add-row input { flex: 1; background: var(--glass); border: 1px solid var(--border); padding: 12px; border-radius: 10px; color: var(--text); font-size: .9rem; outline: none; transition: .2s; font-family: var(--font); }
-        .fh-add-row input:focus { border-color: var(--accent); }
-        .ai-row { position: relative; }
-        .sentence-input { padding-right: 48px !important; }
-        .magic-btn { position: absolute; right: 6px; top: 6px; bottom: 6px; width: 36px; border-radius: 8px; background: rgba(226,183,20,.15); border: none; color: var(--accent); cursor: pointer; transition: .2s; }
-        .magic-btn:hover:not(:disabled) { background: var(--accent); color: #000; }
-        .magic-btn:disabled { opacity: .5; cursor: not-allowed; }
-        .fh-add-submit { padding: 12px; border-radius: 10px; background: var(--glass); border: 1px solid var(--border); color: var(--text); font-weight: 700; cursor: pointer; transition: .2s; margin-top: 4px; }
-        .fh-add-submit:hover { background: rgba(255,255,255,.1); }
 
+        .fh-cards-list h4 { font-size: .85rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
         .fh-cards-scroll { display: flex; flex-direction: column; gap: 8px; }
         .empty-text { font-size: .9rem; color: var(--text-muted); font-style: italic; }
         .fh-card-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(0,0,0,.2); border: 1px solid var(--border); border-radius: 12px; }
@@ -532,17 +562,35 @@ export default function FlashcardsHubPage() {
         .fh-card-remove { background: none; border: none; color: var(--text-muted); font-size: 1rem; cursor: pointer; padding: 8px; transition: .2s; }
         .fh-card-remove:hover { color: #ff453a; }
 
-        /* Modals (AI & Manual) */
+        .fh-add-card { display: flex; flex-direction: column; gap: 10px; padding-top: 4px; border-top: 1px solid var(--border); }
+        .fh-add-row { display: flex; gap: 10px; margin-top: 16px; }
+        .fh-add-row input, .fh-sentence-input { background: var(--glass); border: 1px solid var(--border); padding: 12px; border-radius: 10px; color: var(--text); font-size: .9rem; outline: none; transition: .2s; font-family: var(--font); }
+        .fh-add-row input { flex: 1; }
+        .fh-sentence-input { width: 100%; }
+        .fh-add-row input:focus, .fh-sentence-input:focus { border-color: var(--accent); }
+        .fh-add-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .fh-magic-link { background: none; border: none; color: var(--accent); font-size: .8rem; font-weight: 700; cursor: pointer; padding: 4px 0; }
+        .fh-magic-link:hover:not(:disabled) { text-decoration: underline; }
+        .fh-magic-link:disabled { opacity: .5; cursor: not-allowed; }
+        .fh-add-submit { padding: 10px 18px; border-radius: 10px; background: var(--glass); border: 1px solid var(--border); color: var(--text); font-weight: 700; font-size: .85rem; cursor: pointer; transition: .2s; white-space: nowrap; }
+        .fh-add-submit:hover { background: rgba(255,255,255,.1); }
+
+        /* Modals */
         .fh-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.75); backdrop-filter: blur(10px); display: flex; align-items: flex-start; justify-content: center; z-index: 1000; padding: 40px 20px; overflow-y: auto; animation: fadeIn .2s; }
         .fh-modal { max-width: 460px; width: 100%; padding: 28px; margin: auto; }
         .fh-manager { max-width: 500px; width: 100%; padding: 0; display: flex; flex-direction: column; max-height: 85vh; margin: auto; }
-        .fh-modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-        .fh-modal-head h2 { font-size: 1.25rem; font-weight: 800; display: flex; align-items: center; gap: 10px; }
-        .fh-modal-head h2 i { color: var(--accent); }
+        .fh-modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .fh-modal-head h2 { font-size: 1.25rem; font-weight: 800; }
         .fh-modal-x { background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; transition: .2s; }
         .fh-modal-x:hover { color: var(--text); }
 
+        .fh-segmented { display: flex; gap: 6px; background: var(--glass); border-radius: 12px; padding: 4px; margin-bottom: 20px; }
+        .fh-segmented-btn { flex: 1; background: none; border: none; padding: 10px; border-radius: 9px; font-size: .85rem; font-weight: 700; color: var(--text-muted); cursor: pointer; font-family: var(--font); }
+        .fh-segmented-btn.active { background: var(--accent); color: #000; }
+        .fh-segmented-btn:disabled { opacity: .6; cursor: not-allowed; }
+
         .fh-form { display: flex; flex-direction: column; gap: 14px; }
+        .fh-form .form-group label { font-size: .75rem; font-weight: 800; color: var(--text-muted); margin-bottom: 6px; display: block; }
         .fh-form .form-group select,
         .fh-form .form-group input { background: var(--glass); border: 1px solid var(--border); padding: 13px 14px; border-radius: 14px; color: var(--text); font-size: .95rem; outline: none; transition: .2s; font-weight: 600; font-family: var(--font); width: 100%; }
         .fh-form .form-group select:focus,
@@ -550,7 +598,7 @@ export default function FlashcardsHubPage() {
         .fh-form .form-group select option { background: var(--bg-elevated); color: var(--text); }
         .fh-form-row { display: flex; gap: 12px; }
         .fh-form-row .form-group { flex: 1; }
-        .fh-submit-btn { width: 100%; padding: 16px; margin-top: 8px; border-radius: 14px; background: var(--accent); color: #000; font-weight: 800; font-size: 1.05rem; border: none; cursor: pointer; transition: .2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .fh-submit-btn { width: 100%; padding: 16px; margin-top: 8px; border-radius: 14px; background: var(--accent); color: #000; font-weight: 800; font-size: 1.05rem; border: none; cursor: pointer; transition: .2s; }
         .fh-submit-btn:hover { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(226,183,20,.3); }
 
         .fh-gen { text-align: center; padding: 36px 20px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
@@ -558,7 +606,7 @@ export default function FlashcardsHubPage() {
         .fh-gen p { color: var(--accent); font-weight: 700; font-size: .9rem; }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
+
         /* Confirm Modal */
         .confirm-modal { width: 90%; max-width: 400px; text-align: center; padding: 32px 24px; animation: slideUp .3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .confirm-icon { font-size: 3rem; color: #ff453a; margin-bottom: 16px; }
@@ -574,14 +622,13 @@ export default function FlashcardsHubPage() {
         @media (max-width: 768px) {
           .fh-page { padding: 16px; min-height: 100dvh; overflow-x: hidden; }
           .fh-header { flex-direction: column; text-align: center; gap: 16px; }
-          .fh-btns { width: 100%; }
-          .fh-btn { flex: 1; justify-content: center; }
+          .fh-btn { width: 100%; justify-content: center; }
           .fh-add-row { flex-direction: column; }
           .fh-grid { grid-template-columns: repeat(2, 1fr); gap: 20px 12px; width: 100%; margin: 0; }
           .fh-stacked-deck { height: 220px; width: 100%; }
           .fh-sd-name { font-size: 1.05rem; -webkit-line-clamp: 3; }
           .fh-manager-top { padding: 16px; }
-          .fh-manager-actions { padding: 16px; flex-direction: column; }
+          .fh-manager-actions { padding: 16px; }
           .fh-modal { padding: 20px; }
           .fh-overlay { padding: 20px 12px; }
         }

@@ -4,8 +4,9 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { useSearchParams } from "next/navigation";
-import { subscribeToUserWords, addUserWord, completeReadingPassage, getUserMistakes, checkDailyLimit, incrementDailyLimit } from "@/lib/firestore";
-import PremiumModal from "@/components/PremiumModal";
+import Link from "next/link";
+import { subscribeToUserWords, addUserWord, completeReadingPassage } from "@/lib/firestore";
+import { AI_MODELS, buildReadingPassagePrompt, buildTextAnalysisPrompt, buildReadingQuizPrompt } from "@/constants/prompts";
 
 const TOPICS = [
   { id: "random", label: "Karışık" },
@@ -109,7 +110,7 @@ export default function ReadingPage() {
 }
 
 function ReadingContent() {
-  const { user, requireAuth, isPremium, setPremiumModalOpen } = useAuth();
+  const { user, requireAuth } = useAuth();
   const { showNotification } = useNotification();
   const [text, setText] = useState("");
   const [level, setLevel] = useState("B1");
@@ -118,17 +119,10 @@ function ReadingContent() {
   const [myWords, setMyWords] = useState([]);
   const [passageTitle, setPassageTitle] = useState("");
   const [translatedText, setTranslatedText] = useState("");
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [streamMode, setStreamMode] = useState(false);
-  const [sourceMode, setSourceMode] = useState(null); // null=selection, "wikipedia", "ai"
+  const [showTranslation, setShowTranslation] = useState(false);
+  const [sourceMode, setSourceMode] = useState("wikipedia"); // "wikipedia" | "ai"
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [wikiUrl, setWikiUrl] = useState("");
-  const [wikiThumbnail, setWikiThumbnail] = useState("");
-  const [currentCardIdx, setCurrentCardIdx] = useState(0);
-  const [logicLines, setLogicLines] = useState([]);
-  const [conjunctions, setConjunctions] = useState([]);
-  const [hoveredRef, setHoveredRef] = useState(null);
-  const [hoveredConj, setHoveredConj] = useState(null);
   const [keyVocab, setKeyVocab] = useState([]);
   const [grammarPatterns, setGrammarPatterns] = useState([]);
   const [isStudyFlipped, setIsStudyFlipped] = useState(false);
@@ -138,44 +132,41 @@ function ReadingContent() {
   // Audio Player States
   const [isReading, setIsReading] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [readSpeed, setReadSpeed] = useState(1);
-  const [autoHighlight, setAutoHighlight] = useState(true);
   const [spokenWordIndex, setSpokenWordIndex] = useState(-1);
   const [currentSentenceIdx, setCurrentSentenceIdx] = useState(0);
   const [processedPassage, setProcessedPassage] = useState([]); // { sentence: string, words: string[] }
   const audioRef = useRef(null);
   const [isBuffering, setIsBuffering] = useState(false);
-  const [availableVoices, setAvailableVoices] = useState([]);
 
   function speakWord(w) {
     if (!w) return;
-    
+
     // Önceki seslendirmeleri anında iptal et (Sıra beklememesi için)
     window.speechSynthesis.cancel();
-    
+
     const utterance = new SpeechSynthesisUtterance(w);
-    
+
     // Tarayıcıdaki sesleri al ve Amerikan aksanlı olanı bul
     const voices = window.speechSynthesis.getVoices();
-    const usVoice = voices.find(v => v.lang === "en-US" && v.name.includes("Google")) || 
-                    voices.find(v => v.lang === "en-US") || 
+    const usVoice = voices.find(v => v.lang === "en-US" && v.name.includes("Google")) ||
+                    voices.find(v => v.lang === "en-US") ||
                     voices[0];
-    
+
     if (usVoice) utterance.voice = usVoice;
     utterance.lang = "en-US";
-    utterance.rate = 0.85; 
+    utterance.rate = 0.85;
     utterance.pitch = 1;
-    
+
     window.speechSynthesis.speak(utterance);
   }
-  
+
   const [lookupInput, setLookupInput] = useState("");
   const [wordInput, setWordInput] = useState("");
   const [meaningInput, setMeaningInput] = useState("");
   const [synInput, setSynInput] = useState("");
   const [fetchingDetails, setFetchingDetails] = useState(false);
   const [showResultCard, setShowResultCard] = useState(false);
-  
+
   const [quizQuestions, setQuizQuestions] = useState([]);
   const searchParams = useSearchParams();
   const [quizLoading, setQuizLoading] = useState(false);
@@ -190,7 +181,7 @@ function ReadingContent() {
 
     if (sharedText) {
       setText(decodeURIComponent(sharedText));
-      setSourceMode(sourceParam || "ai"); // Doğrudan analiz ekranına geç
+      setSourceMode(sourceParam || "ai");
       setQuizQuestions([]);
     } else if (generateMode === "special") {
       setSourceMode("ai");
@@ -236,13 +227,13 @@ function ReadingContent() {
       const structure = [];
       let globalSentenceIdx = 0;
 
-      paras.forEach((para, pi) => {
+      paras.forEach((para) => {
         const sentences = para.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [para];
         const paraSentences = [];
         sentences.forEach(s => {
           // Google TTS limiti (~200 karakter) için uzun cümleleri böl
           const chunks = s.length > 180 ? s.match(/.{1,180}(?:\s|$)|.{1,180}/g) || [s] : [s];
-          
+
           chunks.forEach(chunk => {
             paraSentences.push({
               original: chunk,
@@ -262,6 +253,7 @@ function ReadingContent() {
     }
     // Yeni metne geçince sesi durdur ve sıfırla
     stopReading();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text]);
 
   useEffect(() => {
@@ -279,12 +271,7 @@ function ReadingContent() {
   }, [text, topic]);
 
   useEffect(() => {
-    const loadVoices = () => {
-      const voices = window.speechSynthesis.getVoices();
-      setAvailableVoices(voices);
-    };
-    loadVoices();
-    window.speechSynthesis.onvoiceschanged = loadVoices;
+    window.speechSynthesis.getVoices();
     return () => { window.speechSynthesis.cancel(); };
   }, []);
 
@@ -292,7 +279,7 @@ function ReadingContent() {
   async function startReading(startIdx = -1) {
     const allSentences = processedPassage.flat();
     const idx = startIdx >= 0 ? startIdx : currentSentenceIdx;
-    
+
     if (idx >= allSentences.length) {
       stopReading();
       return;
@@ -319,7 +306,7 @@ function ReadingContent() {
       const response = await fetch('/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           text: sentenceObj.original,
           voice: 'en-US-AndrewNeural' // Yüksek kaliteli erkek sesi
         })
@@ -338,11 +325,10 @@ function ReadingContent() {
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
-      audio.playbackRate = readSpeed;
       audioRef.current = audio;
 
       audio.ontimeupdate = () => {
-        if (autoHighlight && audio.duration) {
+        if (audio.duration) {
           const progress = audio.currentTime / audio.duration;
           const wordTokens = sentenceObj.tokens.filter(t => t.isWord);
           const currentWordIdx = Math.floor(progress * wordTokens.length);
@@ -379,14 +365,6 @@ function ReadingContent() {
     }
   }
 
-  function pauseReading() {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      setIsPaused(true);
-      setIsReading(false);
-    }
-  }
-
   function stopReading() {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -399,86 +377,32 @@ function ReadingContent() {
     setCurrentSentenceIdx(0);
   }
 
-  function seekAudio(direction) {
-    const allSentences = processedPassage.flat();
-    let newIdx = currentSentenceIdx + direction;
-    if (newIdx < 0) newIdx = 0;
-    if (newIdx >= allSentences.length) newIdx = allSentences.length - 1;
-    
-    stopReading();
-    setCurrentSentenceIdx(newIdx);
-    setTimeout(() => startReading(newIdx), 50);
-  }
-
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.playbackRate = readSpeed;
-    }
-  }, [readSpeed]);
-
-  useEffect(() => {
-    if (isReading && !isPaused) {
-      // Hız değişirse yeniden başlat
-      const wasReading = isReading;
-      stopReading();
-      if (wasReading) startReading();
-    }
-  }, [readSpeed]);
-
   // Quiz Sonucunu Dinle ve Başarıyı Tetikle
   useEffect(() => {
     if (quizQuestions.length > 0 && !isFinished) {
       const allAnswered = quizQuestions.every(q => q.userAnswer);
       const allCorrect = quizQuestions.every(q => q.userAnswer === q.correct);
-      
+
       if (allAnswered && allCorrect) {
         handleCompleteReading();
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quizQuestions]);
-
 
   async function generateAIText(selectedTopic) {
     const t = selectedTopic || topic;
     setTopic(t);
     setGenerating(true);
-    
-    let prompt = `Write a high-quality, professional academic reading passage for YDT students.
-    Target Level: ${level} CEFR.
-    Topic: ${t}.
-    
-    Linguistic Requirements:
-    - Style: Professional academic journal (e.g., Nature, The Economist).
-    - Sentence Structure: Use complex clauses, passive voice, and academic logical connectors. 
-    - Cohesion: Ensure logical flow and perfect transitions between sentences.
-    - NO repetitive simplistic SVO sentences.
-    - NO typos or spelling errors.
-    
-    Format: Return ONLY a valid JSON object with keys: 
-      "title": "A professional academic title",
-      "en": "The English reading text (Sophisticated English)",
-      "tr": "Professional Turkish translation (Academic Turkish)",
-      "logic_lines": [
-        {"ref": "it/they/this", "target": "EXACT phrase in text", "context": "explanation"}
-      ],
-      "conjunctions": [
-        {"word": "however/when/etc", "type": "contrast/time/etc", "tr": "Türkçe anlamı"}
-      ],
-      "key_vocabulary": [
-        {"word": "string", "type": "noun/verb/adj", "tr": "Turkish meaning"}
-      ],
-      "grammar_patterns": [
-        {"title": "string", "description": "English desc", "description_tr": "Türkçe açıklama", "found_in_text": "EXACT sentence from text", "examples": [{"en": "string", "tr": "string"}]}
-      ]
-    Important: The 'target' MUST match a substring in the 'en' text exactly.
-    Length: 150-200 words.`;
+
+    let prompt = buildReadingPassagePrompt({ level, topic: t });
 
     try {
       const response = await fetch("/api/groq", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+          model: AI_MODELS.FAST,
           messages: [{ role: "user", content: prompt }],
           temperature: 0.2,
           response_format: { type: "json_object" },
@@ -490,104 +414,15 @@ function ReadingContent() {
         setPassageTitle(parsed.title || "");
         setText(parsed.en || "");
         setTranslatedText(parsed.tr || "");
-        setLogicLines(parsed.logic_lines || []);
-        setConjunctions(parsed.conjunctions || []);
         setKeyVocab(parsed.key_vocabulary || []);
         setGrammarPatterns(parsed.grammar_patterns || []);
-        setQuizQuestions([]); 
-        setIsFlipped(false);
+        setQuizQuestions([]);
+        setShowTranslation(false);
         setIsStudyFlipped(false);
-        setCurrentCardIdx(0);
-
-        // Başarılı
-
       }
     } catch (error) {
       console.error(error);
       setText("Bağlantı hatası.");
-    }
-    setGenerating(false);
-    setIsFinished(false);
-  }
-
-  async function generateStoryFromMyWords() {
-    if (!user) return requireAuth(() => {});
-
-    setGenerating(true);
-    try {
-      const mistakes = await getUserMistakes(user.uid);
-      const bank = myWords.map(w => w.word);
-      
-      // Filtreleme: Sadece gerçek kelimeleri al (ID'leri ve çok uzun teknik dizileri temizle)
-      const isIdFormat = (str) => /^\d{10,20}_[a-z0-9]+$/.test(str) || str.includes("_") || /\d/.test(str);
-      
-      const combined = [...new Set([...bank, ...mistakes])].filter(w => w && w.length > 1 && !isIdFormat(w));
-      
-      if (combined.length < 3) {
-        showNotification("En az 3 gerçek akademik kelimeniz olmalı (Bankada veya hatalarda).", "warning");
-        setGenerating(false);
-        return;
-      }
-
-      const shuffled = combined.sort(() => 0.5 - Math.random());
-      const selectedWords = shuffled.slice(0, 7);
-      
-      const levelConstraints = {
-        "A2": "Use very simple SVO sentences and common daily vocabulary for all text except the required words. Keep it basic.",
-        "B1": "Use intermediate vocabulary and clear standard English. Include simple complex sentences.",
-        "B2": "Use upper-intermediate academic vocabulary, passive voice, and complex clauses. Typical YDT exam level.",
-        "C1": "Use advanced, sophisticated academic vocabulary, abstract concepts, and complex logical connectors."
-      };
-
-      let prompt = `Write a professional academic reading passage that logically integrates the following vocabulary.
-      Target Level: ${level} CEFR.
-      Required Vocabulary: ${selectedWords.join(", ")}.
-      
-      Linguistic Requirements:
-      - The text must be a coherent academic argument or analysis, NOT a list of random sentences.
-      - Use sophisticated sentence structures and professional academic tone.
-      - Bold the required words in the "en" text.
-      - Ensure perfect logical flow and cohesive links.
-      
-      Format: Return ONLY a valid JSON object with keys: 
-        "title": "Academic Title",
-        "en": "English text (Sophisticated, professional, words in **bold**)",
-        "tr": "Accurate academic Turkish translation",
-        "key_vocabulary": [
-          {"word": "string", "type": "noun/verb/adj", "tr": "Turkish meaning"}
-        ],
-        "grammar_patterns": [
-          {"title": "string", "description": "English desc", "description_tr": "Türkçe açıklama", "found_in_text": "EXACT sentence from text", "examples": [{"en": "string", "tr": "string"}]}
-        ]
-      
-      Length: 150-200 words.`;
-      
-      const response = await fetch("/api/groq", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.2,
-          response_format: { type: "json_object" },
-        }),
-      });
-      const data = await response.json();
-      if (data.choices?.[0]?.message?.content) {
-        const parsed = JSON.parse(data.choices[0].message.content);
-        setPassageTitle(parsed.title || "");
-        setText(parsed.en || "");
-        setTranslatedText(parsed.tr || "");
-        setTopic("Kelimelerim");
-        setKeyVocab(parsed.key_vocabulary || []);
-        setGrammarPatterns(parsed.grammar_patterns || []);
-        setQuizQuestions([]);
-        setIsFlipped(false);
-        setIsStudyFlipped(false);
-        showNotification(`Hikaye oluşturuldu! Kullanılan kelimeler: ${selectedWords.join(", ")}`, "success");
-      }
-    } catch (err) {
-      showNotification("Hikaye üretilirken hata oluştu.", "error");
     }
     setGenerating(false);
     setIsFinished(false);
@@ -598,13 +433,9 @@ function ReadingContent() {
     setTopic(t);
     setGenerating(true);
     setQuizQuestions([]);
-    setIsFlipped(false);
-    setCurrentCardIdx(0);
-    setLogicLines([]);
-    setConjunctions([]);
+    setShowTranslation(false);
     setTranslatedText("");
     setWikiUrl("");
-    setWikiThumbnail("");
     try {
       const wikiResp = await fetch("/api/wikipedia", {
         method: "POST",
@@ -621,7 +452,6 @@ function ReadingContent() {
         setText(data.text || "");
         setTranslatedText(data.tr || "");
         setWikiUrl(data.url || "");
-        setWikiThumbnail(data.thumbnail || "");
 
         // Wikipedia Metni için AI Analizi (Kelime ve Gramer)
         analyzeTextForStudyDeck(data.text);
@@ -636,22 +466,14 @@ function ReadingContent() {
 
   async function analyzeTextForStudyDeck(passage) {
     if (!passage) return;
-    const prompt = `Analyze the following academic text for English learners (YDT level).
-    1. Extract 6-9 key academic words (Key Vocabulary).
-    2. Identify 2-3 important grammar patterns/structures used in the text. Provide the EXACT sentence from the text where this pattern is used.
-    
-    Format: Return ONLY a valid JSON object with keys:
-    "key_vocabulary": [{"word": "string", "type": "noun/verb/adj", "tr": "Turkish meaning"}],
-    "grammar_patterns": [{"title": "string", "description": "English description", "description_tr": "Türkçe detaylı açıklama", "found_in_text": "EXACT sentence from text", "examples": [{"en": "string", "tr": "string"}]}]
-    
-    Text: ${passage}`;
+    const prompt = buildTextAnalysisPrompt(passage);
 
     try {
       const response = await fetch("/api/groq", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+          model: AI_MODELS.FAST,
           messages: [{ role: "user", content: prompt }],
           temperature: 0.1,
           response_format: { type: "json_object" },
@@ -674,7 +496,6 @@ function ReadingContent() {
       await completeReadingPassage(user.uid);
       showNotification("Analiz başarıyla tamamlandı!", "success");
       setIsFinished(true);
-      // Reset text after short delay or just stay there? Stay for now.
     } catch {
       showNotification("Hata oluştu.", "error");
     }
@@ -684,7 +505,7 @@ function ReadingContent() {
   async function lookupWord(input) {
     const clean = (input || lookupInput).trim();
     if (!clean) return;
-    
+
     setFetchingDetails(true);
     setShowResultCard(true);
     setWordInput(clean);
@@ -730,17 +551,14 @@ function ReadingContent() {
     setQuizLoading(true);
     setQuizQuestions([]);
 
-    const prompt = `Based on the text below, create exactly 3 multiple-choice questions. 
-    Return ONLY a valid JSON object with key "questions" containing an array of 3 objects.
-    Each object keys: "q" (question), "a", "b", "c", "d" (options), "correct" (value: a/b/c/d).
-    Text: ${text}`;
+    const prompt = buildReadingQuizPrompt(text);
 
     try {
       const response = await fetch("/api/groq", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+          model: AI_MODELS.FAST,
           messages: [{ role: "user", content: prompt }],
           temperature: 0.1,
           response_format: { type: "json_object" },
@@ -755,142 +573,21 @@ function ReadingContent() {
     setQuizLoading(false);
   }
 
-  function renderStreamMode() {
-    if (!text.trim()) return null;
-    
-    // Metni cümlelere böl ve 2'şerli kartlar yap
-    const sentences = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [text];
-    const cards = [];
-    for (let i = 0; i < sentences.length; i += 2) {
-      cards.push(sentences.slice(i, i + 2).join(" "));
-    }
-
-    if (currentCardIdx >= cards.length) setCurrentCardIdx(0);
-
-    const currentCard = cards[currentCardIdx];
-    const tokens = currentCard.split(/(\s+)/);
-
-    return (
-      <div className="stream-container">
-        {/* Progress Bar */}
-        <div className="stream-overall-progress">
-          <div 
-            className="stream-progress-fill" 
-            style={{ width: `${((currentCardIdx + 1) / cards.length) * 100}%` }}
-          ></div>
-        </div>
-
-        <div className="stream-card-wrapper animate-slideIn">
-          <div className="stream-card-content">
-            {tokens.map((token, ti) => {
-              const clean = token.replace(/[^\p{L}]/gu, "").toLowerCase().trim();
-              
-              // Bu kelime bir referans mı?
-              const isRef = logicLines.find(l => l?.ref?.toLowerCase() === clean);
-              // Bu kelime bir bağlaç mı?
-              const isConj = conjunctions.find(c => c?.word?.toLowerCase() === clean);
-              
-              // Sadece hover edilen referansın hedefini parlat
-              const isCurrentTarget = hoveredRef && hoveredRef.target.toLowerCase().includes(clean);
-              
-              const isActiveRef = hoveredRef && hoveredRef.ref.toLowerCase() === clean;
-              
-              // Study Highlight: Kelime veya cümle eşleşmesi
-              const isStudyActive = studyHighlight && (
-                clean === studyHighlight.toLowerCase() || 
-                studyHighlight.toLowerCase().includes(clean) && clean.length > 3
-              );
-
-              // Audio Highlight (Mavi Işık)
-              const isAudioActive = autoHighlight && ti === spokenWordIndex;
-
-              return (
-                <span 
-                  key={ti} 
-                  className={`stream-word 
-                    ${isRef ? "logic-ref" : ""} 
-                    ${isConj ? "conj-ref" : ""} 
-                    ${isActiveRef || isCurrentTarget ? "connection-active" : ""} 
-                    ${hoveredConj && hoveredConj.word.toLowerCase() === clean ? "conj-active" : ""}
-                    ${isStudyActive ? "study-highlight-active" : ""}
-                    ${isAudioActive ? "audio-highlight-active" : ""}
-                  `}
-                  style={{ cursor: 'pointer' }}
-                  onMouseEnter={() => {
-                    if (isRef) setHoveredRef(isRef);
-                    if (isConj) setHoveredConj(isConj);
-                  }}
-                  onMouseLeave={() => {
-                    setHoveredRef(null);
-                    setHoveredConj(null);
-                  }}
-                  onClick={() => {
-                    if (clean) {
-                      if (isRef || isConj) {
-                        // Mobilde tıklayınca ipucunu göster/gizle
-                        setHoveredRef(prev => (prev === isRef ? null : isRef));
-                        setHoveredConj(prev => (prev === isConj ? null : isConj));
-                      } else {
-                        setLookupInput(clean);
-                        setTimeout(() => lookupWord(clean), 0);
-                      }
-                    }
-                  }}
-                >
-                  {token}
-                  {isActiveRef && (
-                    <span className="logic-connector-tip">
-                      {hoveredRef.target}
-                    </span>
-                  )}
-                  {hoveredConj && hoveredConj.word.toLowerCase() === clean && (
-                    <span className={`conj-connector-tip ${isActiveRef ? "stacked" : ""}`}>
-                      {hoveredConj.tr}
-                    </span>
-                  )}
-                </span>
-              );
-            })}
-          </div>
-          
-          <div className="stream-card-footer">
-            <button 
-              className="btn-stream-nav" 
-              onClick={() => setCurrentCardIdx(prev => Math.max(0, prev - 1))}
-              disabled={currentCardIdx === 0}
-            >
-              <i className="fa-solid fa-chevron-left"></i>
-            </button>
-            <div className="stream-progress">
-              Kart {currentCardIdx + 1} / {cards.length}
-            </div>
-            <button 
-              className="btn-stream-nav highlight" 
-              onClick={() => setCurrentCardIdx(prev => Math.min(cards.length - 1, prev + 1))}
-              disabled={currentCardIdx === cards.length - 1}
-            >
-              {currentCardIdx === cards.length - 1 ? <i className="fa-solid fa-check"></i> : <i className="fa-solid fa-chevron-right"></i>}
-            </button>
-          </div>
-        </div>
-        
-        {/* Quick Quiz for the card */}
-        <div className="stream-quick-quiz animate-fadeIn">
-           <p className="quiz-hint"><i className="fa-solid fa-bolt"></i> Bu parçayı anladın mı? Devam et!</p>
-        </div>
-      </div>
-    );
-  }
-
   function checkAnswer(qIdx, opt) {
-    setQuizQuestions(prev => prev.map((q, i) => 
+    setQuizQuestions(prev => prev.map((q, i) =>
       i === qIdx ? { ...q, userAnswer: opt } : q
     ));
   }
 
+  function applySettings() {
+    setSettingsOpen(false);
+    if (sourceMode === "wikipedia") generateWikipediaText(topic);
+    else generateAIText(topic);
+  }
+
   function renderAnalysis() {
     if (!processedPassage.length) return null;
-    
+
     return (
       <div className="reading-content-wrapper">
         {processedPassage.map((paraSentences, pi) => (
@@ -901,28 +598,28 @@ function ReadingContent() {
               let wordCounter = 0;
 
               return (
-                <span key={si} className={`reading-sentence ${isCurrentSentence && autoHighlight ? 'sentence-active' : ''}`}>
+                <span key={si} className={`reading-sentence ${isCurrentSentence ? 'sentence-active' : ''}`}>
                   {sObj.tokens.map((token, ti) => {
                     if (!token.isWord) return <span key={ti}>{token.text}</span>;
-                    
+
                     const clean = token.text.replace(/[^\p{L}]/gu, "").toLowerCase().trim();
                     const isSaved = myWords.some(w => w.word?.toLowerCase() === clean);
                     const isAcademic = YDT_ACADEMIC_WORDS.includes(clean);
-                    
+
                     const currentWordIdx = wordCounter;
                     wordCounter++;
 
                     const isStudyActive = studyHighlight && (
-                      clean === studyHighlight.toLowerCase() || 
+                      clean === studyHighlight.toLowerCase() ||
                       studyHighlight.toLowerCase().includes(clean) && clean.length > 3
                     );
 
-                    const isAudioActive = isCurrentSentence && autoHighlight && currentWordIdx === spokenWordIndex;
+                    const isAudioActive = isCurrentSentence && currentWordIdx === spokenWordIndex;
 
                     return (
-                      <span key={ti} className={`hover-word 
-                        ${isSaved ? "is-saved" : ""} 
-                        ${isAcademic ? "academic-word" : ""} 
+                      <span key={ti} className={`hover-word
+                        ${isSaved ? "is-saved" : ""}
+                        ${isAcademic ? "academic-word" : ""}
                         ${isStudyActive ? "study-highlight-active" : ""}
                         ${isAudioActive ? "audio-highlight-active" : ""}
                       `}
@@ -940,448 +637,590 @@ function ReadingContent() {
     );
   }
 
+  const topicOptions = sourceMode === "wikipedia" ? WIKI_TOPICS : TOPICS;
+
   return (
-    <div className={`reading-page ${sidebarCollapsed ? "zen-mode" : ""}`}>
-
-      {/* ───── SOURCE SELECTION SCREEN ───── */}
-      {!sourceMode ? (
-        <div className="source-selection-container">
-          <div className="source-selection-header">
-            <h2 className="section-title" style={{ margin: 0 }}>Metin Analizi</h2>
-            <p className="source-subtitle">Okuma pratiği için bir kaynak seçin</p>
-          </div>
-          <div className="source-cards-grid">
-            <button className="source-card" onClick={() => setSourceMode("wikipedia")}>
-              <div className="source-card-icon wiki-icon">
-                <i className="fa-brands fa-wikipedia-w"></i>
-              </div>
-              <h3>Wikipedia&apos;dan Oku</h3>
-              <p>Gerçek İngilizce makaleler ile pratik yap. Ücretsiz, sınırsız içerik.</p>
-              <div className="source-card-tags">
-                <span className="stag">Gerçek İçerik</span>
-                <span className="stag">Sınırsız</span>
-                <span className="stag">Ücretsiz</span>
-              </div>
-            </button>
-            <button className="source-card" onClick={() => setSourceMode("ai")}>
-              <div className="source-card-icon ai-icon">
-                <i className="fa-solid fa-wand-magic-sparkles"></i>
-              </div>
-              <h3>AI ile Üret</h3>
-              <p>Yapay zeka ile seviyene uygun akademik metin üret. YDT formatında.</p>
-              <div className="source-card-tags">
-                <span className="stag">Seviye Uyumlu</span>
-                <span className="stag">YDT Format</span>
-                <span className="stag">Çeviri</span>
-              </div>
-            </button>
-          </div>
-
-        </div>
-      ) : (
-      <>
-
-      {/* ───── READING INTERFACE ───── */}
-      <div className="header-split" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button 
-            onClick={() => { setSourceMode(null); setText(""); setPassageTitle(""); setQuizQuestions([]); setWikiUrl(""); setWikiThumbnail(""); }}
-            className="btn-ghost"
-            style={{ padding: '8px 12px', borderRadius: '12px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 6 }}
-          >
-            <i className="fa-solid fa-arrow-left"></i>
-          </button>
-          <h2 className="section-title" style={{ margin: 0 }}>
-            {sourceMode === "wikipedia" ? "Wikipedia Okuma" : "Metin Analizi"}
-          </h2>
-          {sourceMode === "wikipedia" && <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '3px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: '#aaa', textTransform: 'uppercase' }}>Wikipedia</span>}
-          {sourceMode === "ai" && <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '3px 10px', borderRadius: '8px', background: 'rgba(226,183,20,0.1)', color: 'var(--accent)', textTransform: 'uppercase' }}>AI</span>}
-        </div>
-        <div className="reading-controls" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <button 
-            className={`btn-ghost ${streamMode ? "active" : ""}`} 
-            onClick={() => setStreamMode(!streamMode)}
-            style={{ padding: '8px 16px', borderRadius: '12px', fontSize: '0.85rem', color: streamMode ? 'var(--accent)' : '' }}
-          >
-            <i className="fa-solid fa-layer-group" style={{ marginRight: 8 }}></i>
-            {streamMode ? " SmartStream Aktif" : " SmartStream Modu"}
-          </button>
-          <button 
-            className={`btn-ghost ${sidebarCollapsed ? "active" : ""}`} 
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            style={{ padding: '8px 16px', borderRadius: '12px', fontSize: '0.85rem' }}
-          >
-            <i className={`fa-solid ${sidebarCollapsed ? "fa-expand-arrows-alt" : "fa-compress-arrows-alt"}`} style={{ marginRight: 8 }}></i>
-            {sidebarCollapsed ? " Kenar Çubuğunu Göster" : " Odak Modu"}
-          </button>
-          {sourceMode === "ai" && (
-            <select value={level} onChange={e => setLevel(e.target.value)} className="reading-select">
-              <option value="A2">A2</option><option value="B1">B1</option>
-              <option value="B2">B2</option><option value="C1">C1</option>
-            </select>
-          )}
-        </div>
+    <div className="reading-page">
+      {/* Header: Geri / başlık / Ayarlar */}
+      <div className="reading-header-bar">
+        <Link href="/library" className="reading-header-back">Geri</Link>
+        <h1 className="reading-header-title">{passageTitle || "Okuma"}</h1>
+        <button className="reading-header-settings" onClick={() => setSettingsOpen(true)}>Ayarlar</button>
       </div>
 
-      {!sidebarCollapsed && (
-        <div className="topic-chips">
-          {(sourceMode === "wikipedia" ? WIKI_TOPICS : TOPICS).map(t => (
-            <button 
-              key={t.id} 
-              className={`topic-chip ${topic === t.id ? "active" : ""}`}
-              onClick={() => sourceMode === "wikipedia" ? generateWikipediaText(t.id) : generateAIText(t.id)}
-              disabled={generating}
-            >
-              <span className="chip-label">{t.label}</span>
-            </button>
-          ))}
-          {sourceMode === "ai" && (
-            <button 
-              className={`topic-chip special-chip ${topic === "Kelimelerim" ? "active" : ""}`}
-              onClick={generateStoryFromMyWords}
-              disabled={generating}
-            >
-              <span className="chip-label"><i className="fa-solid fa-magic-wand-sparkles" style={{ marginRight: 6 }}></i> Kelimelerimle Yaz</span>
-            </button>
-          )}
-        </div>
-      )}
+      {text.trim() ? (
+        <>
+          <div className="reading-body">
+            {renderAnalysis()}
 
-      <div className={`reading-grid ${sidebarCollapsed ? "collapsed-sidebar" : ""}`}>
-        {!sidebarCollapsed && (
-          <div className="reading-sidebar animate-fadeInLeft">
-          <div className="glass-card">
-            <div className="card-header-minimal">Kelime Ara</div>
-            <div className="minimal-search-box">
-              <input 
-                placeholder="Kelimeyi girin..." 
-                value={lookupInput} 
-                onChange={e => setLookupInput(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && lookupWord()}
-              />
-              <button onClick={() => lookupWord()} className="minimal-search-btn">
-                Ara
-              </button>
+            {showTranslation && translatedText && (
+              <div className="reading-translation-block">
+                <div className="reading-translation-label">Türkçe</div>
+                {translatedText.split(/\n+/).map((p, i) => (
+                  <p key={i} className="reading-translation-p">{p}</p>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {sourceMode === "wikipedia" && wikiUrl && (
+            <div className="reading-source-credit">
+              <a href={wikiUrl} target="_blank" rel="noopener noreferrer">
+                <i className="fa-brands fa-wikipedia-w"></i> Kaynak: Wikipedia — {passageTitle}
+              </a>
             </div>
-          </div>
+          )}
 
-          <div className="glass-card">
-            <div className="card-header-minimal">Metin Girişi</div>
-            <textarea
-              className="reading-textarea"
-              placeholder="Metninizi buraya ekleyin..."
-              value={text}
-              onChange={e => {
-                setText(e.target.value);
-                setPassageTitle("");
-              }}
-              rows={8}
-            />
-          </div>
-        </div>
-      )}
+          {/* STUDY DECK (VOCAB & GRAMMAR) */}
+          {(keyVocab.length > 0 || grammarPatterns.length > 0) && (
+            <div className="study-deck-wrapper animate-fadeIn" style={{ marginTop: 40, marginBottom: 40 }}>
+              <div className="study-deck-header">
+                <div className="study-deck-title">
+                  <i className={`fa-solid ${isStudyFlipped ? 'fa-book-open' : 'fa-list-check'}`}></i>
+                  <span>{isStudyFlipped ? 'Grammar Patterns' : 'Key Vocabulary'}</span>
+                </div>
+                <button className="study-flip-toggle" onClick={() => setIsStudyFlipped(!isStudyFlipped)}>
+                  {isStudyFlipped ? 'Kelime Kartlarına Dön' : 'Gramer Yapılarına Bak'}
+                  <i className="fa-solid fa-rotate"></i>
+                </button>
+              </div>
 
-      <div className="reading-main">
-          {text.trim() ? (
-            <>
-              <div className={`reading-card-scene ${isFlipped ? "is-flipped" : ""}`}>
-                <div className="reading-card-inner">
-                  {/* FRONT: ENGLISH ANALYSIS */}
-                  <div className="reading-card-front glass-card reading-display-card">
-                    <div className="card-header-minimal">
-                      <span>{streamMode ? "SmartStream Akışı" : "Analiz"}</span>
-                      {translatedText && !streamMode && (
-                        <button className="btn-translate-toggle" onClick={() => setIsFlipped(true)}>
-                          <i className="fa-solid fa-language"></i> Türkçesine Bak
-                        </button>
-                      )}
-                    </div>
-                    {passageTitle && <h1 className="reading-title-display">{passageTitle}</h1>}
-                    <div className="reading-display">
-                      {streamMode ? renderStreamMode() : renderAnalysis()}
-                    </div>
-                    
-                    {/* AUDIO PLAYER CONTROLS */}
-                    {!streamMode && text.trim() && (
-                      <div className="audio-player-bar animate-slideUp">
-                        <div className="audio-player-content">
-                          <div className="player-main-ctrls">
-                            <button className="player-btn-secondary" onClick={() => seekAudio(-1)} title="Geri Al">
-                              <i className="fa-solid fa-backward-step"></i>
+              <div className={`study-deck-scene ${isStudyFlipped ? 'is-flipped' : ''}`}>
+                <div className="study-deck-inner">
+                  {/* FRONT: KEY VOCABULARY */}
+                  <div className="study-deck-front">
+                    <div className="vocab-grid">
+                      {keyVocab.map((v, i) => (
+                        <div key={i} className={`vocab-item-card animate-slideIn ${studyHighlight === v.word ? 'active-highlight' : ''}`}
+                             style={{ animationDelay: `${i * 0.05}s`, cursor: 'pointer' }}
+                             onClick={() => {
+                               const targetWord = v.word;
+                               setStudyHighlight(prev => prev === targetWord ? null : targetWord);
+                               setTimeout(() => {
+                                 const activeEl = document.querySelector('.study-highlight-active');
+                                 if (activeEl) activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                               }, 100);
+                             }}>
+                          <div className="vocab-card-header">
+                            <button className="v-icon-btn" onClick={() => speakWord(v.word)}>
+                              <i className="fa-solid fa-volume-high"></i>
                             </button>
-                            <button className="player-btn-main" onClick={isReading ? pauseReading : () => startReading()}>
-                              <i className={`fa-solid ${isReading ? "fa-pause" : "fa-play"}`}></i>
+                            <button className="v-icon-btn" onClick={() => {
+                              setWordInput(v.word);
+                              setMeaningInput(v.tr);
+                              setSynInput("-");
+                              setShowResultCard(true);
+                            }}>
+                              <i className="fa-solid fa-bookmark"></i>
                             </button>
-                            <button className="player-btn-secondary" onClick={() => seekAudio(1)} title="İleri Al">
-                              <i className="fa-solid fa-forward-step"></i>
-                            </button>
-                            
-                            <div className="speed-control-wrapper">
-                              <i className="fa-solid fa-gauge-high speed-icon"></i>
-                              <select value={readSpeed} onChange={e => setReadSpeed(parseFloat(e.target.value))} className="speed-select-premium">
-                                <option value="0.5">0.5x</option>
-                                <option value="0.75">0.75x</option>
-                                <option value="1">1.0x</option>
-                                <option value="1.25">1.25x</option>
-                                <option value="1.5">1.5x</option>
-                                <option value="2">2.0x</option>
-                              </select>
-                            </div>
                           </div>
-
-                          <div className="player-extra-ctrls">
-                             <button 
-                               className={`premium-toggle-btn ${autoHighlight ? 'active' : ''}`}
-                               onClick={() => {
-                                 const next = !autoHighlight;
-                                 setAutoHighlight(next);
-                                 showNotification(next ? "Otomatik İşaretleme Açıldı" : "İşaretleme Kapatıldı", "info");
-                               }}
-                             >
-                               <div className="toggle-dot"></div>
-                               <span className="toggle-text">İşaretle</span>
-                             </button>
-                             <div className="player-status-tag">
-                                {isBuffering ? "YÜKLENİYOR..." : isReading ? <span className="status-pulse">OKUNUYOR</span> : isPaused ? "DURAKLATILDI" : "HAZIR"}
-                             </div>
+                          <div className="vocab-card-body">
+                            <div className="v-word-row">
+                              <span className="v-type">{v.type}</span>
+                              <h3 className="v-word">{v.word}</h3>
+                            </div>
+                            <p className="v-meaning">{v.tr}</p>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      ))}
+                    </div>
                   </div>
 
-                  {/* BACK: TURKISH TRANSLATION */}
-                  <div className="reading-card-back glass-card reading-display-card">
-                    <div className="card-header-minimal">
-                      <span>Türkçe Çeviri</span>
-                      <button className="btn-translate-toggle" onClick={() => setIsFlipped(false)}>
-                        <i className="fa-solid fa-arrow-left"></i> İngilizceye Dön
-                      </button>
-                    </div>
-                    {passageTitle && <h1 className="reading-title-display">{passageTitle} (Çeviri)</h1>}
-                    <div className="reading-display translation-text-display">
-                      {translatedText.split(/\n+/).map((p, i) => (
-                        <p key={i} className="reading-paragraph">{p}</p>
+                  {/* BACK: GRAMMAR PATTERNS */}
+                  <div className="study-deck-back">
+                    <div className="grammar-list">
+                      {grammarPatterns.map((g, i) => (
+                        <div key={i} className={`grammar-card-scene ${flippedGrammarCards[i] ? 'g-is-flipped' : ''}`}
+                             onClick={(e) => {
+                               if (e.target.closest('.g-found-tag')) return;
+                               setFlippedGrammarCards(prev => ({...prev, [i]: !prev[i]}));
+                             }}>
+                          <div className="grammar-card-inner">
+                            <div className="grammar-card-front grammar-item-card">
+                              <div className="grammar-card-header">
+                                <h3 className="g-title">{g.title}</h3>
+                                <span className="g-flip-hint"><i className="fa-solid fa-language"></i> Tıkla: Açıklama</span>
+                              </div>
+                              <p className="g-desc">{g.description}</p>
+                              <div className="g-examples">
+                                {g.examples?.map((ex, ei) => (
+                                  <div key={ei} className="g-example-item">
+                                    <p className="ex-en">{ex.en}</p>
+                                    <p className="ex-tr">{ex.tr}</p>
+                                  </div>
+                                ))}
+                              </div>
+                              {g.found_in_text && (
+                                <div className="g-found-tag" onClick={(e) => {
+                                  e.stopPropagation();
+                                  const targetText = g.found_in_text;
+                                  setStudyHighlight(prev => prev === targetText ? null : targetText);
+                                  setTimeout(() => {
+                                    const activeEl = document.querySelector('.study-highlight-active');
+                                    if (activeEl) activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                  }, 100);
+                                }}>
+                                  <i className="fa-solid fa-magnifying-glass"></i> Metinde Göster
+                                </div>
+                              )}
+                            </div>
+                            <div className="grammar-card-back grammar-item-card academic-tr-bg">
+                              <div className="grammar-card-header">
+                                <h3 className="g-title" style={{ color: 'var(--accent)' }}>{g.title} (Açıklama)</h3>
+                                <span className="g-flip-hint">Geri Dön <i className="fa-solid fa-rotate"></i></span>
+                              </div>
+                              <div className="g-tr-content">
+                                <p>{g.description_tr || "Açıklama hazırlanıyor..."}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>
                 </div>
-              </div> {/* End of reading-card-scene */}
-
-              <div className="analysis-actions" style={{ display: 'flex', gap: 10, marginTop: 15 }}>
-                <button onClick={generateQuiz} className="btn-ghost flex-1" disabled={quizLoading || isFinished}>
-                  {quizLoading ? "Hazırlanıyor..." : isFinished ? "Test Tamamlandı" : "Okuduğunu Anlama Testi"}
-                </button>
               </div>
-
-              {isFinished && (
-                <div className="glass-card animate-fadeIn" style={{ border: '1px solid var(--accent)', background: 'rgba(48, 209, 88, 0.1)', marginBottom: 20 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0' }}>
-                    <i className="fa-solid fa-circle-check" style={{ color: 'var(--accent)', fontSize: '1.4rem' }}></i>
-                    <div>
-                      <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 900 }}>Tebrikler!</h4>
-                      <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Soruların tamamını doğru yanıtlayarak analizi başarıyla tamamladın.</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {quizQuestions.length > 0 && (
-                <div className="quiz-section">
-                  {quizQuestions.map((q, i) => (
-                    <div key={i} className="glass-card quiz-card">
-                      <p className="quiz-q-text"><b>{i+1}.</b> {q.q}</p>
-                      <div className="quiz-options-col">
-                        {['a','b','c','d'].map(opt => {
-                          let cls = "quiz-opt";
-                          if (q.userAnswer) {
-                            if (opt === q.correct) cls += " correct";
-                            else if (opt === q.userAnswer) cls += " wrong";
-                          }
-                          return (
-                            <button key={opt} className={cls} disabled={!!q.userAnswer} onClick={() => checkAnswer(i, opt)}>
-                              <span className="opt-letter">{opt.toUpperCase()}</span>
-                              {q[opt]}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* STUDY DECK (VOCAB & GRAMMAR) */}
-              {(keyVocab.length > 0 || grammarPatterns.length > 0) && (
-                <div className="study-deck-wrapper animate-fadeIn" style={{ marginTop: 40, marginBottom: 40 }}>
-                  <div className="study-deck-header">
-                    <div className="study-deck-title">
-                      <i className={`fa-solid ${isStudyFlipped ? 'fa-book-open' : 'fa-list-check'}`}></i>
-                      <span>{isStudyFlipped ? 'Grammar Patterns' : 'Key Vocabulary'}</span>
-                    </div>
-                    <button className="study-flip-toggle" onClick={() => setIsStudyFlipped(!isStudyFlipped)}>
-                      {isStudyFlipped ? 'Kelime Kartlarına Dön' : 'Gramer Yapılarına Bak'}
-                      <i className="fa-solid fa-rotate"></i>
-                    </button>
-                  </div>
-
-                  <div className={`study-deck-scene ${isStudyFlipped ? 'is-flipped' : ''}`}>
-                    <div className="study-deck-inner">
-                      {/* FRONT: KEY VOCABULARY */}
-                      <div className="study-deck-front">
-                        <div className="vocab-grid">
-                          {keyVocab.map((v, i) => (
-                            <div key={i} className={`vocab-item-card animate-slideIn ${studyHighlight === v.word ? 'active-highlight' : ''}`} 
-                                 style={{ animationDelay: `${i * 0.05}s`, cursor: 'pointer' }}
-                                 onClick={() => {
-                                   const targetWord = v.word;
-                                   setStudyHighlight(prev => prev === targetWord ? null : targetWord);
-                                   
-                                   // Vurgulanan kelimeye yumuşak geçiş yap
-                                   setTimeout(() => {
-                                     const activeEl = document.querySelector('.study-highlight-active');
-                                     if (activeEl) {
-                                       activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                     }
-                                   }, 100);
-                                 }}>
-                              <div className="vocab-card-header">
-                                <button className="v-icon-btn" onClick={() => speakWord(v.word)}>
-                                  <i className="fa-solid fa-volume-high"></i>
-                                </button>
-                                <button className="v-icon-btn" onClick={() => {
-                                  setWordInput(v.word);
-                                  setMeaningInput(v.tr);
-                                  setSynInput("-");
-                                  setShowResultCard(true);
-                                }}>
-                                  <i className="fa-solid fa-bookmark"></i>
-                                </button>
-                              </div>
-                              <div className="vocab-card-body">
-                                <div className="v-word-row">
-                                  <span className="v-type">{v.type}</span>
-                                  <h3 className="v-word">{v.word}</h3>
-                                </div>
-                                <p className="v-meaning">{v.tr}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* BACK: GRAMMAR PATTERNS */}
-                      <div className="study-deck-back">
-                        <div className="grammar-list">
-                          {grammarPatterns.map((g, i) => (
-                            <div key={i} className={`grammar-card-scene ${flippedGrammarCards[i] ? 'g-is-flipped' : ''}`}
-                                 onClick={(e) => {
-                                   if (e.target.closest('.g-found-tag')) return;
-                                   setFlippedGrammarCards(prev => ({...prev, [i]: !prev[i]}));
-                                 }}>
-                              <div className="grammar-card-inner">
-                                {/* G-FRONT: ENGLISH & EXAMPLES */}
-                                <div className="grammar-card-front grammar-item-card">
-                                  <div className="grammar-card-header">
-                                    <h3 className="g-title">{g.title}</h3>
-                                    <span className="g-flip-hint"><i className="fa-solid fa-language"></i> Tıkla: Açıklama</span>
-                                  </div>
-                                  <p className="g-desc">{g.description}</p>
-                                  <div className="g-examples">
-                                    {g.examples?.map((ex, ei) => (
-                                      <div key={ei} className="g-example-item">
-                                        <p className="ex-en">{ex.en}</p>
-                                        <p className="ex-tr">{ex.tr}</p>
-                                      </div>
-                                    ))}
-                                  </div>
-                                  {g.found_in_text && (
-                                    <div className="g-found-tag" onClick={(e) => {
-                                      e.stopPropagation();
-                                      const targetText = g.found_in_text;
-                                      setStudyHighlight(prev => prev === targetText ? null : targetText);
-                                      
-                                      // Vurgulanan gramer yapısına yumuşak geçiş yap
-                                      setTimeout(() => {
-                                        const activeEl = document.querySelector('.study-highlight-active');
-                                        if (activeEl) {
-                                          activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                        }
-                                      }, 100);
-                                    }}>
-                                      <i className="fa-solid fa-magnifying-glass"></i> Metinde Göster
-                                    </div>
-                                  )}
-                                </div>
-                                {/* G-BACK: TURKISH EXPLANATION */}
-                                <div className="grammar-card-back grammar-item-card academic-tr-bg">
-                                  <div className="grammar-card-header">
-                                    <h3 className="g-title" style={{ color: 'var(--accent)' }}>{g.title} (Açıklama)</h3>
-                                    <span className="g-flip-hint">Geri Dön <i className="fa-solid fa-rotate"></i></span>
-                                  </div>
-                                  <div className="g-tr-content">
-                                    <p>{g.description_tr || "Açıklama hazırlanıyor..."}</p>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="empty-analysis-state">
-              <p>Analiz için metin ekleyin veya yukarıdan bir konu seçin.</p>
-              {generating && <p style={{ color: "var(--accent)", marginTop: 12 }}>İçerik hazırlanıyor...</p>}
             </div>
           )}
-        </div>
-      </div>
 
-      {/* Wikipedia Source Link */}
-      {sourceMode === "wikipedia" && wikiUrl && text.trim() && (
-        <div style={{ textAlign: 'center', marginTop: 12, marginBottom: 12 }}>
-          <a href={wikiUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.75rem', color: '#888', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <i className="fa-brands fa-wikipedia-w"></i> Kaynak: Wikipedia — {passageTitle}
-            <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: '0.6rem' }}></i>
-          </a>
+          {/* Footer: ipucu + tek CTA (quiz akışına götürür) */}
+          <div className="reading-footer">
+            <p className="reading-footer-hint">Kelimeye dokun, anlamını gör</p>
+            <button
+              onClick={generateQuiz}
+              className="reading-footer-cta"
+              disabled={quizLoading || isFinished || text.length < 50}
+            >
+              {quizLoading ? "Hazırlanıyor..." : isFinished ? "Test Tamamlandı" : "Anladım, Sınava Geç"}
+            </button>
+          </div>
+
+          {isFinished && (
+            <div className="glass-card animate-fadeIn" style={{ border: '1px solid var(--accent)', background: 'rgba(48, 209, 88, 0.1)', marginTop: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0' }}>
+                <i className="fa-solid fa-circle-check" style={{ color: 'var(--accent)', fontSize: '1.4rem' }}></i>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 900 }}>Tebrikler!</h4>
+                  <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Soruların tamamını doğru yanıtlayarak analizi başarıyla tamamladın.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {quizQuestions.length > 0 && (
+            <div className="quiz-section">
+              {quizQuestions.map((q, i) => (
+                <div key={i} className="glass-card quiz-card">
+                  <p className="quiz-q-text"><b>{i + 1}.</b> {q.q}</p>
+                  <div className="quiz-options-col">
+                    {['a', 'b', 'c', 'd'].map(opt => {
+                      let cls = "quiz-opt";
+                      if (q.userAnswer) {
+                        if (opt === q.correct) cls += " correct";
+                        else if (opt === q.userAnswer) cls += " wrong";
+                      }
+                      return (
+                        <button key={opt} className={cls} disabled={!!q.userAnswer} onClick={() => checkAnswer(i, opt)}>
+                          <span className="opt-letter">{opt.toUpperCase()}</span>
+                          {q[opt]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="reading-empty-state">
+          {generating ? "İçerik hazırlanıyor..." : "Ayarlar'dan bir kaynak ve konu seçip başla."}
         </div>
       )}
 
-      </>
+      {/* ───── AYARLAR SHEET ───── */}
+      {(settingsOpen || !text.trim()) && (
+        <div
+          className="reading-settings-overlay"
+          onClick={() => text.trim() && setSettingsOpen(false)}
+        >
+          <div className="reading-settings-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-handle"></div>
+
+            <div className="settings-block">
+              <div className="settings-label">KAYNAK</div>
+              <div className="segmented">
+                <button
+                  className={`segmented-btn ${sourceMode === "wikipedia" ? "active" : ""}`}
+                  onClick={() => { setSourceMode("wikipedia"); setTopic("random"); }}
+                >
+                  Wikipedia
+                </button>
+                <button
+                  className={`segmented-btn ${sourceMode === "ai" ? "active" : ""}`}
+                  onClick={() => { setSourceMode("ai"); setTopic("random"); }}
+                >
+                  AI Üret
+                </button>
+              </div>
+            </div>
+
+            {sourceMode === "ai" && (
+              <div className="settings-block">
+                <div className="settings-label">SEVİYE</div>
+                <div className="segmented">
+                  {["A2", "B1", "B2", "C1"].map((lv) => (
+                    <button
+                      key={lv}
+                      className={`segmented-btn ${level === lv ? "active" : ""}`}
+                      onClick={() => setLevel(lv)}
+                    >
+                      {lv}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="settings-block">
+              <div className="settings-label">KONU</div>
+              <select className="settings-select" value={topic} onChange={(e) => setTopic(e.target.value)}>
+                {topicOptions.map((t) => (
+                  <option key={t.id} value={t.id}>{t.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <button className="settings-submit-btn" onClick={applySettings} disabled={generating}>
+              {generating ? "Hazırlanıyor..." : "Metni Getir"}
+            </button>
+
+            {text.trim() && (
+              <>
+                <div className="settings-divider"></div>
+
+                <button className="settings-toggle-row" onClick={() => setShowTranslation(!showTranslation)}>
+                  <span>Türkçe Göster</span>
+                  <span className={`mini-toggle ${showTranslation ? "on" : ""}`}><span className="mini-toggle-dot"></span></span>
+                </button>
+
+                <button
+                  className="settings-audio-btn"
+                  onClick={() => (isReading ? stopReading() : startReading())}
+                  disabled={isBuffering}
+                >
+                  {isBuffering ? "Yükleniyor..." : isReading ? "Sesli Okumayı Durdur" : "Sesli Oku"}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showResultCard && (
+        <div className="responsive-lookup-overlay" onClick={() => setShowResultCard(false)}>
+          <div className="responsive-lookup-card animate-slideUp" onClick={e => e.stopPropagation()}>
+            <div className="sheet-handle"></div>
+            <div className="card-header-minimal">
+              <span>Hızlı Sözlük</span>
+              <button onClick={() => setShowResultCard(false)} className="btn-close-minimal">Kapat</button>
+            </div>
+
+            <div className="popup-search-box" style={{ marginBottom: 24, display: 'flex', gap: 8 }}>
+              <input
+                placeholder="Yeni bir kelime ara..."
+                value={lookupInput}
+                onChange={e => setLookupInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && lookupWord()}
+                style={{
+                  flex: 1,
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '12px',
+                  padding: '10px 14px',
+                  fontSize: '0.85rem',
+                  color: '#fff'
+                }}
+              />
+              <button
+                onClick={() => lookupWord()}
+                className="btn-icon-sm"
+                style={{ background: 'var(--accent)', color: '#000', borderRadius: '12px', padding: '0 15px' }}
+              >
+                <i className="fa-solid fa-search"></i>
+              </button>
+            </div>
+
+            {fetchingDetails ? (
+              <div className="sheet-loading-small"><div className="spinner-ring"></div></div>
+            ) : (
+              <>
+                <div className="lookup-fields">
+                  <div className="lookup-field">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <label>KELİME</label>
+                      <button
+                        className="btn-icon-sm"
+                        onClick={() => speakWord(wordInput)}
+                        title="Dinle"
+                        style={{ background: 'rgba(255, 255, 255, 0.05)', border: 'none', color: 'var(--accent)', cursor: 'pointer' }}
+                      >
+                        <i className="fa-solid fa-volume-high"></i>
+                      </button>
+                    </div>
+                    <input value={wordInput} onChange={e => setWordInput(e.target.value)} />
+                  </div>
+                  <div className="lookup-field">
+                    <label>ANLAM</label>
+                    <input value={meaningInput} onChange={e => setMeaningInput(e.target.value)} />
+                  </div>
+                  <div className="lookup-field">
+                    <label>EŞ ANLAM</label>
+                    <input value={synInput} onChange={e => setSynInput(e.target.value)} />
+                  </div>
+                </div>
+                <button
+                  onClick={saveWord}
+                  className="btn-primary w-100 mt-4"
+                  style={{
+                    padding: '16px',
+                    borderRadius: '16px',
+                    fontSize: '0.9rem',
+                    fontWeight: 900,
+                    boxShadow: '0 10px 20px rgba(226, 183, 20, 0.2)'
+                  }}
+                >
+                  Bankaya Kaydet
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       )}
 
       <style jsx>{`
-        /* Source Selection */
-        .source-selection-container { max-width: 700px; margin: 40px auto; padding: 0 16px; }
-        .source-selection-header { text-align: center; margin-bottom: 40px; }
-        .source-subtitle { color: #888; font-size: 0.95rem; margin-top: 8px; }
-        .source-cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .source-card {
-          background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 24px; padding: 36px 28px; text-align: center; cursor: pointer;
-          transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; gap: 12px;
+        .reading-page {
+          max-width: 760px;
+          margin: 0 auto;
+          padding-bottom: 60px;
         }
-        .source-card:hover { border-color: var(--accent); background: rgba(226,183,20,0.04); transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
-        .source-card-icon { width: 72px; height: 72px; border-radius: 22px; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 8px; }
-        .wiki-icon { background: rgba(255,255,255,0.06); color: #fff; }
-        .ai-icon { background: rgba(226,183,20,0.1); color: var(--accent); }
-        .source-card h3 { font-size: 1.2rem; font-weight: 900; color: #fff; margin: 0; }
-        .source-card p { font-size: 0.82rem; color: #888; line-height: 1.5; margin: 0; }
-        .source-card-tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
-        .stag { font-size: 0.65rem; font-weight: 700; padding: 3px 10px; border-radius: 8px; background: rgba(255,255,255,0.04); color: #aaa; border: 1px solid rgba(255,255,255,0.06); text-transform: uppercase; letter-spacing: 0.3px; }
-        .source-card:hover .stag { border-color: rgba(226,183,20,0.2); color: var(--accent); }
+
+        /* Header */
+        .reading-header-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 16px 4px;
+          border-bottom: 1px solid var(--border);
+          margin-bottom: 8px;
+        }
+        .reading-header-back {
+          font-size: 0.85rem;
+          font-weight: 700;
+          color: var(--text-muted);
+          text-decoration: none;
+          flex-shrink: 0;
+        }
+        .reading-header-back:hover { color: var(--text); }
+        .reading-header-title {
+          flex: 1;
+          text-align: center;
+          font-size: 0.95rem;
+          font-weight: 800;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          margin: 0;
+        }
+        .reading-header-settings {
+          background: none;
+          border: none;
+          font-size: 0.85rem;
+          font-weight: 700;
+          color: var(--accent);
+          cursor: pointer;
+          flex-shrink: 0;
+        }
+
+        /* Body */
+        .reading-body {
+          padding: 36px 24px;
+          font-size: 17px;
+          line-height: 1.9;
+          color: var(--text);
+        }
+        .reading-translation-block {
+          margin-top: 28px;
+          padding-top: 24px;
+          border-top: 1px dashed var(--border);
+        }
+        .reading-translation-label {
+          font-size: 0.7rem;
+          font-weight: 800;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          color: var(--text-muted);
+          margin-bottom: 12px;
+        }
+        .reading-translation-p {
+          font-size: 15px;
+          line-height: 1.8;
+          color: var(--text-muted);
+          margin-bottom: 10px;
+        }
+        .reading-source-credit { text-align: center; margin: 4px 0 20px; }
+        .reading-source-credit a {
+          font-size: 0.75rem; color: var(--text-muted); text-decoration: none;
+          display: inline-flex; align-items: center; gap: 6px;
+        }
+        .reading-source-credit a:hover { color: var(--accent); }
+
+        .reading-empty-state {
+          text-align: center;
+          padding: 80px 20px;
+          color: var(--text-muted);
+          font-size: 0.95rem;
+        }
+
+        /* Footer */
+        .reading-footer {
+          text-align: center;
+          padding: 24px 20px 8px;
+        }
+        .reading-footer-hint {
+          font-size: 0.8rem;
+          color: var(--text-muted);
+          margin-bottom: 14px;
+        }
+        .reading-footer-cta {
+          background: var(--accent);
+          color: #000;
+          font-weight: 800;
+          font-size: 0.9rem;
+          padding: 14px 32px;
+          border-radius: 14px;
+          border: none;
+          cursor: pointer;
+        }
+        .reading-footer-cta:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Settings Sheet */
+        .reading-settings-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.5);
+          backdrop-filter: blur(6px);
+          z-index: 5000;
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+        }
+        .reading-settings-sheet {
+          width: 100%;
+          max-width: 480px;
+          background: var(--bg-card);
+          border: 1px solid var(--border);
+          border-radius: 24px 24px 0 0;
+          padding: 20px 24px 28px;
+          box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.35);
+        }
+        @media (min-width: 640px) {
+          .reading-settings-overlay { align-items: center; }
+          .reading-settings-sheet { border-radius: 24px; }
+        }
+        .settings-block { margin-bottom: 18px; }
+        .settings-label {
+          font-size: 0.7rem;
+          font-weight: 800;
+          letter-spacing: 1px;
+          color: var(--text-muted);
+          margin-bottom: 8px;
+        }
+        .segmented {
+          display: flex;
+          gap: 6px;
+          background: var(--glass);
+          border-radius: 12px;
+          padding: 4px;
+        }
+        .segmented-btn {
+          flex: 1;
+          background: none;
+          border: none;
+          padding: 10px;
+          border-radius: 9px;
+          font-size: 0.82rem;
+          font-weight: 700;
+          color: var(--text-muted);
+          cursor: pointer;
+        }
+        .segmented-btn.active { background: var(--accent); color: #000; }
+        .settings-select {
+          width: 100%;
+          background: var(--glass);
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          padding: 12px 14px;
+          font-size: 0.9rem;
+          color: var(--text);
+        }
+        .settings-submit-btn {
+          width: 100%;
+          background: var(--accent);
+          color: #000;
+          font-weight: 800;
+          font-size: 0.9rem;
+          padding: 14px;
+          border-radius: 14px;
+          border: none;
+          cursor: pointer;
+        }
+        .settings-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .settings-divider { height: 1px; background: var(--border); margin: 18px 0; }
+        .settings-toggle-row {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          background: none;
+          border: none;
+          padding: 10px 0;
+          font-size: 0.88rem;
+          font-weight: 700;
+          color: var(--text);
+          cursor: pointer;
+        }
+        .mini-toggle {
+          width: 34px; height: 20px; border-radius: 20px; background: var(--glass);
+          border: 1px solid var(--border); position: relative; display: inline-block;
+        }
+        .mini-toggle-dot {
+          position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%;
+          background: var(--text-muted); transition: all 0.2s;
+        }
+        .mini-toggle.on { background: var(--accent); border-color: var(--accent); }
+        .mini-toggle.on .mini-toggle-dot { background: #000; transform: translateX(14px); }
+        .settings-audio-btn {
+          width: 100%;
+          background: none;
+          border: 1px solid var(--border);
+          border-radius: 14px;
+          padding: 12px;
+          font-size: 0.85rem;
+          font-weight: 700;
+          color: var(--text);
+          cursor: pointer;
+          margin-top: 10px;
+        }
+        .settings-audio-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         /* Study Deck */
         .study-deck-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .study-deck-title { display: flex; align-items: center; gap: 10px; font-weight: 900; color: #fff; font-size: 1.1rem; }
         .study-deck-title i { color: var(--accent); }
-        .study-flip-toggle { 
-          background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); 
+        .study-flip-toggle {
+          background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
           color: #fff; padding: 8px 16px; border-radius: 12px; font-size: 0.75rem; font-weight: 700;
           display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;
         }
@@ -1389,31 +1228,31 @@ function ReadingContent() {
         .study-flip-toggle i { font-size: 0.8rem; }
 
         .study-deck-scene { perspective: 1500px; display: grid; position: relative; margin-bottom: 40px; }
-        .study-deck-inner { 
+        .study-deck-inner {
           display: grid;
           grid-template-columns: 1fr;
-          transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); 
-          transform-style: preserve-3d; 
+          transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+          transform-style: preserve-3d;
         }
         .study-deck-scene.is-flipped .study-deck-inner { transform: rotateY(180deg); }
 
-        .study-deck-front, .study-deck-back { 
+        .study-deck-front, .study-deck-back {
           grid-area: 1 / 1;
-          backface-visibility: hidden; 
-          border-radius: 24px; 
+          backface-visibility: hidden;
+          border-radius: 24px;
           height: fit-content;
         }
         .study-deck-back { transform: rotateY(180deg); }
 
         /* Vocabulary Cards */
         .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
-        .vocab-item-card { 
-          background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); 
+        .vocab-item-card {
+          background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
           border-radius: 20px; padding: 20px; transition: all 0.3s ease;
         }
         .vocab-item-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); }
         .vocab-card-header { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 12px; }
-        .v-icon-btn { 
+        .v-icon-btn {
           background: none; border: none; color: #666; cursor: pointer; font-size: 0.9rem; transition: color 0.2s;
         }
         .v-icon-btn:hover { color: var(--accent); }
@@ -1423,11 +1262,10 @@ function ReadingContent() {
         .v-meaning { font-size: 0.9rem; color: #aaa; margin: 0; line-height: 1.4; }
 
         /* Grammar Cards */
-        /* Grammar Cards - Compact & Stable Grid Version */
-        .grammar-card-scene { 
-          perspective: 1200px; 
-          cursor: pointer; 
-          margin-bottom: 8px; /* Boşluk azaltıldı */
+        .grammar-card-scene {
+          perspective: 1200px;
+          cursor: pointer;
+          margin-bottom: 8px;
         }
         .grammar-card-inner {
           display: grid;
@@ -1436,35 +1274,28 @@ function ReadingContent() {
           transform-style: preserve-3d;
         }
         .grammar-card-scene.g-is-flipped .grammar-card-inner { transform: rotateY(180deg); }
-        
+
         .grammar-card-front, .grammar-card-back {
           grid-area: stack;
-          width: 100%; 
-          backface-visibility: hidden; 
+          width: 100%;
+          backface-visibility: hidden;
           border-radius: 16px;
         }
-        
-        .grammar-card-front {
-          z-index: 2;
-          transform: rotateY(0deg);
-        }
-        
+
+        .grammar-card-front { z-index: 2; transform: rotateY(0deg); }
+
         .grammar-card-back {
           transform: rotateY(180deg);
           z-index: 1;
           background: rgba(226, 183, 20, 0.08) !important;
         }
 
-        .grammar-list { 
-          display: flex; 
-          flex-direction: column; 
-          gap: 10px; /* Kartlar arası boşluk daraltıldı */
-        }
-        .grammar-item-card { 
-          background: rgba(255,255,255,0.03); 
-          border: 1px solid rgba(255,255,255,0.08); 
-          border-radius: 16px; 
-          padding: 16px 20px; /* İç boşluklar optimize edildi */
+        .grammar-list { display: flex; flex-direction: column; gap: 10px; }
+        .grammar-item-card {
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 16px;
+          padding: 16px 20px;
           position: relative;
         }
         .academic-tr-bg { background: rgba(226, 183, 20, 0.05) !important; border-color: rgba(226, 183, 20, 0.2) !important; }
@@ -1472,15 +1303,13 @@ function ReadingContent() {
         .g-tr-content { font-size: 0.95rem; color: #fff; line-height: 1.6; padding: 10px 0; }
         .grammar-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .g-title { font-size: 1.1rem; font-weight: 900; color: #fff; margin: 0; }
-        .g-save-btn { background: none; border: none; color: #666; cursor: pointer; }
-        .g-save-btn:hover { color: var(--accent); }
         .g-desc { font-size: 0.9rem; color: #aaa; line-height: 1.6; margin-bottom: 20px; }
         .g-examples { display: flex; flex-direction: column; gap: 12px; }
         .g-example-item { padding-left: 12px; border-left: 3px solid var(--accent); }
         .ex-en { font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
         .ex-tr { font-size: 0.85rem; color: #888; font-style: italic; }
 
-        .g-found-tag { 
+        .g-found-tag {
           display: inline-flex; align-items: center; gap: 6px; font-size: 0.7rem; font-weight: 800;
           color: var(--accent); background: rgba(226,183,20,0.1); padding: 4px 10px; border-radius: 8px;
           margin-top: 8px; text-transform: uppercase;
@@ -1501,98 +1330,19 @@ function ReadingContent() {
           transform: scale(1.02);
         }
 
-        /* Audio Player Styles */
-        .audio-player-bar {
-          margin-top: 20px;
-          background: rgba(0,0,0,0.2);
-          border: 1px solid rgba(255,255,255,0.05);
-          border-radius: 20px;
-          padding: 12px 20px;
-        }
-        .audio-player-content { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
-        .player-main-ctrls { display: flex; align-items: center; gap: 12px; }
-        .player-btn-main { 
-          width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: #000; 
-          border: none; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center;
-          transition: transform 0.2s;
-        }
-        .player-btn-main:hover { transform: scale(1.1); }
-        .player-btn-secondary { 
-          background: rgba(255,255,255,0.05); color: #fff; border: none; width: 36px; height: 36px; 
-          border-radius: 50%; cursor: pointer; transition: background 0.2s;
-        }
-        .player-btn-secondary:hover { background: rgba(255,255,255,0.1); color: var(--accent); }
-        
-        .speed-control-wrapper { 
-          display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); 
-          padding: 4px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
-        }
-        .speed-icon { font-size: 0.8rem; color: var(--accent); }
-        .speed-select-premium {
-          background: transparent; border: none; color: #fff; font-size: 0.8rem; font-weight: 800; 
-          cursor: pointer; outline: none; padding-right: 5px;
-        }
-        .speed-select-premium option { background: #1a1a1a; color: #fff; }
-
-        .player-extra-ctrls { display: flex; align-items: center; gap: 20px; }
-        .toggle-highlight-box { display: flex; align-items: center; gap: 10px; }
-        .toggle-label { font-size: 0.75rem; font-weight: 800; color: #aaa; }
-        
-        .player-status-tag { 
-          font-size: 0.65rem; font-weight: 900; letter-spacing: 1px; color: var(--accent);
-          background: rgba(226,183,20,0.1); padding: 4px 12px; border-radius: 8px;
-        }
-        .status-pulse { animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-
-        /* Custom Switch */
-        .toggle-switch { position: relative; display: inline-block; width: 34px; height: 20px; }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .slider { 
-          position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; 
-          background-color: rgba(255,255,255,0.1); transition: .4s; border-radius: 20px; 
-        }
-        .slider:before { 
-          position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; 
-          background-color: white; transition: .4s; border-radius: 50%; 
-        }
-        input:checked + .slider { background-color: var(--accent); }
-        input:checked + .slider:before { transform: translateX(14px); }
-
-        /* Premium Toggle Button */
-        .premium-toggle-btn {
-          display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05);
-          border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 6px 14px;
-          cursor: pointer; transition: all 0.3s ease;
-        }
-        .premium-toggle-btn.active {
-          background: rgba(0, 162, 255, 0.1); border-color: rgba(0, 162, 255, 0.4);
-        }
-        .toggle-dot {
-          width: 12px; height: 12px; border-radius: 50%; background: #555;
-          transition: all 0.3s ease; box-shadow: 0 0 0 rgba(0, 162, 255, 0);
-        }
-        .premium-toggle-btn.active .toggle-dot {
-          background: #00a2ff; box-shadow: 0 0 10px #00a2ff;
-        }
-        .toggle-text { font-size: 0.75rem; font-weight: 800; color: #aaa; transition: color 0.3s; }
-        .premium-toggle-btn.active .toggle-text { color: #fff; }
-
-        /* Unified Highlighting */
-        .reading-sentence { 
-          transition: background 0.3s ease; 
-          border-radius: 8px; 
+        .reading-sentence {
+          transition: background 0.3s ease;
+          border-radius: 8px;
           padding: 4px 6px;
           margin: 2px -4px;
           display: inline;
-          line-height: 1.8;
+          line-height: 1.9;
         }
-        .sentence-active { 
-          background: rgba(0, 162, 255, 0.15) !important; 
+        .sentence-active {
+          background: rgba(0, 162, 255, 0.15) !important;
           box-shadow: 0 0 0 2px rgba(0, 162, 255, 0.1);
         }
 
-        /* Audio Highlighting (Strong Blue Light) */
         :global(.audio-highlight-active) {
           background: #00a2ff !important;
           box-shadow: 0 0 20px rgba(0, 162, 255, 0.7);
@@ -1605,149 +1355,16 @@ function ReadingContent() {
           margin: 0 -2px;
         }
 
-        /* --- MOBILE OPTIMIZATION --- */
-        @media (max-width: 1024px) {
-          .analysis-layout { 
-            grid-template-columns: 1fr !important; 
-            height: auto !important; 
-            overflow: visible !important; 
-            padding: 20px !important; 
-            gap: 20px;
-          }
-          .study-panel { 
-            height: auto !important; 
-            overflow: visible !important; 
-          }
-          .study-scroll-area {
-            max-height: 500px;
-          }
-          .content-container {
-            padding-bottom: 100px; /* Nav bar space */
-          }
-          .source-selection-container {
-            padding: 20px 16px;
-          }
-          .source-cards-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-
         @media (max-width: 640px) {
-          .text-header-card {
-            padding: 15px 20px;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 15px;
+          .reading-body {
+            padding: 16px 18px;
+            font-size: 14px;
+            line-height: 1.8;
           }
-          .header-actions {
-            width: 100%;
-            justify-content: flex-end;
-          }
-          .passage-card {
-            padding: 25px 20px;
-          }
-          .passage-text {
-            font-size: 1.15rem !important;
-          }
-          .audio-dock {
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 15px;
-          }
-          .audio-meta {
-            width: 100%;
-            justify-content: center;
-          }
-          .speed-slider {
-            flex: 1;
-          }
-          .vocab-grid {
-            grid-template-columns: 1fr;
-          }
+          .reading-sentence { line-height: 1.8; }
+          .vocab-grid { grid-template-columns: 1fr; }
         }
       `}</style>
-
-      {showResultCard && (
-        <div className="responsive-lookup-overlay" onClick={() => setShowResultCard(false)}>
-          <div className="responsive-lookup-card animate-slideUp" onClick={e => e.stopPropagation()}>
-            <div className="sheet-handle"></div>
-            <div className="card-header-minimal">
-              <span>Hızlı Sözlük</span>
-              <button onClick={() => setShowResultCard(false)} className="btn-close-minimal">Kapat</button>
-            </div>
-
-            {/* Pop-up İçi Hızlı Arama */}
-            <div className="popup-search-box" style={{ marginBottom: 24, display: 'flex', gap: 8 }}>
-              <input 
-                placeholder="Yeni bir kelime ara..." 
-                value={lookupInput} 
-                onChange={e => setLookupInput(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && lookupWord()}
-                style={{ 
-                  flex: 1, 
-                  background: 'rgba(255, 255, 255, 0.05)', 
-                  border: '1px solid rgba(255, 255, 255, 0.1)', 
-                  borderRadius: '12px', 
-                  padding: '10px 14px', 
-                  fontSize: '0.85rem',
-                  color: '#fff'
-                }}
-              />
-              <button 
-                onClick={() => lookupWord()} 
-                className="btn-icon-sm"
-                style={{ background: 'var(--accent)', color: '#000', borderRadius: '12px', padding: '0 15px' }}
-              >
-                <i className="fa-solid fa-search"></i>
-              </button>
-            </div>
-
-            {fetchingDetails ? (
-              <div className="sheet-loading-small"><div className="spinner-ring"></div></div>
-            ) : (
-              <>
-                <div className="lookup-fields">
-                  <div className="lookup-field">
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <label>KELİME</label>
-                      <button 
-                        className="btn-icon-sm" 
-                        onClick={() => speakWord(wordInput)} 
-                        title="Dinle"
-                        style={{ background: 'rgba(255, 255, 255, 0.05)', border: 'none', color: 'var(--accent)', cursor: 'pointer' }}
-                      >
-                        <i className="fa-solid fa-volume-high"></i>
-                      </button>
-                    </div>
-                    <input value={wordInput} onChange={e => setWordInput(e.target.value)} />
-                  </div>
-                  <div className="lookup-field">
-                    <label>ANLAM</label>
-                    <input value={meaningInput} onChange={e => setMeaningInput(e.target.value)} />
-                  </div>
-                  <div className="lookup-field">
-                    <label>EŞ ANLAM</label>
-                    <input value={synInput} onChange={e => setSynInput(e.target.value)} />
-                  </div>
-                </div>
-                <button 
-                  onClick={saveWord} 
-                  className="btn-primary w-100 mt-4"
-                  style={{ 
-                    padding: '16px', 
-                    borderRadius: '16px', 
-                    fontSize: '0.9rem', 
-                    fontWeight: 900,
-                    boxShadow: '0 10px 20px rgba(226, 183, 20, 0.2)' 
-                  }}
-                >
-                  Bankaya Kaydet
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

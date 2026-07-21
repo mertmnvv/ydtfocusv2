@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { subscribeToUserWords, subscribeToUserStats, getUserHeroStats, checkAndGrantBadges } from "@/lib/firestore";
 import { BADGES } from "@/constants/badges";
+import Leaderboard from "@/components/Leaderboard";
 
 export default function AchievementsPage() {
   const { user, userProfile, loading: authLoading } = useAuth();
@@ -147,6 +148,14 @@ export default function AchievementsPage() {
         ))}
       </div>
 
+      <div className="ach-leaderboard-section">
+        <div className="ach-leaderboard-header">
+          <h2 className="ach-section-title ach-leaderboard-title">Liderlik Tablosu</h2>
+          <p className="ach-filter-hint">En iyi öğrenciler arasındaki yerini gör.</p>
+        </div>
+        <Leaderboard />
+      </div>
+
       <style jsx>{`
         .achievements-page { padding: 20px; max-width: 1200px; margin: 0 auto; padding-bottom: 100px; }
         
@@ -198,6 +207,10 @@ export default function AchievementsPage() {
 
         .ach-card-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; font-weight: 500; margin-bottom: 12px; }
         .ach-earned-tag { font-size: 0.7rem; font-weight: 900; color: var(--accent); text-transform: uppercase; display: flex; align-items: center; gap: 4px; }
+
+        .ach-leaderboard-section { padding-bottom: 40px; }
+        .ach-leaderboard-header { border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
+        .ach-leaderboard-title { margin-bottom: 4px; }
 
         @media (max-width: 768px) {
           .ach-hero-content { flex-direction: column; text-align: center; gap: 24px; padding: 20px; }
