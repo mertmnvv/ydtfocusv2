@@ -39,7 +39,7 @@ export default function ProfilePage() {
       </div>
 
       <div className="profile-page-list">
-        <a href="/dashboard?tab=leaderboard" className="profile-page-item">
+        <a href="/achievements" className="profile-page-item">
           <span>Rozetlerim</span>
           <span className="profile-page-item-arrow">›</span>
         </a>

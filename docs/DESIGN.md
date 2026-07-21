@@ -6,6 +6,34 @@
 > paketin kalıcı, repo içi özetidir; mockup dosyası sadece görsel referans için
 > saklanır.
 
+## Sonraki karar: Reading-merkezli IA
+
+Aşağıdaki "5a Navigasyon" ve "1b Dashboard" bölümleri, ilk onaylanan handoff
+paketinin **orijinal, tarihsel kaydıdır** — hâlâ o turun neden/nasıl
+kararlarını açıklar. Ancak bu ilk uygulamadan sonra ürün sahibi net bir geri
+bildirim verdi: **okuma paneli sitenin asıl konusu**, öne çekilmeli ve site
+bunun etrafında şekillenmeli. Buna göre şu ek karar alındı ve uygulandı:
+
+- **Okuma artık uygulamanın girişi ve navigasyondaki birincil hedefi.** Kök
+  `/` yönlendirmesi ve giriş/kayıt sonrası yönlendirme artık `/dashboard`
+  değil `/reading`. `src/app/(app)/layout.js`'teki `DESTINATIONS`
+  dizisinde ilk sekme "Bugün" değil "Okuma" (`/reading`).
+- **`/dashboard` ayrı bir ekran olmaktan çıktı, sadece geriye dönük uyumluluk
+  için `/reading`'e yönlendiren bir stub oldu** (`src/app/(app)/dashboard/page.js`).
+  Eski Dashboard'un tek değerli sinyali — seri günü ve tekrar bekleyen kelime
+  sayısı — artık Reading sayfasının en üstünde ince bir durum şeridi olarak
+  yaşıyor (sadece giriş yapmış kullanıcılarda görünür, `/srs`'e link verir).
+- **Kütüphane hub'ından "Okuma" kartı kaldırıldı** — Okuma artık o hub'ın
+  içinde bir kart değil, kendi başına üst-seviye sekme. Kütüphane artık
+  Quiz/Kartlar/Gramer (birincil) + Sözlük/Hatalarım/Zero to Hero (ikincil)
+  ile Okuma'yı destekleyen araçların toplandığı yer.
+
+Kapsam dışı bırakılanlar (bilinçli): `src/app/admin/*` ve PayTR ödeme
+callback URL'leri hâlâ `/dashboard`'a işaret ediyor — yönlendirme stub'ı
+sayesinde çalışmaya devam ediyorlar, bu pivotta değiştirilmedi.
+`src/components/Onboarding.js`'deki tur içeriği (özellikle "dashboard" adımı)
+zaten önceki turdan beri güncel değildi — ayrı bir içerik gözden geçirme işi.
+
 ## Neden
 
 Mevcut arayüz aşırı yoğun: 9 öğeli üst nav + ayrı 5 ikonlu mobil alt bar + 9

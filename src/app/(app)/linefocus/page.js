@@ -613,7 +613,7 @@ export default function LinefocusPage() {
     return (
       <div className="lf-standalone">
         <div className="lf-top-bar">
-          <a href="/dashboard" className="lf-exit-btn"><i className="fas fa-chevron-left"></i> back</a>
+          <a href="/reading" className="lf-exit-btn"><i className="fas fa-chevron-left"></i> back</a>
           <div className="lf-logo">line<span>focus</span></div>
         </div>
         <div className="lf-main" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' }}>
@@ -622,7 +622,7 @@ export default function LinefocusPage() {
           <p style={{ color: 'var(--text-muted)', marginBottom: 24, maxWidth: 400, lineHeight: 1.6 }}>
             Linefocus odaklanma modu, klavye yazımı ve geniş ekran deneyimi için tasarlanmıştır. Lütfen bu moda bilgisayarınızdan erişin.
           </p>
-          <a href="/dashboard" className="lf-primary-btn">Panele Dön</a>
+          <a href="/reading" className="lf-primary-btn">Panele Dön</a>
         </div>
       </div>
     );
@@ -644,7 +644,7 @@ export default function LinefocusPage() {
     return (
       <div className="lf-standalone">
         <div className="lf-top-bar">
-          <a href="/dashboard" className="lf-exit-btn"><i className="fas fa-chevron-left"></i> back</a>
+          <a href="/reading" className="lf-exit-btn"><i className="fas fa-chevron-left"></i> back</a>
           <div className="lf-logo">line<span>focus</span></div>
         </div>
         <div className="lf-main" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' }}>
@@ -672,7 +672,7 @@ export default function LinefocusPage() {
 
       {/* Top Bar */}
       <div className="lf-top-bar">
-        <a href="/dashboard" className="lf-exit-btn">
+        <a href="/reading" className="lf-exit-btn">
           <i className="fas fa-chevron-left"></i> back
         </a>
         <div className="lf-logo">line<span>focus</span></div>
