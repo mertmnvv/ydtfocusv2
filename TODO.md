@@ -73,12 +73,19 @@ olarak da alınabilirler.
 > kullanıyor ve tasarım dokümanının kapsamında değil — bu redesign turunda
 > dokunulmadı, ileride ayrı bir iş olarak değerlendirilebilir.
 
-## 5. Flashcards — "Tek Oluşturma Akışı, Öne Çıkan Oynat" (4a)
+## 5. Flashcards — "Tek Oluşturma Akışı, Öne Çıkan Oynat" (4a) — TAMAMLANDI
 
-- [ ] 2 header butonunu tek "+ Yeni Deste"ye indir
-- [ ] Tek modal + segmented control (AI ile Üret / Elle Oluştur)
-- [ ] Deste yöneticisinde "Hemen Oyna"yı en üste/en büyük aksiyona taşı,
-      silmeyi overflow menüsüne al
+- [x] 2 header butonu ("AI Üret" / "Yeni Deste") → tek "+ Yeni Deste"
+- [x] Tek modal + segmented control (AI ile Üret / Elle Oluştur),
+      `createTab` state'i ile
+- [x] AI formunun 17 satırlık sabit `<select>`'i type-to-search
+      `<input list>` + `<datalist>`'e döndü (aynı kategori listesi öneri
+      olarak)
+- [x] Deste yöneticisinde "Hemen Oyna" tam genişlik, tek ve en büyük aksiyon;
+      altında kompakt "{N} kelime · %{pct} biliniyor" meta satırı
+- [x] Deste silme kalıcı çöp ikonundan "..." overflow menüsüne taşındı
+- [x] "+ kelime ekle" satırı sadeleşti; AI örnek-cümle yardımcısı artık
+      pinned ikon buton değil, ikincil "Örnek cümle öner" metin linki
 
 ---
 
