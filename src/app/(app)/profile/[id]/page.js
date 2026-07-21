@@ -1,17 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
+import { useParams } from "next/navigation";
 import { getDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { useNotification } from "@/context/NotificationContext";
 
 export default function UserProfilePage() {
   const { id } = useParams();
-  const { user } = useAuth();
-  const { showNotification } = useNotification();
-  const router = useRouter();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -33,60 +28,46 @@ export default function UserProfilePage() {
   const stats = profile.publicStats || {};
 
   return (
-    <div className="profile-view-container">
-      <div className="glass-card profile-main-card">
-        <div className="profile-top">
-          <div className="profile-avatar-large">
-            {profile.displayName?.[0] || "?"}
-          </div>
-          <div className="profile-primary-info">
-            <h1 className="profile-name">{profile.displayName || "Gizli Kullanıcı"}</h1>
-            <div className="profile-status">
-              <span className="status-dot"></span>
-              {stats.streak || 0} Günlük Seri
-            </div>
-          </div>
+    <div className="profile-view-page">
+      <div className="profile-view-header">
+        <div className="profile-view-avatar">{profile.displayName?.[0] || "?"}</div>
+        <div>
+          <h1 className="profile-view-name">{profile.displayName || "Gizli Kullanıcı"}</h1>
+          <div className="profile-view-streak">{stats.streak || 0} günlük seri</div>
         </div>
+      </div>
 
-        <div className="profile-stats-grid">
-          <div className="p-stat-card">
-            <div className="p-stat-val">{stats.masteryCount || 0}</div>
-            <div className="p-stat-label">Bilinen Kelime</div>
-          </div>
-          <div className="p-stat-card">
-            <div className="p-stat-val">{stats.weeklyMinutes || 0}dk</div>
-            <div className="p-stat-label">Haftalık Çalışma</div>
-          </div>
-          <div className="p-stat-card">
-            <div className="p-stat-val">{stats.correct || 0}</div>
-            <div className="p-stat-label">Toplam Doğru</div>
-          </div>
+      <div className="profile-view-stats">
+        <div className="profile-view-stat">
+          <div className="profile-view-stat-val">{stats.masteryCount || 0}</div>
+          <div className="profile-view-stat-label">Bilinen Kelime</div>
+        </div>
+        <div className="profile-view-stat">
+          <div className="profile-view-stat-val">{stats.weeklyMinutes || 0}dk</div>
+          <div className="profile-view-stat-label">Haftalık Çalışma</div>
+        </div>
+        <div className="profile-view-stat">
+          <div className="profile-view-stat-val">{stats.correct || 0}</div>
+          <div className="profile-view-stat-label">Toplam Doğru</div>
         </div>
       </div>
 
       <style jsx>{`
-        .profile-view-container { max-width: 700px; margin: 40px auto; padding: 0 20px; }
-        .profile-main-card { padding: 40px; }
-        .profile-top { display: flex; align-items: center; gap: 32px; margin-bottom: 40px; }
-        .profile-avatar-large {
-          width: 100px; height: 100px; border-radius: 30px; background: var(--bg-elevated);
-          display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 900;
-          border: 2px solid var(--accent); color: var(--accent);
-          box-shadow: 0 10px 25px rgba(226, 183, 20, 0.15);
+        .profile-view-page { max-width: 480px; margin: 0 auto; padding: 40px 20px; }
+        .profile-view-header { display: flex; align-items: center; gap: 20px; margin-bottom: 32px; }
+        .profile-view-avatar {
+          width: 72px; height: 72px; border-radius: 20px; background: var(--bg-elevated);
+          border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+          font-size: 1.8rem; font-weight: 800; color: var(--accent); flex-shrink: 0;
         }
-        .profile-primary-info { flex: 1; }
-        .profile-name { font-size: 2rem; font-weight: 900; margin-bottom: 8px; color: var(--text); }
-        .profile-status { display: flex; align-items: center; gap: 8px; color: var(--accent); font-weight: 700; font-size: 0.9rem; }
-        .status-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 10px var(--accent); }
-        .profile-actions { display: flex; flex-direction: column; gap: 12px; }
-        .profile-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-        .p-stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 24px; text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
-        .p-stat-val { font-size: 1.5rem; font-weight: 900; color: var(--primary); margin-bottom: 4px; }
-        .p-stat-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
-        @media (max-width: 600px) {
-          .profile-top { flex-direction: column; text-align: center; }
-          .profile-actions { width: 100%; }
-          .profile-stats-grid { grid-template-columns: 1fr; }
+        .profile-view-name { font-size: 1.4rem; font-weight: 800; color: var(--text); }
+        .profile-view-streak { color: var(--accent); font-weight: 700; font-size: 0.85rem; margin-top: 4px; }
+        .profile-view-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .profile-view-stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 18px 10px; text-align: center; }
+        .profile-view-stat-val { font-size: 1.3rem; font-weight: 900; color: var(--text); margin-bottom: 2px; }
+        .profile-view-stat-label { font-size: 0.68rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+        @media (max-width: 480px) {
+          .profile-view-header { flex-direction: column; text-align: center; }
         }
       `}</style>
     </div>
