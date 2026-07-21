@@ -53,9 +53,9 @@ export default function MistakesPage() {
 
   const mistakeWords = wrongIds.map(wText => {
     // Hem ID bazlı hem de metin bazlı eşleşme ara (Legacy ve yeni ID formatı desteği)
-    const found = myWords.find(w => 
-      w.id === wText || 
-      w.word === wText || 
+    const found = myWords.find(w =>
+      w.id === wText ||
+      w.word === wText ||
       w.word?.toLowerCase() === wText?.toLowerCase()
     );
     return found ? { ...found, originalId: wText } : { word: wText, meaning: "—", originalId: wText };
@@ -63,59 +63,38 @@ export default function MistakesPage() {
 
   return (
     <div className="mistakes-page">
-      <div className="header-split">
-        <h2 className="section-title">Hatalarım ({wrongIds.length})</h2>
+      <div className="mistakes-header">
+        <div>
+          <h1 className="mistakes-title">Hatalarım</h1>
+          <p className="mistakes-subtitle">{wrongIds.length} kelime</p>
+        </div>
         {wrongIds.length > 0 && (
-          <button className="btn-ghost" style={{ color: "var(--error)", borderColor: "var(--error)" }} onClick={() => setClearConfirm(true)}>
-            Tümünü Sil
-          </button>
+          <button className="mistakes-clear-btn" onClick={() => setClearConfirm(true)}>Tümünü Sil</button>
         )}
       </div>
 
       {mistakeWords.length === 0 ? (
-        <div className="glass-card" style={{ textAlign: "center", padding: 40 }}>
-          <h3 style={{ fontWeight: 800, marginBottom: 8 }}>Hata Yok</h3>
+        <div className="mistakes-empty">
+          <h3>Hata Yok</h3>
           <p className="hint-text">Quiz&apos;lerde yanlış bildiğiniz kelimeler burada görünecek.</p>
         </div>
       ) : (
-        <div className="glass-card">
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {mistakeWords.map((w, i) => (
-              <div key={i} className="mistake-card">
-                <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, flexWrap: "wrap" }}>
-                  <span className="mistake-word">{w.word}</span>
-                  <span className="mistake-meaning">{w.meaning}</span>
-                  {w.syn && w.syn !== "-" && (
-                    <span style={{ color: "var(--archive)", fontSize: "0.8rem" }}>Eş: {w.syn}</span>
-                  )}
-                </div>
-                <button
-                  onClick={() => removeOne(w.originalId)}
-                  style={{
-                    background: "transparent",
-                    border: "1px solid rgba(255,69,58,0.3)",
-                    color: "var(--error)",
-                    padding: "6px 12px",
-                    borderRadius: 8,
-                    fontSize: "0.8rem",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                    flexShrink: 0,
-                  }}
-                >
-                  Sil
-                </button>
+        <div className="mistakes-list">
+          {mistakeWords.map((w, i) => (
+            <div key={i} className="mistake-row">
+              <div className="mistake-info">
+                <span className="mistake-word">{w.word}</span>
+                <span className="mistake-meaning">{w.meaning}</span>
+                {w.syn && w.syn !== "-" && <span className="mistake-syn">Eş: {w.syn}</span>}
               </div>
-            ))}
-          </div>
+              <button className="mistake-remove" onClick={() => removeOne(w.originalId)}>Sil</button>
+            </div>
+          ))}
         </div>
       )}
 
       {wrongIds.length >= 4 && (
-        <a href="/quiz" className="btn-primary" style={{ display: "block", textAlign: "center", marginTop: 20, padding: 16 }}>
-          Hata Testi Başlat
-        </a>
+        <a href="/quiz" className="mistakes-cta">Hata Testi Başlat</a>
       )}
 
       {clearConfirm && (
@@ -126,6 +105,38 @@ export default function MistakesPage() {
           onCancel={() => setClearConfirm(false)}
         />
       )}
+
+      <style jsx>{`
+        .mistakes-page { max-width: 640px; margin: 0 auto; padding: 20px 0 60px; }
+        .mistakes-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; gap: 12px; }
+        .mistakes-title { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.5px; color: var(--text); }
+        .mistakes-subtitle { color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; }
+        .mistakes-clear-btn {
+          background: none; border: 1px solid rgba(255, 69, 58, 0.3); color: var(--error);
+          padding: 10px 16px; border-radius: 10px; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+        }
+        .mistakes-clear-btn:hover { background: rgba(255, 69, 58, 0.1); }
+        .mistakes-empty { text-align: center; padding: 60px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; }
+        .mistakes-empty h3 { font-weight: 800; margin-bottom: 8px; }
+        .mistakes-list { display: flex; flex-direction: column; gap: 8px; }
+        .mistake-row {
+          display: flex; align-items: center; justify-content: space-between; gap: 12px;
+          background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px;
+        }
+        .mistake-info { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1; }
+        .mistake-word { font-weight: 800; color: var(--text); }
+        .mistake-meaning { color: var(--accent); font-size: 0.88rem; font-weight: 600; }
+        .mistake-syn { color: var(--archive); font-size: 0.78rem; }
+        .mistake-remove {
+          background: none; border: 1px solid rgba(255, 69, 58, 0.3); color: var(--error);
+          padding: 6px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer; flex-shrink: 0;
+        }
+        .mistake-remove:hover { background: rgba(255, 69, 58, 0.1); }
+        .mistakes-cta {
+          display: block; text-align: center; margin-top: 24px; padding: 16px;
+          background: var(--accent); color: #000; font-weight: 800; border-radius: 14px; text-decoration: none;
+        }
+      `}</style>
     </div>
   );
 }

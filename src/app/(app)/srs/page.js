@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getUserWords, updateUserWord, updateUserStats, refreshUserStreak } from "@/lib/firestore";
 import Link from "next/link";
@@ -18,30 +18,26 @@ const LEVEL_INTERVALS = [0.5, 1, 3, 7, 15]; // Gün cinsinden tekrar aralıklar�
 
 export default function SRSPage() {
   const { user } = useAuth();
-  const [words, setWords] = useState([]);
   const [quizWords, setQuizWords] = useState([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [phase, setPhase] = useState("loading");
   const [loading, setLoading] = useState(true);
-  
-  const [answers, setAnswers] = useState([]); 
+
+  const [answers, setAnswers] = useState([]);
   const [correctCount, setCorrectCount] = useState(0);
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
-  
+
   const [selectedOption, setSelectedOption] = useState(null);
   const [showNextDelay, setShowNextDelay] = useState(false);
-
-  const scrollRef = useRef(null);
 
   useEffect(() => {
     if (user) {
       getUserWords(user.uid).then(all => {
         const wordList = all || [];
-        setWords(wordList);
         const now = Date.now();
         const dueWords = wordList.filter(w => (w.nextReview || 0) <= now);
-        
+
         if (dueWords.length === 0) {
           setPhase("no-due");
           refreshUserStreak(user.uid).catch(console.error);
@@ -61,22 +57,18 @@ export default function SRSPage() {
   }, [user]);
 
   function generateOptions(target, all) {
-    // Bankadaki diğer kelimeleri al
     const others = all.filter(w => w.id !== target.id && w.meaning !== target.meaning);
     const selectedOthers = others.sort(() => Math.random() - 0.5).slice(0, 3);
-    
+
     let opts = [target.meaning, ...selectedOthers.map(o => o.meaning)];
-    
-    // Eğer bankada 4 kelime yoksa, fallback listesinden çeldirici ekle
+
     if (opts.length < 4) {
       const needed = 4 - opts.length;
       const filteredFallbacks = FALLBACK_DISTRACTORS.filter(f => !opts.includes(f));
       const fallbacks = filteredFallbacks.sort(() => Math.random() - 0.5).slice(0, needed);
       opts = [...opts, ...fallbacks];
     }
-    
-    // Eğer hala eksik varsa (çok düşük ihtimal), "---" yerine güvenli bir kelime ekle
-    while(opts.length < 4) opts.push("belirlemek"); 
+    while (opts.length < 4) opts.push("belirlemek");
 
     return opts.sort(() => Math.random() - 0.5);
   }
@@ -86,14 +78,14 @@ export default function SRSPage() {
     const target = quizWords[currentIdx];
     const isCorrect = option === target.meaning;
     setSelectedOption(option);
-    
+
     if (isCorrect) {
       setCorrectCount(prev => prev + 1);
       playSuccessSound();
     } else {
       playErrorSound();
     }
-    
+
     setAnswers(prev => [...prev, { word: target.word, correctMeaning: target.meaning, userAnswer: option, isCorrect }]);
     setShowNextDelay(true);
 
@@ -114,19 +106,16 @@ export default function SRSPage() {
         setShowNextDelay(false);
         setCurrentIdx(prev => prev + 1);
       } else {
-        // Test Bitti
         const finalCorrectCount = correctCount + (isCorrect ? 1 : 0);
         const finalWrongCount = quizWords.length - finalCorrectCount;
-        
-        // State'i hemen güncelle ki UI'da doğru görünsün
+
         if (isCorrect) setCorrectCount(finalCorrectCount);
         setEndTime(Date.now());
-        
+
         try {
-          // İstatistikleri oturum toplamı kadar artır
-          await updateUserStats(user.uid, { 
-            correct: finalCorrectCount, 
-            wrong: finalWrongCount 
+          await updateUserStats(user.uid, {
+            correct: finalCorrectCount,
+            wrong: finalWrongCount
           });
           await refreshUserStreak(user.uid);
         } catch (err) {
@@ -142,93 +131,81 @@ export default function SRSPage() {
 
   if (phase === "no-due") {
     return (
-      <div className="glass-card" style={{ maxWidth: 500, margin: "100px auto", padding: 40, textAlign: "center" }}>
-        <h2 style={{ fontSize: "2rem", fontWeight: 800, marginBottom: 16 }}>Akıllı Tekrar</h2>
-        <p className="hint-text" style={{ fontSize: "1.1rem", marginBottom: 32 }}>Şu an tekrar etmen gereken bir kelime yok. Harika gidiyorsun!</p>
-        <Link href="/reading" className="btn-primary" style={{ display: "inline-block", padding: "12px 32px" }}>Merkeze Dön</Link>
+      <div className="srs-empty-page">
+        <div className="srs-empty-card">
+          <h2>Akıllı Tekrar</h2>
+          <p className="hint-text">Şu an tekrar etmen gereken bir kelime yok. Harika gidiyorsun!</p>
+          <Link href="/reading" className="btn-primary">Okumaya Dön</Link>
+        </div>
+        <style jsx>{`
+          .srs-empty-page { display: flex; align-items: center; justify-content: center; min-height: 60vh; padding: 20px; }
+          .srs-empty-card { max-width: 440px; width: 100%; padding: 40px; text-align: center; background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; }
+          .srs-empty-card h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 12px; color: var(--text); }
+          .srs-empty-card p { margin-bottom: 24px; }
+          .srs-empty-card :global(.btn-primary) { display: inline-block; padding: 14px 32px; }
+        `}</style>
       </div>
     );
   }
 
   if (phase === "quiz") {
+    const q = quizWords[currentIdx];
     return (
-      <div className="quiz-sim">
-        <div className="quiz-sim-bar">
-          <Link href="/reading" className="quiz-exit-icon">
-            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-          </Link>
-          <div className="quiz-sim-progress">
-            <div className="quiz-sim-progress-fill" style={{ width: `${((currentIdx + 1) / quizWords.length) * 100}%` }}></div>
-          </div>
-          <span className="quiz-sim-counter">{currentIdx + 1} / {quizWords.length}</span>
-        </div>
-
-        <div className="quiz-scroll-container">
-          <div 
-            className="quiz-slides-wrapper" 
-            style={{ 
-              transform: `translateY(-${currentIdx * 100}%)`,
-              transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
-            }}
-          >
-            {quizWords.map((q, idx) => (
-              <div key={idx} className={`quiz-slide ${idx === currentIdx ? "active" : ""}`}>
-                <div className="quiz-sim-body">
-                  <div className="quiz-sim-header-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, marginBottom: 40 }}>
-                    <div className="quiz-sim-word" style={{ marginBottom: 0 }}>{q.word}</div>
-                  </div>
-                  <div className="quiz-sim-options">
-                    {q.options.map((opt, i) => {
-                      const isSelected = selectedOption === opt;
-                      const isCorrectAnswer = opt === q.meaning;
-                      let cls = "quiz-sim-opt";
-                      if (idx === currentIdx && showNextDelay) {
-                        if (isCorrectAnswer) cls += " correct-ans flash-success";
-                        else if (isSelected && !isCorrectAnswer) cls += " wrong-ans shake-error";
-                      }
-                      return (
-                        <button key={i} className={cls} onClick={() => handleAnswer(opt)} disabled={idx !== currentIdx || showNextDelay}>
-                          <span className="quiz-sim-opt-letter">{String.fromCharCode(65 + i)}</span>
-                          {opt}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
+      <div className="srs-run-page">
+        <div className="srs-run-top">
+          <Link href="/reading" className="srs-run-close">Kapat</Link>
+          <div className="srs-run-dots">
+            {quizWords.map((_, i) => (
+              <span key={i} className={`srs-run-dot ${i < currentIdx ? "done" : ""} ${i === currentIdx ? "current" : ""}`}></span>
             ))}
           </div>
         </div>
 
+        <div className="srs-run-body">
+          <div className="srs-run-word">{q.word}</div>
+          <div className="srs-run-options">
+            {q.options.map((opt, i) => {
+              const isSelected = selectedOption === opt;
+              const isCorrectAnswer = opt === q.meaning;
+              let cls = "srs-run-opt";
+              if (showNextDelay) {
+                if (isCorrectAnswer) cls += " correct";
+                else if (isSelected) cls += " wrong";
+              }
+              return (
+                <button key={i} className={cls} onClick={() => handleAnswer(opt)} disabled={showNextDelay}>
+                  <span className="srs-run-opt-letter">{String.fromCharCode(65 + i)}</span>
+                  {opt}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <style jsx>{`
-          .quiz-scroll-container { 
-            width: 100%; 
-            height: calc(100vh - 220px); 
-            overflow: hidden;
-            position: relative;
+          .srs-run-page { max-width: 560px; margin: 0 auto; }
+          .srs-run-top { display: flex; align-items: center; gap: 16px; padding: 16px 0; margin-bottom: 40px; }
+          .srs-run-close { background: none; border: none; color: var(--text-muted); font-size: 0.85rem; font-weight: 700; text-decoration: none; flex-shrink: 0; }
+          .srs-run-close:hover { color: var(--text); }
+          .srs-run-dots { flex: 1; display: flex; gap: 4px; overflow-x: auto; }
+          .srs-run-dot { flex: 1; min-width: 6px; height: 4px; border-radius: 4px; background: var(--glass); }
+          .srs-run-dot.done { background: var(--text-muted); }
+          .srs-run-dot.current { background: var(--accent); }
+          .srs-run-body { text-align: center; }
+          .srs-run-word { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 32px; }
+          .srs-run-options { display: flex; flex-direction: column; gap: 10px; }
+          .srs-run-opt {
+            display: flex; align-items: center; gap: 14px; width: 100%; background: var(--bg-card);
+            border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; text-align: left;
+            font-size: 0.95rem; font-weight: 600; color: var(--text); cursor: pointer; transition: border-color 0.15s;
           }
-          .quiz-slides-wrapper {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-          }
-          .quiz-slide {
-            flex: 0 0 100%; 
-            width: 100%; 
-            height: 100%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            pointer-events: none;
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
-            opacity: 0; 
-            transform: scale(0.95);
-          }
-          .quiz-slide.active { 
-            pointer-events: all; 
-            opacity: 1; 
-            transform: scale(1);
-          }
+          .srs-run-opt:hover:not(:disabled) { border-color: var(--accent); }
+          .srs-run-opt:disabled { cursor: default; }
+          .srs-run-opt-letter { width: 26px; height: 26px; border-radius: 8px; background: var(--glass); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.75rem; flex-shrink: 0; }
+          .srs-run-opt.correct { background: #30d158; border-color: #30d158; color: #06210f; }
+          .srs-run-opt.correct .srs-run-opt-letter { background: rgba(0,0,0,0.15); color: #06210f; }
+          .srs-run-opt.wrong { background: #ff453a; border-color: #ff453a; color: #2a0503; }
+          .srs-run-opt.wrong .srs-run-opt-letter { background: rgba(0,0,0,0.15); color: #2a0503; }
         `}</style>
       </div>
     );
@@ -243,66 +220,60 @@ export default function SRSPage() {
     const wrongAnswers = answers.filter(a => !a.isCorrect);
 
     return (
-      <div className="result-page">
-        <div className="glass-card result-card">
-          <div className="result-header">
-            <div className="result-icon-circle">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            </div>
-            <h2 className="result-title">Tekrar Tamamlandı!</h2>
-            <p className="result-subtitle">{timeStr} sürede zihnini tazeledin</p>
-          </div>
+      <div className="srs-result-page">
+        <div className="srs-result-card">
+          <div className="srs-result-score-circle">%{accuracy}</div>
+          <h2 className="srs-result-title">Tekrar Tamamlandı!</h2>
+          <p className="srs-result-subtitle">{timeStr} sürede zihnini tazeledin</p>
 
-          <div className="result-stats-grid">
-            <div className="res-stat-card success"><div className="res-stat-val">{correctCount}</div><div className="res-stat-label">Hatırlandı</div></div>
-            <div className="res-stat-card error"><div className="res-stat-val">{quizWords.length - correctCount}</div><div className="res-stat-label">Unutuldu</div></div>
-            <div className="res-stat-card accent"><div className="res-stat-val">%{accuracy}</div><div className="res-stat-label">Başarı</div></div>
+          <div className="srs-result-stats">
+            <div className="srs-stat success"><div className="srs-stat-val">{correctCount}</div><div className="srs-stat-label">Hatırlandı</div></div>
+            <div className="srs-stat error"><div className="srs-stat-val">{quizWords.length - correctCount}</div><div className="srs-stat-label">Unutuldu</div></div>
+            <div className="srs-stat accent"><div className="srs-stat-val">%{accuracy}</div><div className="srs-stat-label">Başarı</div></div>
           </div>
 
           {wrongAnswers.length > 0 && (
-            <div className="result-mistakes">
-              <h4 className="mistakes-title">Zayıf Halkalar</h4>
-              <div className="mistakes-list">
+            <div className="srs-result-mistakes">
+              <h4>Zayıf Halkalar</h4>
+              <div className="srs-mistakes-list">
                 {wrongAnswers.slice(0, 5).map((w, i) => (
-                  <div key={i} className="mistake-item">
-                    <span className="mistake-word">{w.word}</span><span className="mistake-arrow">→</span><span className="mistake-meaning">{w.correctMeaning}</span>
+                  <div key={i} className="srs-mistake-item">
+                    <span className="srs-mistake-word">{w.word}</span>
+                    <span className="srs-mistake-arrow">→</span>
+                    <span className="srs-mistake-meaning">{w.correctMeaning}</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          <div className="result-actions">
-            <Link href="/reading" className="btn-primary" style={{ flex: 1, textAlign: 'center', padding: 16 }}>Merkeze Dön</Link>
-          </div>
+          <Link href="/reading" className="srs-result-cta">Okumaya Dön</Link>
         </div>
 
         <style jsx>{`
-          .result-page { max-width: 600px; margin: 0 auto; animation: fadeIn 0.5s ease-out; }
-          .result-card { padding: 40px; text-align: center; }
-          .result-header { margin-bottom: 32px; }
-          .result-icon-circle {
-            width: 80px; height: 80px; background: rgba(48, 209, 88, 0.1); border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; color: #30d158;
-            margin: 0 auto 20px; border: 1px solid rgba(48, 209, 88, 0.2);
+          .srs-result-page { max-width: 500px; margin: 0 auto; }
+          .srs-result-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 40px; text-align: center; }
+          .srs-result-score-circle {
+            width: 88px; height: 88px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 20px; background: var(--glass); border: 2px solid var(--accent); font-size: 1.3rem; font-weight: 900; color: var(--accent);
           }
-          .result-title { font-size: 2.2rem; font-weight: 900; margin-bottom: 8px; letter-spacing: -1px; }
-          .result-subtitle { color: var(--text-muted); font-size: 1.1rem; }
-          .result-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 40px; }
-          .res-stat-card { background: var(--glass); border: 1px solid var(--border); border-radius: 20px; padding: 20px 10px; }
-          .res-stat-val { font-size: 1.8rem; font-weight: 900; margin-bottom: 4px; }
-          .res-stat-card.success .res-stat-val { color: var(--primary); }
-          .res-stat-card.error .res-stat-val { color: var(--error); }
-          .res-stat-card.accent .res-stat-val { color: var(--accent); }
-          .res-stat-label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
-          .result-mistakes { text-align: left; background: var(--bg-elevated); border-radius: 20px; padding: 24px; margin-bottom: 32px; }
-          .mistakes-title { font-weight: 800; margin-bottom: 16px; color: var(--error); font-size: 1rem; }
-          .mistake-item { display: flex; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
-          .mistake-word { font-weight: 700; min-width: 100px; color: var(--text); }
-          .mistake-arrow { color: var(--text-muted); }
-          .mistake-meaning { color: var(--primary); font-size: 0.9rem; }
-          .result-actions { display: flex; gap: 16px; }
-          @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+          .srs-result-title { font-size: 1.6rem; font-weight: 900; margin-bottom: 8px; letter-spacing: -1px; color: var(--text); }
+          .srs-result-subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 32px; }
+          .srs-result-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 32px; }
+          .srs-stat { background: var(--glass); border: 1px solid var(--border); border-radius: 16px; padding: 16px 8px; }
+          .srs-stat-val { font-size: 1.5rem; font-weight: 900; margin-bottom: 2px; }
+          .srs-stat.success .srs-stat-val { color: var(--primary); }
+          .srs-stat.error .srs-stat-val { color: var(--error); }
+          .srs-stat.accent .srs-stat-val { color: var(--accent); }
+          .srs-stat-label { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+          .srs-result-mistakes { text-align: left; background: var(--bg-elevated); border-radius: 16px; padding: 20px; margin-bottom: 28px; }
+          .srs-result-mistakes h4 { font-weight: 800; margin-bottom: 14px; color: var(--error); font-size: 0.9rem; }
+          .srs-mistake-item { display: flex; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+          .srs-mistake-item:last-child { border-bottom: none; }
+          .srs-mistake-word { font-weight: 700; min-width: 90px; color: var(--text); }
+          .srs-mistake-arrow { color: var(--text-muted); }
+          .srs-mistake-meaning { color: var(--primary); }
+          .srs-result-cta { display: block; padding: 15px; background: var(--accent); color: #000; font-weight: 800; border-radius: 14px; text-decoration: none; }
         `}</style>
       </div>
     );

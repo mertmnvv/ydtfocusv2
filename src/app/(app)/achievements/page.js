@@ -25,7 +25,7 @@ export default function AchievementsPage() {
     const setup = async () => {
       try {
         const h = await getUserHeroStats(user.uid);
-        
+
         unsubWords = subscribeToUserWords(user.uid, (wordList) => {
           if (isMounted) {
             setWords(wordList);
@@ -51,26 +51,28 @@ export default function AchievementsPage() {
       unsubWords();
       unsubStats();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Reactive badge check when data changes
   useEffect(() => {
     if (user && stats && words.length > 0) {
       getUserHeroStats(user.uid).then(h => {
         checkAndGrantBadges(user.uid, stats, words.length, h.levels, words);
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [words, stats, user]);
 
   if (authLoading || loading) return <div className="page-loading"><div className="spinner-ring"></div></div>;
 
   if (!user) {
     return (
-      <div className="glass-card" style={{ textAlign: "center", padding: "60px 20px", marginTop: 40, maxWidth: 500, margin: "40px auto" }}>
-        <i className="fa-solid fa-lock" style={{ fontSize: '3rem', color: 'var(--accent)', marginBottom: 20 }}></i>
-        <h3 style={{ fontWeight: 800, marginBottom: 12, fontSize: '1.5rem' }}>Rozetlerini Görmek İçin Kayıt Olmalısın</h3>
-        <p className="hint-text" style={{ marginBottom: 24 }}>Sistemdeki ilerlemelerinize göre kazandığınız başarıları görüntülemek için giriş yapın.</p>
-        <button onClick={() => window.location.href='/login'} className="btn-primary" style={{ padding: '14px 32px' }}>Giriş Yap / Kayıt Ol</button>
+      <div className="achievements-page">
+        <div className="ach-gate">
+          <h3>Rozetlerini Görmek İçin Kayıt Olmalısın</h3>
+          <p className="hint-text">Sistemdeki ilerlemelerinize göre kazandığınız başarıları görüntülemek için giriş yapın.</p>
+          <button onClick={() => window.location.href='/login'} className="btn-primary">Giriş Yap / Kayıt Ol</button>
+        </div>
       </div>
     );
   }
@@ -81,20 +83,14 @@ export default function AchievementsPage() {
 
   return (
     <div className="achievements-page">
-      <div className="ach-hero-card glass-card">
-        <div className="ach-hero-content">
-          <div className="ach-hero-main">
-            <h1 className="ach-page-title">Gelişim Yolculuğu</h1>
-            <p className="ach-page-desc">Akademik hedeflerini tamamla, yetkinliklerini kanıtla ve profesyonel rozetlerini topla.</p>
-          </div>
-          <div className="ach-progress-circle">
-            <svg viewBox="0 0 36 36" className="circular-chart">
-              <path className="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-              <path className="circle" style={{ strokeDasharray: `${progressPct}, 100` }} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-              <text x="18" y="20.35" className="percentage">%{progressPct}</text>
-            </svg>
-            <div className="ach-count-text">{earnedCount} / {totalCount} Rozet</div>
-          </div>
+      <div className="ach-header">
+        <div>
+          <h1 className="ach-title">Rozetler</h1>
+          <p className="ach-subtitle">Akademik hedeflerini tamamla, rozetlerini topla.</p>
+        </div>
+        <div className="ach-progress-summary">
+          <span className="ach-progress-count">{earnedCount}/{totalCount}</span>
+          <div className="ach-progress-bar"><div className="ach-progress-fill" style={{ width: `${progressPct}%` }}></div></div>
         </div>
       </div>
 
@@ -118,8 +114,8 @@ export default function AchievementsPage() {
                 .map(badge => {
                   const isEarned = userProfile?.badges?.includes(badge.id);
                   return (
-                    <div 
-                      key={badge.id} 
+                    <div
+                      key={badge.id}
                       className={`ach-full-card ${isEarned ? 'earned' : 'locked'}`}
                       style={{ "--b-color": isEarned ? badge.color : "var(--border)" }}
                     >
@@ -150,71 +146,67 @@ export default function AchievementsPage() {
 
       <div className="ach-leaderboard-section">
         <div className="ach-leaderboard-header">
-          <h2 className="ach-section-title ach-leaderboard-title">Liderlik Tablosu</h2>
+          <h2 className="ach-section-title">Liderlik Tablosu</h2>
           <p className="ach-filter-hint">En iyi öğrenciler arasındaki yerini gör.</p>
         </div>
         <Leaderboard />
       </div>
 
       <style jsx>{`
-        .achievements-page { padding: 20px; max-width: 1200px; margin: 0 auto; padding-bottom: 100px; }
-        
-        .ach-hero-card { 
-          background: linear-gradient(135deg, rgba(10, 132, 255, 0.1), rgba(191, 90, 242, 0.05));
-          padding: 40px; border-radius: 32px; margin-bottom: 40px; border: 1px solid rgba(10, 132, 255, 0.2);
+        .achievements-page { max-width: 1000px; margin: 0 auto; padding: 20px 0 100px; }
+
+        .ach-gate { max-width: 480px; margin: 60px auto; text-align: center; padding: 60px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; }
+        .ach-gate h3 { font-weight: 800; margin-bottom: 12px; font-size: 1.2rem; }
+        .ach-gate button { margin-top: 16px; padding: 14px 28px; border-radius: 12px; }
+
+        .ach-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: 36px; flex-wrap: wrap; }
+        .ach-title { font-size: 1.8rem; font-weight: 900; letter-spacing: -1px; color: var(--text); }
+        .ach-subtitle { color: var(--text-muted); font-size: 0.9rem; margin-top: 6px; }
+        .ach-progress-summary { min-width: 160px; }
+        .ach-progress-count { font-size: 0.85rem; font-weight: 800; color: var(--accent); display: block; margin-bottom: 6px; text-align: right; }
+        .ach-progress-bar { height: 6px; background: var(--glass); border-radius: 4px; overflow: hidden; width: 160px; }
+        .ach-progress-fill { height: 100%; background: var(--accent); transition: width 1s ease; }
+
+        .ach-category-section { margin-bottom: 48px; }
+        .ach-section-header { margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 14px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .ach-section-title { font-size: 0.9rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: var(--accent); }
+        .ach-filter-hint { font-size: 0.78rem; color: var(--text-muted); font-weight: 600; }
+
+        .ach-full-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+        .ach-full-card {
+          display: flex; gap: 16px; padding: 18px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
+          transition: all 0.25s ease; position: relative;
         }
-        .ach-hero-content { display: flex; align-items: center; justify-content: space-between; gap: 40px; }
-        .ach-page-title { font-size: 2.5rem; font-weight: 900; margin-bottom: 12px; letter-spacing: -1px; }
-        .ach-page-desc { font-size: 1.1rem; color: var(--text-muted); max-width: 500px; line-height: 1.6; }
-
-        .ach-progress-circle { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-        .circular-chart { width: 120px; height: 120px; }
-        .circle-bg { fill: none; stroke: var(--border); stroke-width: 2.8; }
-        .circle { fill: none; stroke: var(--accent); stroke-width: 2.8; stroke-linecap: round; transition: stroke-dasharray 1s ease; }
-        .percentage { fill: var(--text); font-size: 0.5rem; font-weight: 800; text-anchor: middle; }
-        .ach-count-text { font-size: 0.9rem; font-weight: 800; color: var(--accent); }
-
-        .ach-category-section { margin-bottom: 60px; }
-        .ach-section-header { margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end; }
-        .ach-section-title { font-size: 1.1rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--accent); }
-        .ach-filter-hint { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
-
-        .ach-full-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
-        .ach-full-card { 
-          display: flex; gap: 20px; padding: 24px; background: var(--glass); border: 1px solid var(--border); border-radius: 24px;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden;
-        }
-        .ach-full-card.earned { border-left: 6px solid var(--b-color); }
+        .ach-full-card.earned { border-left: 3px solid var(--b-color); }
         .ach-full-card.locked { opacity: 0.5; filter: grayscale(1); border-style: dashed; }
-        .ach-full-card:hover { transform: translateY(-5px); border-color: var(--b-color); opacity: 1; filter: grayscale(0); }
+        .ach-full-card:hover { border-color: var(--b-color); opacity: 1; filter: grayscale(0); }
 
-        .ach-card-icon { 
-          width: 56px; height: 56px; border-radius: 18px; background: var(--bg-elevated); 
-          display: flex; align-items: center; justify-content: center; font-size: 1.5rem; 
-          color: var(--b-color); flex-shrink: 0; box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        .ach-card-icon {
+          width: 46px; height: 46px; border-radius: 14px; background: var(--bg-elevated);
+          display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+          color: var(--b-color); flex-shrink: 0;
         }
-        .ach-lock-icon { font-size: 1.2rem; color: var(--text-muted); opacity: 0.4; }
+        .ach-lock-icon { font-size: 1rem; color: var(--text-muted); opacity: 0.5; }
 
-        .ach-card-info { flex: 1; }
-        .ach-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .ach-card-name { font-size: 1.1rem; font-weight: 800; color: var(--text); }
-        .ach-difficulty-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .ach-card-info { flex: 1; min-width: 0; }
+        .ach-card-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+        .ach-card-name { font-size: 0.95rem; font-weight: 800; color: var(--text); }
+        .ach-difficulty-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
         .diff-1 { background: #34c759; }
         .diff-2 { background: #007aff; }
         .diff-3 { background: #ffcc00; }
         .diff-4 { background: #ff9500; }
         .diff-5 { background: #ff3b30; }
 
-        .ach-card-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; font-weight: 500; margin-bottom: 12px; }
-        .ach-earned-tag { font-size: 0.7rem; font-weight: 900; color: var(--accent); text-transform: uppercase; display: flex; align-items: center; gap: 4px; }
+        .ach-card-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 8px; }
+        .ach-earned-tag { font-size: 0.68rem; font-weight: 800; color: var(--accent); text-transform: uppercase; display: flex; align-items: center; gap: 4px; }
 
-        .ach-leaderboard-section { padding-bottom: 40px; }
-        .ach-leaderboard-header { border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
-        .ach-leaderboard-title { margin-bottom: 4px; }
+        .ach-leaderboard-section { padding-top: 20px; border-top: 1px solid var(--border); }
+        .ach-leaderboard-header { margin-bottom: 20px; }
+        .ach-leaderboard-header p { margin-top: 4px; }
 
         @media (max-width: 768px) {
-          .ach-hero-content { flex-direction: column; text-align: center; gap: 24px; padding: 20px; }
-          .ach-page-title { font-size: 1.8rem; }
+          .ach-header { flex-direction: column; align-items: flex-start; }
           .ach-full-grid { grid-template-columns: 1fr; }
         }
       `}</style>
