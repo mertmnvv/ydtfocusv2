@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import FloatingBank from "@/components/FloatingBank";
@@ -13,17 +13,26 @@ import PremiumModal from "@/components/PremiumModal";
 import PremiumPaywall from "@/components/PremiumPaywall";
 import FeedbackModal from "@/components/FeedbackModal";
 
-const navItems = [
-  { id: "dashboard", label: "Level Up", href: "/dashboard" },
-  { id: "reading", label: "Reading", href: "/reading" },
-  { id: "quiz", label: "Quiz", href: "/quiz" },
-  { id: "hero", label: "Zero to Hero", href: "/hero" },
-  { id: "grammar", label: "Gramer", href: "/grammar" },
+// 4 hedefli navigasyon modeli (bkz. docs/DESIGN.md — "5a: 4 Sekme + Kütüphane Hub").
+// Web'de Bugün/Kütüphane/Rozetler metin linki + ayrı avatar olarak, mobilde
+// aynı 4 hedef alt tab bar'ında (Profil dahil) render edilir.
+const DESTINATIONS = [
+  { id: "today", label: "Bugün", href: "/dashboard" },
+  { id: "library", label: "Kütüphane", href: "/library" },
   { id: "achievements", label: "Rozetler", href: "/achievements" },
-  { id: "archive", label: "Sözlük", href: "/archive" },
-  { id: "flashcards-hub", label: "Flashcards", href: "/flashcards-hub" },
-  { id: "mistakes", label: "Hatalar", href: "/mistakes" },
+  { id: "profile", label: "Profil", href: "/profile" },
 ];
+
+// Kütüphane hub'ı altına katlanan eski üst-seviye rotalar — bunlardan
+// herhangi birindeyken mobil/web navda "Kütüphane" aktif görünmeli.
+const LIBRARY_ROUTES = ["/library", "/reading", "/quiz", "/flashcards-hub", "/grammar", "/archive", "/mistakes", "/hero"];
+
+function getActiveDestination(pathname) {
+  if (pathname.startsWith("/profile")) return "profile";
+  if (pathname.startsWith("/achievements")) return "achievements";
+  if (LIBRARY_ROUTES.some((p) => pathname.startsWith(p))) return "library";
+  return "today";
+}
 
 import ThemeToggle from "@/components/ThemeToggle";
 import { useFcmToken } from "@/hooks/useFcmToken";
@@ -60,8 +69,6 @@ function AppContent({ children }) {
   const { user, userProfile, logout, isAdmin, isPremium, premiumModalOpen, setPremiumModalOpen, requireAuth } = useAuth();
   useFcmToken(user);
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
@@ -71,13 +78,7 @@ function AppContent({ children }) {
     // Premium paywall session mantığı kaldırıldı.
   }, [user, isPremium]);
 
-  const currentTabParam = searchParams.get("tab");
-  
-  let activeTab = navItems.find(item => pathname.startsWith(item.href))?.id || "dashboard";
-  
-  if (activeTab === "dashboard" && currentTabParam === "leaderboard") {
-    activeTab = "leaderboard";
-  }
+  const activeTab = getActiveDestination(pathname);
 
   if (pathname === "/linefocus") {
     return <>{children}</>;
@@ -124,7 +125,7 @@ function AppContent({ children }) {
           </div>
 
           <div className="nav-links">
-            {navItems.filter(i => i.id !== "dashboard" && i.id !== "mistakes").map(item => (
+            {DESTINATIONS.filter(d => d.id !== "profile").map(item => (
               <Link
                 key={item.id}
                 href={item.href}
@@ -133,11 +134,6 @@ function AppContent({ children }) {
                 {item.label}
               </Link>
             ))}
-            {isAdmin && (
-              <Link href="/admin" className="nav-btn nav-btn-admin">
-                Admin
-              </Link>
-            )}
           </div>
           <div className="nav-user">
             <ThemeToggle />
@@ -170,22 +166,20 @@ function AppContent({ children }) {
                 <>
                   <div className="switcher-overlay" onClick={() => setProfileOpen(false)} />
                   <div className="profile-dropdown">
-                    <Link href="/dashboard" className="profile-drop-item" onClick={() => setProfileOpen(false)}>
-                      <i className="fa-solid fa-chart-line"></i>
+                    <Link href="/profile" className="profile-drop-item" onClick={() => setProfileOpen(false)}>
+                      <i className="fa-solid fa-user"></i>
                       <span>Profilim</span>
-                    </Link>
-                    <Link href="/mistakes" className="profile-drop-item" onClick={() => setProfileOpen(false)}>
-                      <i className="fa-solid fa-circle-xmark"></i>
-                      <span>Hatalarım</span>
-                    </Link>
-                    <Link href="/archive" className="profile-drop-item" onClick={() => setProfileOpen(false)}>
-                      <i className="fa-solid fa-language"></i>
-                      <span>Sözlük</span>
                     </Link>
                     <button className="profile-drop-item" onClick={() => { setShowFeedback(true); setProfileOpen(false); }}>
                       <i className="fa-solid fa-comments"></i>
                       <span>Geri Bildirim</span>
                     </button>
+                    {isAdmin && (
+                      <Link href="/admin" className="profile-drop-item" onClick={() => setProfileOpen(false)}>
+                        <i className="fa-solid fa-user-shield"></i>
+                        <span>Admin</span>
+                      </Link>
+                    )}
                     <div className="drop-divider"></div>
                     {user ? (
                       <button onClick={() => { logout(); setProfileOpen(false); }} className="profile-drop-item logout-red">
@@ -203,172 +197,25 @@ function AppContent({ children }) {
               )}
             </div>
           </div>
-          {/* Mobile Hamburger Button */}
-          <button className="mobile-hamburger" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="3" y1="12" x2="21" y2="12"></line>
-              <line x1="3" y1="6" x2="21" y2="6"></line>
-              <line x1="3" y1="18" x2="21" y2="18"></line>
-            </svg>
-          </button>
         </div>
       </nav>
-
-      {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
-        <div className="mobile-menu-overlay" onClick={() => setMobileMenuOpen(false)}>
-          <div className="mobile-menu-grid" onClick={(e) => e.stopPropagation()}>
-            {navItems.map(item => (
-              <Link
-                key={item.id}
-                href={item.href}
-                className={`mobile-menu-item ${activeTab === item.id ? "active" : ""}`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <span className="mobile-menu-label">{item.label}</span>
-              </Link>
-            ))}
-            {isAdmin && (
-              <Link
-                href="/admin"
-                className="mobile-menu-item admin"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <span className="mobile-menu-label">Admin</span>
-              </Link>
-            )}
-            <button
-              className="mobile-menu-item logout"
-              onClick={() => { logout(); setMobileMenuOpen(false); }}
-            >
-              <span className="mobile-menu-label">Çıkış</span>
-            </button>
-          </div>
-          <button className="mobile-menu-close" onClick={() => setMobileMenuOpen(false)}>
-            <i className="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-      )}
 
       <main className="app-main">
         {children}
       </main>
 
-      {/* Mobile Bottom Pill Nav */}
+      {/* Mobile Bottom Nav — 4 hedef, sadece metin etiketi (bkz. docs/DESIGN.md 5a) */}
       <nav className="mobile-bottom-nav">
-        {[
-          { id: "reading", label: "Read", href: "/reading", icon: "fa-book-open" },
-          { id: "quiz", label: "Quiz", href: "/quiz", icon: "fa-bolt" },
-          { id: "flashcards-hub", label: "Cards", href: "/flashcards-hub", icon: "fa-layer-group" },
-          { id: "grammar", label: "Grammar", href: "/grammar", icon: "fa-spell-check" },
-          { id: "achievements", label: "Rozetler", href: "/achievements", icon: "fa-medal" },
-        ].map(item => (
+        {DESTINATIONS.map(item => (
           <Link
             key={item.id}
             href={item.href}
             className={`bottom-nav-item ${activeTab === item.id ? "active" : ""}`}
-            onClick={() => setProfileOpen(false)}
-            title={item.label}
           >
-            <i className={`fa-solid ${item.icon}`}></i>
+            <span className="bottom-nav-label">{item.label}</span>
           </Link>
         ))}
-        {/* Profile Button */}
-        {/* Profile Button */}
-        {user ? (
-          <button
-            className={`bottom-nav-item profile ${profileOpen ? 'active' : ''}`}
-            onClick={() => setProfileOpen(!profileOpen)}
-            style={{ position: 'relative' }}
-          >
-            <div className="bottom-nav-avatar-mini">
-              {userProfile?.photoURL ? (
-                <img src={userProfile.photoURL} alt="Profil" className="avatar-img" />
-              ) : (
-                <i className="fa-solid fa-user" style={{ fontSize: '0.9rem', color: 'var(--accent)' }}></i>
-              )}
-            </div>
-            <i className="fa-solid fa-circle-user" style={{ 
-              position: 'absolute', 
-              bottom: '10px', 
-              right: '12px', 
-              fontSize: '0.6rem', 
-              color: profileOpen ? 'var(--accent)' : '#86868b',
-              background: 'var(--bg)',
-              borderRadius: '50%'
-            }}></i>
-          </button>
-        ) : (
-          <button
-            className="bottom-nav-item profile"
-            onClick={() => requireAuth(() => {})}
-            style={{ position: 'relative' }}
-          >
-            <div className="bottom-nav-avatar-mini" style={{ background: 'var(--accent)' }}>
-              <i className="fa-solid fa-right-to-bracket" style={{ fontSize: '0.9rem', color: '#000' }}></i>
-            </div>
-          </button>
-        )}
       </nav>
-
-      {/* Mobil Profil Menüsü */}
-      {profileOpen && (
-        <div className="mobile-profile-popup-overlay hide-desktop" onClick={() => setProfileOpen(false)}>
-          <div className="mobile-profile-popup" onClick={e => e.stopPropagation()}>
-            <div className="popup-header">
-              <div className="popup-name-group">
-                <div className="popup-name">{userProfile?.displayName || "Misafir"}</div>
-                <div className="popup-plan-tag" style={{
-                  fontSize: '0.65rem',
-                  fontWeight: 800,
-                  color: isAdmin ? '#ff453a' : isPremium ? 'var(--accent)' : 'var(--text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '1px'
-                }}>
-                  {isAdmin ? 'Yönetici Paneli' : isPremium ? 'Premium Plan' : 'Standart Plan'}
-                </div>
-              </div>
-              <ThemeToggle />
-            </div>
-            <div className="popup-links">
-              <Link href="/dashboard" className="popup-link" onClick={() => setProfileOpen(false)}>
-                <i className="fa-solid fa-chart-line"></i>
-                <span>Profil</span>
-              </Link>
-              <Link href="/mistakes" className="popup-link" onClick={() => setProfileOpen(false)}>
-                <i className="fa-solid fa-circle-xmark"></i>
-                <span>Hatalar</span>
-              </Link>
-              <Link href="/archive" className="popup-link" onClick={() => setProfileOpen(false)}>
-                <i className="fa-solid fa-language"></i>
-                <span>Sözlük</span>
-              </Link>
-              <button className="popup-link" onClick={() => { setShowFeedback(true); setProfileOpen(false); }}>
-                <i className="fa-solid fa-comments"></i>
-                <span>Geri Bildirim</span>
-              </button>
-              {isAdmin && (
-                <Link href="/admin" className="popup-link admin-link" onClick={() => setProfileOpen(false)}>
-                  <i className="fa-solid fa-user-shield"></i>
-                  <span>Admin</span>
-                </Link>
-              )}
-              <div className="popup-divider"></div>
-              {user ? (
-                <button onClick={() => { logout(); setProfileOpen(false); }} className="popup-link logout-red">
-                  <i className="fa-solid fa-right-from-bracket"></i>
-                  <span>Çıkış</span>
-                </button>
-              ) : (
-                <button onClick={() => { requireAuth(() => {}); setProfileOpen(false); }} className="popup-link" style={{color: 'var(--accent)'}}>
-                  <i className="fa-solid fa-right-to-bracket"></i>
-                  <span>Giriş Yap / Kayıt Ol</span>
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Footer */}
       <footer className="app-footer hide-mobile">

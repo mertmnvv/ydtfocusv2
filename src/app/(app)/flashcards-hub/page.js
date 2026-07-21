@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getUserDecks, createUserDeck, addGlobalWords, deleteUserDeck, updateUserDeck } from "@/lib/firestore";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AI_MODELS, buildExampleSentencePrompt } from "@/constants/prompts";
 
 const AI_CATEGORIES = [
   { value: "YDT Çıkmış Kelimeler", label: "YDT Çıkmış Kelimeler", icon: "fa-bullseye" },
@@ -149,14 +150,15 @@ export default function FlashcardsHubPage() {
     }
     setMagicLoading(true);
     try {
+      const { system, user: userContent } = buildExampleSentencePrompt({ word: newCardWord, meaning: newCardMeaning });
       const res = await fetch("/api/groq", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+          model: AI_MODELS.FAST,
           messages: [
-            { role: "system", content: "You are an English teacher." },
-            { role: "user", content: `Create a short, simple B1-B2 level English example sentence for the word "${newCardWord}" (meaning: ${newCardMeaning}). Return ONLY the sentence.` }
+            { role: "system", content: system },
+            { role: "user", content: userContent }
           ]
         })
       });

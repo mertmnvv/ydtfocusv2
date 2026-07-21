@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getUserHeroStats, updateUserHeroStats } from "@/lib/firestore";
 import HeroAssistant from "@/components/HeroAssistant";
 import Link from "next/link";
+import { AI_MODELS, buildHeroFillBlankPrompt } from "@/constants/prompts";
 
 const LEVEL_COLORS = {
   A1: "#30d158",
@@ -89,34 +90,13 @@ export default function HeroPage() {
     const themes = ["daily life", "work", "travel", "hobbies", "shopping", "technology", "nature", "emotions", "socializing", "education", "science", "arts", "politics", "history"];
     const randomTheme = themes[Math.floor(Math.random() * themes.length)];
 
-    const prompt = `Task: Generate ${qCount} English "Fill in the Blank" exercises.
-    Level: CEFR ${level}, Step ${subLevel}/${stats.required}.
-    Theme: ${randomTheme}.
-
-    FORMAT EXAMPLE:
-    {
-      "steps": [
-        {
-          "text": "He usually [gap1] to the gym on Mondays.",
-          "blanks": {"gap1": "goes"},
-          "translation": "O genellikle Pazartesi günleri spor salonuna gider.",
-          "distractors": ["go", "going", "gone"],
-          "allTranslations": {"He": "O", "usually": "genellikle", "goes": "gider", "to": "-e", "the": "o", "gym": "spor salonu"}
-        }
-      ]
-    }
-
-    RULES:
-    1. "text" MUST contain exactly one "[gap1]".
-    2. "blanks" MUST contains the correct word for "[gap1]".
-    3. "distractors" MUST be 3 single words, NOT full sentences.
-    4. Return ONLY the JSON object.`;
+    const prompt = buildHeroFillBlankPrompt({ qCount, level, subLevel, required: stats.required, theme: randomTheme });
 
     fetch("/api/groq", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
+        model: AI_MODELS.FAST,
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7, // Lower temperature for more consistency
       }),

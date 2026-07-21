@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Groq from "groq-sdk";
+import { AI_MODELS } from "@/constants/prompts";
 
 export const runtime = "edge";
 
@@ -73,7 +74,7 @@ export async function POST(req) {
             content: m.content
           }))
         ],
-        model: "llama-3.1-8b-instant",
+        model: AI_MODELS.FAST,
         stream: true,
       });
 

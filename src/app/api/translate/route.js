@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { AI_MODELS, buildWordTranslationPrompt, buildWordLookupFallbackPrompt } from "@/constants/prompts";
 
 export async function POST(request) {
   try {
@@ -51,10 +52,10 @@ export async function POST(request) {
               "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
             },
             body: JSON.stringify({
-              model: "llama-3.1-8b-instant",
-              messages: [{ 
-                role: "user", 
-                content: `Translate the English word "${clean}" to Turkish. Return ONLY the Turkish translation, nothing else. Example: "eloquent" → "belagatli, güzel konuşan"`
+              model: AI_MODELS.FAST,
+              messages: [{
+                role: "user",
+                content: buildWordTranslationPrompt(clean)
               }],
               temperature: 0.1,
               max_tokens: 30
@@ -87,11 +88,10 @@ export async function POST(request) {
         "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
-        messages: [{ 
-          role: "user", 
-          content: `Translate the word "${clean}" to Turkish and provide up to 2 English academic synonyms and a short English definition.
-          Return ONLY valid JSON: {"en": "${clean}", "tr": "Türkçe karşılığı", "synonyms": "syn1, syn2", "definition": "short English definition"}`
+        model: AI_MODELS.FAST,
+        messages: [{
+          role: "user",
+          content: buildWordLookupFallbackPrompt(clean)
         }],
         response_format: { type: "json_object" },
         temperature: 0.1

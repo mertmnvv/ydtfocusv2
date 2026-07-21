@@ -6,6 +6,7 @@ import { useNotification } from "@/context/NotificationContext";
 import { useSearchParams } from "next/navigation";
 import { subscribeToUserWords, addUserWord, completeReadingPassage, getUserMistakes, checkDailyLimit, incrementDailyLimit } from "@/lib/firestore";
 import PremiumModal from "@/components/PremiumModal";
+import { AI_MODELS, buildReadingPassagePrompt, buildPersonalizedPassagePrompt, buildTextAnalysisPrompt, buildReadingQuizPrompt } from "@/constants/prompts";
 
 const TOPICS = [
   { id: "random", label: "Karışık" },
@@ -443,42 +444,14 @@ function ReadingContent() {
     setTopic(t);
     setGenerating(true);
     
-    let prompt = `Write a high-quality, professional academic reading passage for YDT students.
-    Target Level: ${level} CEFR.
-    Topic: ${t}.
-    
-    Linguistic Requirements:
-    - Style: Professional academic journal (e.g., Nature, The Economist).
-    - Sentence Structure: Use complex clauses, passive voice, and academic logical connectors. 
-    - Cohesion: Ensure logical flow and perfect transitions between sentences.
-    - NO repetitive simplistic SVO sentences.
-    - NO typos or spelling errors.
-    
-    Format: Return ONLY a valid JSON object with keys: 
-      "title": "A professional academic title",
-      "en": "The English reading text (Sophisticated English)",
-      "tr": "Professional Turkish translation (Academic Turkish)",
-      "logic_lines": [
-        {"ref": "it/they/this", "target": "EXACT phrase in text", "context": "explanation"}
-      ],
-      "conjunctions": [
-        {"word": "however/when/etc", "type": "contrast/time/etc", "tr": "Türkçe anlamı"}
-      ],
-      "key_vocabulary": [
-        {"word": "string", "type": "noun/verb/adj", "tr": "Turkish meaning"}
-      ],
-      "grammar_patterns": [
-        {"title": "string", "description": "English desc", "description_tr": "Türkçe açıklama", "found_in_text": "EXACT sentence from text", "examples": [{"en": "string", "tr": "string"}]}
-      ]
-    Important: The 'target' MUST match a substring in the 'en' text exactly.
-    Length: 150-200 words.`;
+    let prompt = buildReadingPassagePrompt({ level, topic: t });
 
     try {
       const response = await fetch("/api/groq", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+          model: AI_MODELS.FAST,
           messages: [{ role: "user", content: prompt }],
           temperature: 0.2,
           response_format: { type: "json_object" },
@@ -531,42 +504,14 @@ function ReadingContent() {
 
       const shuffled = combined.sort(() => 0.5 - Math.random());
       const selectedWords = shuffled.slice(0, 7);
-      
-      const levelConstraints = {
-        "A2": "Use very simple SVO sentences and common daily vocabulary for all text except the required words. Keep it basic.",
-        "B1": "Use intermediate vocabulary and clear standard English. Include simple complex sentences.",
-        "B2": "Use upper-intermediate academic vocabulary, passive voice, and complex clauses. Typical YDT exam level.",
-        "C1": "Use advanced, sophisticated academic vocabulary, abstract concepts, and complex logical connectors."
-      };
 
-      let prompt = `Write a professional academic reading passage that logically integrates the following vocabulary.
-      Target Level: ${level} CEFR.
-      Required Vocabulary: ${selectedWords.join(", ")}.
-      
-      Linguistic Requirements:
-      - The text must be a coherent academic argument or analysis, NOT a list of random sentences.
-      - Use sophisticated sentence structures and professional academic tone.
-      - Bold the required words in the "en" text.
-      - Ensure perfect logical flow and cohesive links.
-      
-      Format: Return ONLY a valid JSON object with keys: 
-        "title": "Academic Title",
-        "en": "English text (Sophisticated, professional, words in **bold**)",
-        "tr": "Accurate academic Turkish translation",
-        "key_vocabulary": [
-          {"word": "string", "type": "noun/verb/adj", "tr": "Turkish meaning"}
-        ],
-        "grammar_patterns": [
-          {"title": "string", "description": "English desc", "description_tr": "Türkçe açıklama", "found_in_text": "EXACT sentence from text", "examples": [{"en": "string", "tr": "string"}]}
-        ]
-      
-      Length: 150-200 words.`;
-      
+      let prompt = buildPersonalizedPassagePrompt({ level, words: selectedWords });
+
       const response = await fetch("/api/groq", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+          model: AI_MODELS.FAST,
           messages: [{ role: "user", content: prompt }],
           temperature: 0.2,
           response_format: { type: "json_object" },
@@ -636,22 +581,14 @@ function ReadingContent() {
 
   async function analyzeTextForStudyDeck(passage) {
     if (!passage) return;
-    const prompt = `Analyze the following academic text for English learners (YDT level).
-    1. Extract 6-9 key academic words (Key Vocabulary).
-    2. Identify 2-3 important grammar patterns/structures used in the text. Provide the EXACT sentence from the text where this pattern is used.
-    
-    Format: Return ONLY a valid JSON object with keys:
-    "key_vocabulary": [{"word": "string", "type": "noun/verb/adj", "tr": "Turkish meaning"}],
-    "grammar_patterns": [{"title": "string", "description": "English description", "description_tr": "Türkçe detaylı açıklama", "found_in_text": "EXACT sentence from text", "examples": [{"en": "string", "tr": "string"}]}]
-    
-    Text: ${passage}`;
+    const prompt = buildTextAnalysisPrompt(passage);
 
     try {
       const response = await fetch("/api/groq", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+          model: AI_MODELS.FAST,
           messages: [{ role: "user", content: prompt }],
           temperature: 0.1,
           response_format: { type: "json_object" },
@@ -730,17 +667,14 @@ function ReadingContent() {
     setQuizLoading(true);
     setQuizQuestions([]);
 
-    const prompt = `Based on the text below, create exactly 3 multiple-choice questions. 
-    Return ONLY a valid JSON object with key "questions" containing an array of 3 objects.
-    Each object keys: "q" (question), "a", "b", "c", "d" (options), "correct" (value: a/b/c/d).
-    Text: ${text}`;
+    const prompt = buildReadingQuizPrompt(text);
 
     try {
       const response = await fetch("/api/groq", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+          model: AI_MODELS.FAST,
           messages: [{ role: "user", content: prompt }],
           temperature: 0.1,
           response_format: { type: "json_object" },
