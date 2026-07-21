@@ -19,7 +19,6 @@ export default function ArchivePage() {
   const [hasMore, setHasMore] = useState(true);
   const [activeLevel, setActiveLevel] = useState("Tümü");
 
-  // Initial load
   useEffect(() => {
     if (user) {
       getUserWords(user.uid).then(uw => setMyWords(uw || [])).catch(console.error);
@@ -27,9 +26,9 @@ export default function ArchivePage() {
     } else {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // When level tab changes
   async function loadWords(level) {
     if (!user) return;
     setLoading(true);
@@ -42,7 +41,6 @@ export default function ArchivePage() {
         setLastDoc(r.lastDoc);
         setHasMore(r.words.length === 50);
       } else {
-        // Fetch ALL words for this level (no pagination needed per-level)
         const levelWords = await getArchiveWordsByLevel(level);
         setWords(levelWords);
         setLastDoc(null);
@@ -95,8 +93,8 @@ export default function ArchivePage() {
         await addUserWord(user.uid, { word: w.word, meaning: w.meaning, syn: w.syn || "-" });
         setMyWords(p => [...p, { word: w.word }]);
         showNotification(`"${w.word}" başarıyla eklendi!`, "success");
-      } catch { 
-        showNotification("Ekleme sırasında bir hata oluştu.", "error"); 
+      } catch {
+        showNotification("Ekleme sırasında bir hata oluştu.", "error");
       }
     });
   }
@@ -111,46 +109,42 @@ export default function ArchivePage() {
     }
   }
 
-  if (authLoading || loading) return <div className="page-loading"><div className="spinner-ring"></div></div>;
+  if (authLoading || loading && words.length === 0) return <div className="page-loading"><div className="spinner-ring"></div></div>;
 
   if (!user) {
     return (
-      <div className="glass-card" style={{ textAlign: "center", padding: "60px 20px", marginTop: 40, maxWidth: 500, margin: "40px auto" }}>
-        <i className="fa-solid fa-lock" style={{ fontSize: '3rem', color: 'var(--accent)', marginBottom: 20 }}></i>
-        <h3 style={{ fontWeight: 800, marginBottom: 12, fontSize: '1.5rem' }}>Akademik Sözlüğe Erişmek İçin Kayıt Olmalısın</h3>
-        <p className="hint-text" style={{ marginBottom: 24 }}>Kelime aramak ve kendi kelime bankanıza kelimeler eklemek için giriş yapmalısınız.</p>
-        <button onClick={() => window.location.href='/login'} className="btn-primary" style={{ padding: '14px 32px' }}>Giriş Yap / Kayıt Ol</button>
+      <div className="archive-page">
+        <div className="archive-empty-gate">
+          <h3>Akademik Sözlüğe Erişmek İçin Kayıt Olmalısın</h3>
+          <p className="hint-text">Kelime aramak ve kendi kelime bankanıza kelimeler eklemek için giriş yapmalısınız.</p>
+          <button onClick={() => window.location.href='/login'} className="btn-primary">Giriş Yap / Kayıt Ol</button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <h2 className="section-title">Akademik Sözlük</h2>
+    <div className="archive-page">
+      <h1 className="archive-title">Akademik Sözlük</h1>
 
-      {/* Search */}
-      <div className="glass-card">
-        <div style={{ display: "flex", gap: 10 }}>
-          <input
-            className="word-input"
-            style={{ flex: 1 }}
-            placeholder={activeLevel === "Tümü" ? "Kelime veya anlam ara..." : `${activeLevel} seviyesinde ara...`}
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && doSearch()}
-          />
-          <button className="btn-primary" onClick={doSearch}>Ara</button>
-          {search && <button className="btn-ghost" onClick={clearSearch}>✕</button>}
-        </div>
+      <div className="archive-search-row">
+        <input
+          className="archive-search-input"
+          placeholder={activeLevel === "Tümü" ? "Kelime veya anlam ara..." : `${activeLevel} seviyesinde ara...`}
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && doSearch()}
+        />
+        <button className="archive-search-btn" onClick={doSearch}>Ara</button>
+        {search && <button className="archive-clear-btn" onClick={clearSearch}>✕</button>}
       </div>
 
-      {/* CEFR Level Tabs */}
       <div className="archive-level-tabs">
         {CEFR_LEVELS.map(l => (
           <button
             key={l}
             className={`archive-tab ${activeLevel === l ? "active" : ""}`}
-            style={activeLevel === l ? { background: CEFR_COLORS[l] || "var(--accent)", color: "#000" } : {}}
+            style={activeLevel === l ? { background: CEFR_COLORS[l] || "var(--accent)", color: "#000", borderColor: "transparent" } : {}}
             onClick={() => loadWords(l)}
           >
             {l}
@@ -158,30 +152,28 @@ export default function ArchivePage() {
         ))}
       </div>
 
-      {/* Word Count */}
-      <div style={{ marginBottom: 12, fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 700 }}>
+      <div className="archive-count">
         {words.length} kelime {activeLevel !== "Tümü" && `(${activeLevel})`}
       </div>
 
-      {/* Word List */}
-      <div className="glass-card">
+      <div className="archive-list-card">
         {words.length === 0 && !loading && (
-          <p className="hint-text" style={{ textAlign: "center", padding: 30 }}>
+          <p className="hint-text archive-empty-text">
             {search ? "Arama sonucu bulunamadı." : activeLevel === "Tümü" ? "Arşivde kelime yok." : `${activeLevel} seviyesinde kelime bulunamadı.`}
           </p>
         )}
         <div className="archive-list">
           {words.map((w, i) => (
             <div key={w.id || i} className="archive-item">
-              <div style={{ flex: 1, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-                <b style={{ marginRight: 2 }}>{w.word || w.phrase}</b>
-                <button className="audio-btn" style={{ marginRight: 8 }} onClick={() => playAudio(w.word || w.phrase)} title="Dinle">
+              <div className="archive-item-info">
+                <b>{w.word || w.phrase}</b>
+                <button className="archive-audio-btn" onClick={() => playAudio(w.word || w.phrase)} title="Dinle">
                   <i className="fa-solid fa-volume-high"></i>
                 </button>
-                <span className="meaning-text">{w.meaning}</span>
-                {w.syn && w.syn !== "-" && <span className="syn-text" style={{ marginLeft: 8 }}>({w.syn})</span>}
+                <span className="archive-meaning">{w.meaning}</span>
+                {w.syn && w.syn !== "-" && <span className="archive-syn">({w.syn})</span>}
               </div>
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <div className="archive-item-actions">
                 {w.level && (
                   <span className="archive-level-badge" style={{
                     background: `${CEFR_COLORS[w.level?.toUpperCase()] || "var(--text-muted)"}20`,
@@ -200,9 +192,61 @@ export default function ArchivePage() {
         </div>
         {loading && <div className="page-loading" style={{ minHeight: "15vh" }}><div className="spinner-ring"></div></div>}
         {hasMore && !loading && words.length > 0 && activeLevel === "Tümü" && (
-          <button className="btn-ghost w-100" style={{ marginTop: 16 }} onClick={loadMore}>Daha Fazla Yükle</button>
+          <button className="archive-load-more" onClick={loadMore}>Daha Fazla Yükle</button>
         )}
       </div>
+
+      <style jsx>{`
+        .archive-page { max-width: 720px; margin: 0 auto; padding: 20px 0 60px; }
+        .archive-title { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.5px; color: var(--text); margin-bottom: 20px; }
+        .archive-empty-gate { text-align: center; padding: 60px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; max-width: 480px; margin: 40px auto; }
+        .archive-empty-gate h3 { font-weight: 800; margin-bottom: 12px; font-size: 1.2rem; }
+        .archive-empty-gate button { margin-top: 16px; padding: 14px 28px; border-radius: 12px; }
+
+        .archive-search-row { display: flex; gap: 8px; margin-bottom: 16px; }
+        .archive-search-input {
+          flex: 1; background: var(--glass); border: 1px solid var(--border); border-radius: 12px;
+          padding: 12px 14px; color: var(--text); font-size: 0.9rem; outline: none; font-family: var(--font);
+        }
+        .archive-search-input:focus { border-color: var(--accent); }
+        .archive-search-btn { background: var(--accent); color: #000; border: none; border-radius: 12px; padding: 0 20px; font-weight: 700; cursor: pointer; }
+        .archive-clear-btn { background: var(--glass); border: 1px solid var(--border); border-radius: 12px; padding: 0 16px; color: var(--text); cursor: pointer; }
+
+        .archive-level-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+        .archive-tab {
+          background: var(--glass); border: 1px solid var(--border); color: var(--text-muted);
+          padding: 8px 14px; border-radius: 10px; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+        }
+        .archive-tab.active { font-weight: 800; }
+
+        .archive-count { font-size: 0.82rem; color: var(--text-muted); font-weight: 700; margin-bottom: 12px; }
+
+        .archive-list-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 18px; padding: 8px; }
+        .archive-empty-text { text-align: center; padding: 30px; }
+        .archive-list { display: flex; flex-direction: column; }
+        .archive-item {
+          display: flex; align-items: center; justify-content: space-between; gap: 12px;
+          padding: 14px 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap;
+        }
+        .archive-item:last-child { border-bottom: none; }
+        .archive-item-info { flex: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: var(--text); }
+        .archive-audio-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; }
+        .archive-audio-btn:hover { color: var(--accent); }
+        .archive-meaning { color: var(--text-muted); font-size: 0.88rem; }
+        .archive-syn { color: var(--archive); font-size: 0.78rem; }
+        .archive-item-actions { display: flex; gap: 8px; align-items: center; }
+        .archive-level-badge { font-size: 0.7rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; }
+        .archive-add-btn {
+          width: 30px; height: 30px; border-radius: 8px; background: var(--glass); border: 1px solid var(--border);
+          color: var(--accent); cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .archive-add-btn.saved { color: #30d158; cursor: default; }
+        .archive-load-more {
+          width: 100%; margin-top: 10px; padding: 12px; background: none; border: 1px solid var(--border);
+          border-radius: 12px; color: var(--text); font-weight: 700; cursor: pointer;
+        }
+        .archive-load-more:hover { background: var(--glass); }
+      `}</style>
     </div>
   );
 }

@@ -1023,30 +1023,6 @@ a {
 /* ADMIN PANEL                                    */
 /* ============================================= */
 
-.admin-layout {
-  padding: 0;
-}
-
-.admin-header {
-  background: rgba(255, 159, 10, 0.05);
-  border-bottom: 1px solid rgba(255, 159, 10, 0.2);
-  padding: 20px;
-  margin-bottom: 20px;
-  border-radius: 0;
-}
-
-.admin-title {
-  font-size: 1.5rem;
-  font-weight: 900;
-  color: var(--warning);
-}
-
-.admin-subtitle {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  margin-top: 4px;
-}
-
 .admin-nav {
   display: flex;
   gap: 8px;
@@ -1142,8 +1118,8 @@ a {
 }
 
 .admin-badge-user {
-  background: rgba(10, 132, 255, 0.15);
-  color: var(--accent);
+  background: var(--glass);
+  color: var(--text-muted);
 }
 
 .admin-form {

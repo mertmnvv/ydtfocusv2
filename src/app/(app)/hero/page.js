@@ -3,8 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getUserHeroStats, updateUserHeroStats } from "@/lib/firestore";
-import HeroAssistant from "@/components/HeroAssistant";
-import Link from "next/link";
 import { AI_MODELS, buildHeroFillBlankPrompt } from "@/constants/prompts";
 
 const LEVEL_COLORS = {
@@ -44,15 +42,15 @@ export default function HeroPage() {
       const data = await getUserHeroStats(user.uid);
       // Immutability fix: Clone the object before modifying
       let lvls = data?.levels ? JSON.parse(JSON.stringify(data.levels)) : JSON.parse(JSON.stringify(heroStats));
-      
+
       const newReqs = { A1: 10, A2: 15, B1: 20, B2: 25, C1: 30 };
       Object.keys(lvls).forEach(k => { if (lvls[k].required !== newReqs[k]) lvls[k].required = newReqs[k]; });
-      
+
       if (lvls.A1.completed >= lvls.A1.required && !lvls.A2.unlocked) lvls.A2.unlocked = true;
       if (lvls.A2.completed >= lvls.A2.required && !lvls.B1.unlocked) lvls.B1.unlocked = true;
       if (lvls.B1.completed >= lvls.B1.required && !lvls.B2.unlocked) lvls.B2.unlocked = true;
       if (lvls.B2.completed >= lvls.B2.required && !lvls.C1.unlocked) lvls.C1.unlocked = true;
-      
+
       setHeroStats(lvls);
       setHeroWords(data?.heroWords || []);
     } catch (err) { console.error(err); }
@@ -71,12 +69,12 @@ export default function HeroPage() {
     if (!heroStats[level].unlocked) return;
     const stats = heroStats[level];
     const subLevel = stats.completed + 1;
-    
+
     const baseQs = { A1: 5, A2: 6, B1: 8, B2: 10, C1: 10 };
     const maxQs = { A1: 8, A2: 10, B1: 12, B2: 14, C1: 15 };
     const progress = stats.completed / (stats.required - 1 || 1);
     const qCount = Math.round(baseQs[level] + (maxQs[level] - baseQs[level]) * progress);
-    
+
     setCurrentLevel(level);
     setGenerating(true);
     setPhase("lesson");
@@ -98,24 +96,22 @@ export default function HeroPage() {
       body: JSON.stringify({
         model: AI_MODELS.FAST,
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.7, // Lower temperature for more consistency
+        temperature: 0.7,
       }),
     })
       .then(r => r.json())
       .then(data => {
         const raw = data.choices?.[0]?.message?.content || "";
         const json = JSON.parse(raw.match(/\{[\s\S]*\}/)[0]);
-        
-        // Filter out steps without [gap1]
+
         const validSteps = json.steps.filter(s => s.text.includes("[gap1]"));
-        
         if (validSteps.length === 0) throw new Error("No valid steps");
 
         setLessonSteps(validSteps.map(s => {
           const correctAnswer = Object.values(s.blanks)[0];
           const dists = (s.distractors || []).filter(d => d && d.trim() !== "");
           const finalBank = [correctAnswer, ...dists].filter(w => w && w.trim() !== "");
-          
+
           return {
             ...s,
             bank: finalBank.sort(() => Math.random() - 0.5),
@@ -194,77 +190,30 @@ export default function HeroPage() {
   if (!isAdmin) {
     return (
       <div className="hero-maintenance">
-        <div className="glass-card maintenance-card">
-          <div className="maintenance-icon">
-            <i className="fa-solid fa-rocket"></i>
-          </div>
+        <div className="maintenance-card">
+          <div className="maintenance-icon"><i className="fa-solid fa-rocket"></i></div>
           <h1>Zero to Hero Çok Yakında!</h1>
-          <p>YDT Focus'un en kapsamlı öğrenme modülü şu an son hazırlık aşamasında.</p>
+          <p>YDT Focus&apos;un en kapsamlı öğrenme modülü şu an son hazırlık aşamasında.</p>
           <div className="maintenance-features">
-            <div className="m-feat">
-              <i className="fa-solid fa-check"></i>
-              <span>100 Basamaklı Müfredat</span>
-            </div>
-            <div className="m-feat">
-              <i className="fa-solid fa-check"></i>
-              <span>AI Destekli Akıllı Sorular</span>
-            </div>
-            <div className="m-feat">
-              <i className="fa-solid fa-check"></i>
-              <span>Kişiselleştirilmiş İlerleme</span>
-            </div>
+            <div className="m-feat"><i className="fa-solid fa-check"></i><span>100 Basamaklı Müfredat</span></div>
+            <div className="m-feat"><i className="fa-solid fa-check"></i><span>AI Destekli Akıllı Sorular</span></div>
+            <div className="m-feat"><i className="fa-solid fa-check"></i><span>Kişiselleştirilmiş İlerleme</span></div>
           </div>
           <div className="maintenance-badge">ÇOK YAKINDA SİZLERLE</div>
         </div>
         <style jsx>{`
-          .hero-maintenance {
-            min-height: 80vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-          }
+          .hero-maintenance { min-height: 70vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
           .maintenance-card {
-            max-width: 500px;
-            width: 100%;
-            padding: 40px;
-            text-align: center;
-            border-top: 4px solid var(--accent);
+            max-width: 460px; width: 100%; padding: 40px; text-align: center;
+            background: var(--bg-card); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: 20px;
           }
-          .maintenance-icon {
-            font-size: 4rem;
-            color: var(--accent);
-            margin-bottom: 24px;
-            animation: float 3s ease-in-out infinite;
-          }
-          h1 { font-size: 1.8rem; margin-bottom: 16px; font-weight: 800; }
-          p { color: var(--text-muted); line-height: 1.6; margin-bottom: 30px; }
-          .maintenance-features {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 30px;
-            text-align: left;
-            background: rgba(255,255,255,0.03);
-            padding: 20px;
-            border-radius: 12px;
-          }
-          .m-feat { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 0.9rem; }
+          .maintenance-icon { font-size: 3rem; color: var(--accent); margin-bottom: 20px; }
+          h1 { font-size: 1.5rem; margin-bottom: 12px; font-weight: 800; color: var(--text); }
+          p { color: var(--text-muted); line-height: 1.6; margin-bottom: 24px; font-size: 0.9rem; }
+          .maintenance-features { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; text-align: left; background: var(--glass); padding: 16px; border-radius: 12px; }
+          .m-feat { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.85rem; color: var(--text); }
           .m-feat i { color: #30d158; }
-          .maintenance-badge {
-            display: inline-block;
-            padding: 8px 20px;
-            background: var(--accent);
-            color: #000;
-            border-radius: 20px;
-            font-weight: 900;
-            font-size: 0.8rem;
-            letter-spacing: 1px;
-          }
-          @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-          }
+          .maintenance-badge { display: inline-block; padding: 8px 18px; background: var(--accent); color: #000; border-radius: 20px; font-weight: 900; font-size: 0.75rem; letter-spacing: 1px; }
         `}</style>
       </div>
     );
@@ -275,18 +224,25 @@ export default function HeroPage() {
     const score = Math.round((correctCount / lessonSteps.length) * 100);
     return (
       <div className="hero-finish">
-        <div className="glass-card hero-finish-inner" style={{ borderTop: "4px solid #ff375f" }}>
-          <div style={{ fontSize: "3rem", color: "#ff375f", marginBottom: 20 }}>
-            <i className="fa-solid fa-circle-xmark"></i>
-          </div>
+        <div className="hero-finish-inner failed">
+          <div className="hero-finish-icon"><i className="fa-solid fa-circle-xmark"></i></div>
           <h2>Başarısız!</h2>
           <p className="hint-text">Başarı Oranı: %{score}</p>
-          <p style={{ marginTop: 10, fontSize: "0.9rem" }}>Geçmek için en az %60 başarı sağlamalısın. Lütfen tekrar dene.</p>
-          <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
+          <p className="hero-finish-note">Geçmek için en az %60 başarı sağlamalısın. Lütfen tekrar dene.</p>
+          <div className="hero-finish-actions">
             <button className="btn-ghost" onClick={() => setPhase("roadmap")}>Vazgeç</button>
             <button className="btn-primary" style={{ flex: 1 }} onClick={() => startLevel(currentLevel)}>Tekrar Dene</button>
           </div>
         </div>
+        <style jsx>{`
+          .hero-finish { display: flex; align-items: center; justify-content: center; min-height: 70vh; padding: 20px; }
+          .hero-finish-inner { max-width: 420px; width: 100%; text-align: center; padding: 40px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; }
+          .hero-finish-inner.failed { border-top: 3px solid #ff375f; }
+          .hero-finish-icon { font-size: 2.5rem; color: #ff375f; margin-bottom: 16px; }
+          h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; color: var(--text); }
+          .hero-finish-note { margin-top: 10px; font-size: 0.85rem; color: var(--text-muted); }
+          .hero-finish-actions { display: flex; gap: 10px; margin-top: 24px; }
+        `}</style>
       </div>
     );
   }
@@ -296,17 +252,21 @@ export default function HeroPage() {
     const score = Math.round((correctCount / lessonSteps.length) * 100);
     return (
       <div className="hero-finish">
-        <div className="glass-card hero-finish-inner">
-          <div className="hero-finish-icon" style={{ fontSize: "3rem", color: "var(--primary)" }}>
-            <i className="fa-solid fa-certificate"></i>
-          </div>
+        <div className="hero-finish-inner">
+          <div className="hero-finish-icon success"><i className="fa-solid fa-certificate"></i></div>
           <h2>Tebrikler!</h2>
           <p className="hint-text">Başarı Oranı: %{score}</p>
-          <p style={{ marginTop: 8, fontSize: "0.9rem" }}>{currentLevel} seviyesinde bir basamak daha tırmandın.</p>
-          <button className="btn-primary w-100" style={{ marginTop: 24 }} onClick={() => setPhase("roadmap")}>
-            Devam Et
-          </button>
+          <p className="hero-finish-note">{currentLevel} seviyesinde bir basamak daha tırmandın.</p>
+          <button className="btn-primary w-100" style={{ marginTop: 24 }} onClick={() => setPhase("roadmap")}>Devam Et</button>
         </div>
+        <style jsx>{`
+          .hero-finish { display: flex; align-items: center; justify-content: center; min-height: 70vh; padding: 20px; }
+          .hero-finish-inner { max-width: 420px; width: 100%; text-align: center; padding: 40px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; }
+          .hero-finish-icon { font-size: 2.5rem; margin-bottom: 16px; }
+          .hero-finish-icon.success { color: var(--primary); }
+          h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; color: var(--text); }
+          .hero-finish-note { margin-top: 8px; font-size: 0.85rem; color: var(--text-muted); }
+        `}</style>
       </div>
     );
   }
@@ -329,13 +289,13 @@ export default function HeroPage() {
           <h3 className="hero-lesson-title">Boşluğu doldur</h3>
 
           {generating ? (
-            <div className="glass-card" style={{ textAlign: "center", padding: 60 }}>
+            <div className="hero-generating">
               <div className="spinner-ring" style={{ margin: "0 auto 16px" }} />
               <p className="hint-text">AI sorular hazırlıyor…</p>
             </div>
           ) : s && (
             <>
-              <div className="hero-sentence glass-card">
+              <div className="hero-sentence">
                 {s.text.split(/(\s+)/).map((p, i) => {
                   const m = p.match(/\[(gap\d+)\]/);
                   if (m) {
@@ -348,7 +308,7 @@ export default function HeroPage() {
                         onDrop={e => { setPlacedWords({ ...placedWords, [gid]: e.dataTransfer.getData("word") }); }}
                         onClick={() => val && setPlacedWords({ ...placedWords, [gid]: null })}
                       >
-                        {val || "\u00A0\u00A0\u00A0"}
+                        {val || "   "}
                       </span>
                     );
                   }
@@ -401,28 +361,31 @@ export default function HeroPage() {
         </div>
 
         <style jsx>{`
-          .hero-lesson { height: 100vh; display: flex; flex-direction: column; background: #0a0a0b; color: #fff; position: relative; z-index: 100; }
+          .hero-lesson { height: 100vh; display: flex; flex-direction: column; background: var(--bg); color: var(--text); position: relative; z-index: 100; }
           .hero-lesson-top { padding: 20px; display: flex; align-items: center; gap: 15px; }
-          .hero-progress-track { flex: 1; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden; }
+          .hero-progress-track { flex: 1; height: 8px; background: var(--glass); border-radius: 5px; overflow: hidden; }
           .hero-progress-fill { height: 100%; background: var(--accent); transition: 0.3s; }
+          .hero-step-count { font-size: 0.85rem; color: var(--text-muted); font-weight: 700; }
           .hero-lesson-body { flex: 1; padding: 20px; max-width: 600px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 30px; overflow-y: auto; }
-          .hero-sentence { font-size: 1.5rem; line-height: 2; padding: 30px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; min-height: 150px; }
+          .hero-lesson-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 800; text-align: center; }
+          .hero-generating { text-align: center; padding: 60px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; }
+          .hero-sentence { font-size: 1.4rem; line-height: 2; padding: 30px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; min-height: 150px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; }
           .hero-blank { border-bottom: 2px solid var(--accent); min-width: 60px; text-align: center; color: var(--accent); font-weight: 700; cursor: pointer; }
           .hero-blank.filled { border-bottom-color: transparent; background: rgba(226, 183, 20, 0.1); padding: 0 10px; border-radius: 8px; }
           .hero-bank { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; padding-bottom: 40px; }
-          .hero-chip { padding: 12px 20px; background: #1a1a1b; border: 1px solid var(--border); border-radius: 12px; color: #fff; cursor: pointer; transition: 0.2s; font-size: 1rem; }
+          .hero-chip { padding: 12px 20px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 12px; color: var(--text); cursor: pointer; transition: 0.2s; font-size: 1rem; }
           .hero-chip:hover { border-color: var(--accent); }
           .hero-chip.used { opacity: 0.2; cursor: default; }
-          
-          .hero-footer { padding: 20px; border-top: 1px solid var(--border); background: #0a0a0b; }
-          .hero-footer.success { background: rgba(48, 209, 88, 0.1); border-top-color: #30d158; }
-          .hero-footer.error { background: rgba(255, 55, 95, 0.1); border-top-color: #ff375f; }
+
+          .hero-footer { padding: 20px; border-top: 1px solid var(--border); background: var(--bg); }
+          .hero-footer.success { background: rgba(48, 209, 88, 0.08); border-top-color: #30d158; }
+          .hero-footer.error { background: rgba(255, 55, 95, 0.08); border-top-color: #ff375f; }
           .hero-footer-inner { max-width: 600px; margin: 0 auto; }
           .hero-fb-row { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
-          .hero-fb-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; }
+          .hero-fb-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; flex-shrink: 0; }
           .hero-fb-icon.success { background: #30d158; color: #000; }
           .hero-fb-icon.error { background: #ff375f; color: #fff; }
-          
+
           @media (max-width: 600px) {
             .hero-footer { padding-bottom: 90px; }
             .hero-sentence { font-size: 1.2rem; padding: 20px; }
@@ -441,16 +404,16 @@ export default function HeroPage() {
 
   return (
     <div className="hero-roadmap">
-      <h2 className="section-title">Zero to Hero</h2>
-      <p className="hint-text" style={{ marginBottom: 24 }}>Seviyeleri tamamlayarak ilerleyin.</p>
+      <h1 className="hero-roadmap-title">Zero to Hero</h1>
+      <p className="hint-text hero-roadmap-subtitle">Seviyeleri tamamlayarak ilerleyin.</p>
 
-      <div className="glass-card" style={{ marginBottom: 40, padding: 20 }}>
-        <div className="header-split">
+      <div className="hero-progress-card">
+        <div className="hero-progress-head">
           <span className="hint-text">Genel İlerleme</span>
-          <b style={{ color: "var(--accent)" }}>%{pct}</b>
+          <b className="hero-progress-pct">%{pct}</b>
         </div>
-        <div className="hero-overall-bar" style={{ height: 10, background: "rgba(255,255,255,0.05)", borderRadius: 5, marginTop: 10, overflow: "hidden" }}>
-          <div className="hero-overall-fill" style={{ width: `${pct}%`, height: "100%", background: "var(--accent)", transition: "1s" }} />
+        <div className="hero-overall-bar">
+          <div className="hero-overall-fill" style={{ width: `${pct}%` }} />
         </div>
       </div>
 
@@ -473,9 +436,9 @@ export default function HeroPage() {
                   <circle className="hero-ring-bg" cx="50" cy="50" r="44" />
                   {!locked && !done && (
                     <circle className="hero-ring-fill" cx="50" cy="50" r="44"
-                      style={{ 
-                        strokeDasharray: `${2 * Math.PI * 44}`, 
-                        strokeDashoffset: `${2 * Math.PI * 44 * (1 - prog / 100)}` 
+                      style={{
+                        strokeDasharray: `${2 * Math.PI * 44}`,
+                        strokeDashoffset: `${2 * Math.PI * 44 * (1 - prog / 100)}`
                       }}
                     />
                   )}
@@ -495,32 +458,38 @@ export default function HeroPage() {
       </div>
 
       <style jsx>{`
-        .hero-roadmap { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .hero-roadmap { max-width: 640px; margin: 0 auto; padding: 20px 0 60px; }
+        .hero-roadmap-title { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.5px; color: var(--text); }
+        .hero-roadmap-subtitle { margin: 4px 0 24px; }
+        .hero-progress-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; margin-bottom: 40px; }
+        .hero-progress-head { display: flex; justify-content: space-between; align-items: center; }
+        .hero-progress-pct { color: var(--accent); }
+        .hero-overall-bar { height: 8px; background: var(--glass); border-radius: 5px; margin-top: 10px; overflow: hidden; }
+        .hero-overall-fill { height: 100%; background: var(--accent); transition: width 1s; }
+
         .hero-path { display: flex; flex-direction: column; gap: 60px; position: relative; align-items: center; padding: 40px 0; }
         .hero-path-item { position: relative; display: flex; flex-direction: column; align-items: center; z-index: 2; }
-        
-        .hero-node { 
-          width: 90px; height: 90px; border-radius: 50%; background: #1a1a1b; 
-          display: flex; align-items: center; justify-content: center; 
+
+        .hero-node {
+          width: 90px; height: 90px; border-radius: 50%; background: var(--bg-elevated);
+          display: flex; align-items: center; justify-content: center;
           cursor: pointer; position: relative; transition: 0.3s;
         }
-        .hero-node:hover:not(.locked) { transform: scale(1.1); box-shadow: 0 0 30px var(--c); }
+        .hero-node:hover:not(.locked) { transform: scale(1.05); box-shadow: 0 0 24px var(--c); }
         .hero-node.locked { opacity: 0.4; cursor: not-allowed; filter: grayscale(1); }
         .hero-node.done { background: var(--c); color: #000; }
-        
+
         .hero-ring { position: absolute; inset: -5px; transform: rotate(-90deg); width: 100px; height: 100px; }
-        .hero-ring-bg { fill: none; stroke: rgba(255,255,255,0.05); stroke-width: 6; }
+        .hero-ring-bg { fill: none; stroke: var(--glass); stroke-width: 6; }
         .hero-ring-fill { fill: none; stroke: var(--c); stroke-width: 6; stroke-linecap: round; transition: 1s; }
-        
-        .hero-node-text { font-size: 1.5rem; font-weight: 900; z-index: 2; }
+
+        .hero-node-text { font-size: 1.5rem; font-weight: 900; z-index: 2; color: var(--text); }
+        .hero-node.done .hero-node-text { color: #000; }
         .hero-node-meta { margin-top: 15px; text-align: center; display: flex; flex-direction: column; gap: 5px; }
         .hero-node-badge { padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; }
         .hero-node-sub { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
-        
-        .hero-path-line { 
-          position: absolute; top: 100px; height: 60px; width: 4px; 
-          background: rgba(255,255,255,0.05); z-index: 1; 
-        }
+
+        .hero-path-line { position: absolute; top: 100px; height: 60px; width: 4px; background: var(--glass); z-index: 1; }
         .hero-path-line.active { background: var(--accent); }
 
         @media (max-width: 600px) {

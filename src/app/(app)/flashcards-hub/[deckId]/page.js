@@ -125,14 +125,17 @@ export default function SwipeGamePage() {
   if (cards.length === 0) {
     return (
       <div className="sg-empty">
-        <div className="glass-card" style={{ padding: 40, textAlign: "center", maxWidth: 400 }}>
+        <div className="sg-empty-card">
           <h2>Bu deste boş</h2>
-          <p style={{ color: "var(--text-muted)", marginTop: 8 }}>Önce desteye kelime eklemelisin.</p>
+          <p>Önce desteye kelime eklemelisin.</p>
           <Link href="/flashcards-hub" className="sg-back-link">← Geri Dön</Link>
         </div>
         <style jsx>{`
-          .sg-empty { height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); }
-          .sg-back-link { display: inline-block; margin-top: 20px; color: var(--accent); font-weight: 700; }
+          .sg-empty { height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); padding: 20px; }
+          .sg-empty-card { max-width: 400px; width: 100%; padding: 40px; text-align: center; background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; }
+          .sg-empty-card h2 { font-weight: 800; color: var(--text); }
+          .sg-empty-card p { color: var(--text-muted); margin-top: 8px; }
+          .sg-back-link { display: inline-block; margin-top: 20px; color: var(--accent); font-weight: 700; text-decoration: none; }
         `}</style>
       </div>
     );

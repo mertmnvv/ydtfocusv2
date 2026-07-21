@@ -10,7 +10,6 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
-  const [roleConfirm, setRoleConfirm] = useState(null); // { uid, currentRole }
   const [userToDelete, setUserToDelete] = useState(null); // { uid, name }
 
   useEffect(() => {
@@ -37,7 +36,7 @@ export default function AdminUsersPage() {
       showNotification("Rol güncellenirken hata oluştu.", "error");
     }
   }
-  
+
   async function handleDeleteUser() {
     if (!userToDelete) return;
     try {
@@ -62,28 +61,27 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div>
+    <div className="admin-users-view">
       <div className="glass-card">
-        <div className="header-split">
-          <h3 className="section-title" style={{ marginBottom: 0 }}>Kullanıcı Yönetimi</h3>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ color: "var(--accent)", fontWeight: 800, fontSize: "1.2rem" }}>{users.length}</div>
-            <div style={{ color: "var(--text-muted)", fontSize: "0.7rem", textTransform: "uppercase" }}>Kullanıcı</div>
+        <div className="au-header">
+          <h3 className="section-title">Kullanıcı Yönetimi</h3>
+          <div className="au-count">
+            <div className="au-count-num">{users.length}</div>
+            <div className="au-count-label">Kullanıcı</div>
           </div>
         </div>
 
-        <div style={{ marginTop: 20, marginBottom: 20 }}>
+        <div className="au-search-wrap">
           <input
             type="text"
             placeholder="İsim veya e-posta ile ara..."
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="word-input"
-            style={{ width: "100%" }}
+            className="word-input au-search-input"
           />
         </div>
 
-        <div style={{ overflowX: "auto" }}>
+        <div className="admin-table-scroll">
           <table className="admin-table">
             <thead>
               <tr>
@@ -97,9 +95,9 @@ export default function AdminUsersPage() {
               {filteredUsers.map(u => (
                 <tr key={u.uid || u.id}>
                   <td>
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      <span style={{ fontWeight: 700 }}>{u.displayName || "İsimsiz"}</span>
-                      <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>{u.email}</span>
+                    <div className="au-user-cell">
+                      <span className="au-user-name">{u.displayName || "İsimsiz"}</span>
+                      <span className="au-user-email">{u.email}</span>
                     </div>
                   </td>
                   <td>
@@ -108,15 +106,15 @@ export default function AdminUsersPage() {
                     </span>
                   </td>
                   <td>
-                    <div style={{ fontSize: "0.75rem", display: "flex", flexDirection: "column", gap: 2 }}>
-                      <span title="Kayıt"><i className="fa-regular fa-calendar" style={{ marginRight: 5 }}></i> {u.createdAt?.seconds ? new Date(u.createdAt.seconds * 1000).toLocaleDateString("tr-TR") : "-"}</span>
-                      <span title="Son Giriş" style={{ color: "var(--accent)" }}><i className="fa-solid fa-clock-rotate-left" style={{ marginRight: 5 }}></i> {u.lastLogin?.seconds ? new Date(u.lastLogin.seconds * 1000).toLocaleString("tr-TR") : "-"}</span>
+                    <div className="au-activity">
+                      <span title="Kayıt"><i className="fa-regular fa-calendar"></i> {u.createdAt?.seconds ? new Date(u.createdAt.seconds * 1000).toLocaleDateString("tr-TR") : "-"}</span>
+                      <span className="au-activity-recent" title="Son Giriş"><i className="fa-solid fa-clock-rotate-left"></i> {u.lastLogin?.seconds ? new Date(u.lastLogin.seconds * 1000).toLocaleString("tr-TR") : "-"}</span>
                     </div>
                   </td>
                   <td>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <select 
-                        className="admin-select-sm"
+                    <div className="au-actions">
+                      <select
+                        className="au-role-select"
                         value={u.role || "free"}
                         onChange={(e) => handleRoleUpdate(u.uid || u.id, e.target.value)}
                       >
@@ -124,8 +122,8 @@ export default function AdminUsersPage() {
                         <option value="premium">Premium</option>
                         <option value="admin">Admin</option>
                       </select>
-                      <button 
-                        className="admin-delete-btn"
+                      <button
+                        className="au-delete-btn"
                         onClick={() => setUserToDelete({ uid: u.uid || u.id, name: u.displayName || u.email })}
                         title="Kullanıcıyı Sil"
                       >
@@ -145,36 +143,52 @@ export default function AdminUsersPage() {
           title="Kullanıcıyı Sil"
           message={`"${userToDelete.name}" isimli kullanıcıyı veritabanından silmek istediğine emin misin? Bu işlem geri alınamaz.`}
           confirmText="Evet, Sil"
-          confirmColor="#ff453a"
+          confirmColor="var(--error)"
           onConfirm={handleDeleteUser}
           onCancel={() => setUserToDelete(null)}
         />
       )}
-      
+
       <style jsx>{`
-        .admin-select-sm {
-          background: #1a1a1b;
+        .au-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .au-count { text-align: right; }
+        .au-count-num { color: var(--accent); font-weight: 800; font-size: 1.2rem; }
+        .au-count-label { color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; }
+
+        .au-search-wrap { margin: 20px 0; }
+        .au-search-input { width: 100%; }
+
+        .admin-table-scroll { overflow-x: auto; }
+
+        .au-user-cell { display: flex; flex-direction: column; }
+        .au-user-name { font-weight: 700; color: var(--text); }
+        .au-user-email { color: var(--text-muted); font-size: 0.8rem; }
+
+        .au-activity { font-size: 0.75rem; display: flex; flex-direction: column; gap: 2px; }
+        .au-activity i { margin-right: 5px; }
+        .au-activity-recent { color: var(--accent); }
+
+        .au-actions { display: flex; align-items: center; gap: 10px; }
+        .au-role-select {
+          background: var(--bg-elevated);
           border: 1px solid var(--border);
-          color: #fff;
+          color: var(--text);
           border-radius: 8px;
           padding: 8px 12px;
           font-size: 0.85rem;
           outline: none;
           cursor: pointer;
           font-weight: 600;
-          transition: 0.2s;
         }
-        .admin-select-sm:hover { border-color: var(--accent); }
-        .admin-select-sm option {
-          background: #1a1a1b;
-          color: #fff;
-          padding: 10px;
-        }
+        .au-role-select:hover { border-color: var(--accent); }
+        .au-role-select option { background: var(--bg-elevated); color: var(--text); }
+
         .admin-badge-premium { background: rgba(226, 183, 20, 0.2); color: var(--accent); }
-        .admin-delete-btn {
+
+        .au-delete-btn {
           background: rgba(255, 69, 58, 0.1);
           border: 1px solid rgba(255, 69, 58, 0.2);
-          color: #ff453a;
+          color: var(--error);
           width: 36px;
           height: 36px;
           border-radius: 8px;
@@ -182,12 +196,10 @@ export default function AdminUsersPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: 0.2s;
         }
-        .admin-delete-btn:hover {
-          background: #ff453a;
+        .au-delete-btn:hover {
+          background: var(--error);
           color: #fff;
-          transform: scale(1.05);
         }
       `}</style>
     </div>
