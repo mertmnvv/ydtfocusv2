@@ -9,6 +9,21 @@ olarak da alınabilirler.
 Quiz, Flashcards) tamamı uygulandı.** Sıradaki olası işler için "Sonraki
 adımlar (kapsam dışı)" bölümüne bak.
 
+## 6. Reading-merkezli IA pivotu — TAMAMLANDI
+
+Ürün sahibinden gelen geri bildirim üzerine: okuma paneli sitenin asıl
+konusu, öne çekildi. Detay için `docs/DESIGN.md` → "Sonraki karar:
+Reading-merkezli IA".
+
+- [x] Kök `/` ve giriş/kayıt sonrası yönlendirme `/reading`'e döndü
+- [x] Nav'daki ilk sekme "Bugün" değil "Okuma" (`/reading`)
+- [x] `/dashboard`, `/reading`'e yönlendiren bir stub'a dönüştürüldü;
+      seri/tekrar-bekleyen-kelime sinyali Reading'in üstündeki durum
+      şeridine taşındı
+- [x] Kütüphane hub'ından "Okuma" kartı kaldırıldı (artık kendi sekmesi)
+- [x] `profile/page.js`'teki "Rozetlerim" linkindeki eski hata
+      (`/dashboard?tab=leaderboard`) `/achievements` olarak düzeltildi
+
 ## Altyapı (bu oturumda tamamlandı)
 
 - [x] `CLAUDE.md` / `AGENTS.md` — Türkçe-önce kuralı + proje/redesign

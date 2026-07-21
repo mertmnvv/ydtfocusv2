@@ -43,7 +43,7 @@ export default function RegisterPage() {
     try {
       const fullDisplayName = `${firstName.trim()} ${lastName.trim()}`;
       await register(email, password, fullDisplayName);
-      router.push("/dashboard");
+      router.push("/reading");
     } catch (err) {
       if (err.code === "auth/email-already-in-use") setError("Bu e-posta zaten kullanılıyor.");
       else if (err.code === "auth/weak-password") setError("Şifre çok zayıf.");
@@ -58,7 +58,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await loginWithGoogle();
-      router.push("/dashboard");
+      router.push("/reading");
     } catch (err) {
       setError("Google ile giriş yapılamadı.");
     }

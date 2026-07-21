@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { subscribeToUserWords, addUserWord, completeReadingPassage } from "@/lib/firestore";
+import { subscribeToUserWords, addUserWord, completeReadingPassage, subscribeToUserStats } from "@/lib/firestore";
 import { AI_MODELS, buildReadingPassagePrompt, buildTextAnalysisPrompt, buildReadingQuizPrompt } from "@/constants/prompts";
 
 const TOPICS = [
@@ -117,6 +117,7 @@ function ReadingContent() {
   const [topic, setTopic] = useState("random");
   const [generating, setGenerating] = useState(false);
   const [myWords, setMyWords] = useState([]);
+  const [stats, setStats] = useState({ streak: 0 });
   const [passageTitle, setPassageTitle] = useState("");
   const [translatedText, setTranslatedText] = useState("");
   const [showTranslation, setShowTranslation] = useState(false);
@@ -202,6 +203,9 @@ function ReadingContent() {
     const unsubscribe = subscribeToUserWords(user.uid, (updated) => {
       setMyWords(updated.filter(w => !isIdFormat(w.word || "")));
     });
+    const unsubscribeStats = subscribeToUserStats(user.uid, (s) => {
+      setStats({ ...(s || {}), streak: s?.streak || 0 });
+    });
 
     // Focus AI'dan gelen özel metni dinle (GlobalAI'dan gelen event)
     const handleLoadPassage = (e) => {
@@ -216,6 +220,7 @@ function ReadingContent() {
 
     return () => {
       unsubscribe();
+      unsubscribeStats();
       window.removeEventListener("focus-load-passage", handleLoadPassage);
     };
   }, [user]);
@@ -638,9 +643,22 @@ function ReadingContent() {
   }
 
   const topicOptions = sourceMode === "wikipedia" ? WIKI_TOPICS : TOPICS;
+  const dueCount = myWords.filter(w => (w.nextReview || 0) <= Date.now()).length;
 
   return (
     <div className="reading-page">
+      {user && (
+        <div className="reading-status-strip">
+          <span>{stats.streak || 0} gün seri</span>
+          <span className="reading-status-dot">·</span>
+          {dueCount > 0 ? (
+            <Link href="/srs">{dueCount} kelime tekrarı bekliyor</Link>
+          ) : (
+            <span>Bugün her şey taze</span>
+          )}
+        </div>
+      )}
+
       {/* Header: Geri / başlık / Ayarlar */}
       <div className="reading-header-bar">
         <Link href="/library" className="reading-header-back">Geri</Link>
@@ -1004,6 +1022,24 @@ function ReadingContent() {
           margin: 0 auto;
           padding-bottom: 60px;
         }
+
+        .reading-status-strip {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 10px 4px 0;
+          font-size: 0.78rem;
+          font-weight: 600;
+          color: var(--text-muted);
+        }
+        .reading-status-strip a {
+          color: var(--accent);
+          font-weight: 700;
+          text-decoration: none;
+        }
+        .reading-status-strip a:hover { text-decoration: underline; }
+        .reading-status-dot { opacity: 0.5; }
 
         /* Header */
         .reading-header-bar {

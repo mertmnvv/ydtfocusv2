@@ -19,7 +19,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-      router.push("/dashboard");
+      router.push("/reading");
     } catch (err) {
       if (err.code === "auth/user-not-found") setError("Bu e-posta ile kayıtlı kullanıcı bulunamadı.");
       else if (err.code === "auth/wrong-password") setError("Şifre hatalı.");
@@ -34,7 +34,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await loginWithGoogle();
-      router.push("/dashboard");
+      router.push("/reading");
     } catch (err) {
       console.error("Google Login Error:", err.code, err.message);
       if (err.code === "auth/popup-closed-by-user") {

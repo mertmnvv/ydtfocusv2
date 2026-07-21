@@ -145,7 +145,7 @@ export default function SRSPage() {
       <div className="glass-card" style={{ maxWidth: 500, margin: "100px auto", padding: 40, textAlign: "center" }}>
         <h2 style={{ fontSize: "2rem", fontWeight: 800, marginBottom: 16 }}>Akıllı Tekrar</h2>
         <p className="hint-text" style={{ fontSize: "1.1rem", marginBottom: 32 }}>Şu an tekrar etmen gereken bir kelime yok. Harika gidiyorsun!</p>
-        <Link href="/dashboard" className="btn-primary" style={{ display: "inline-block", padding: "12px 32px" }}>Merkeze Dön</Link>
+        <Link href="/reading" className="btn-primary" style={{ display: "inline-block", padding: "12px 32px" }}>Merkeze Dön</Link>
       </div>
     );
   }
@@ -154,7 +154,7 @@ export default function SRSPage() {
     return (
       <div className="quiz-sim">
         <div className="quiz-sim-bar">
-          <Link href="/dashboard" className="quiz-exit-icon">
+          <Link href="/reading" className="quiz-exit-icon">
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </Link>
           <div className="quiz-sim-progress">
@@ -273,7 +273,7 @@ export default function SRSPage() {
           )}
 
           <div className="result-actions">
-            <Link href="/dashboard" className="btn-primary" style={{ flex: 1, textAlign: 'center', padding: 16 }}>Merkeze Dön</Link>
+            <Link href="/reading" className="btn-primary" style={{ flex: 1, textAlign: 'center', padding: 16 }}>Merkeze Dön</Link>
           </div>
         </div>
 

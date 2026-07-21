@@ -5,7 +5,6 @@ export default function sitemap() {
     "",
     "/login",
     "/register",
-    "/dashboard",
     "/archive",
     "/reading",
     "/grammar",

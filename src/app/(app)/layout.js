@@ -13,25 +13,28 @@ import PremiumModal from "@/components/PremiumModal";
 import PremiumPaywall from "@/components/PremiumPaywall";
 import FeedbackModal from "@/components/FeedbackModal";
 
-// 4 hedefli navigasyon modeli (bkz. docs/DESIGN.md — "5a: 4 Sekme + Kütüphane Hub").
-// Web'de Bugün/Kütüphane/Rozetler metin linki + ayrı avatar olarak, mobilde
-// aynı 4 hedef alt tab bar'ında (Profil dahil) render edilir.
+// 4 hedefli navigasyon modeli (bkz. docs/DESIGN.md — "Sonraki karar:
+// Reading-merkezli IA"). Okuma artık uygulamanın girişi ve birincil
+// sekmesi; Kütüphane geri kalan destekleyici araçları (Quiz/Kartlar/
+// Gramer/Sözlük/Hatalarım/Zero to Hero) barındırır. Web'de Okuma/
+// Kütüphane/Rozetler metin linki + ayrı avatar olarak, mobilde aynı 4
+// hedef alt tab bar'ında (Profil dahil) render edilir.
 const DESTINATIONS = [
-  { id: "today", label: "Bugün", href: "/dashboard" },
+  { id: "reading", label: "Okuma", href: "/reading" },
   { id: "library", label: "Kütüphane", href: "/library" },
   { id: "achievements", label: "Rozetler", href: "/achievements" },
   { id: "profile", label: "Profil", href: "/profile" },
 ];
 
-// Kütüphane hub'ı altına katlanan eski üst-seviye rotalar — bunlardan
+// Kütüphane hub'ı altına katlanan destekleyici rotalar — bunlardan
 // herhangi birindeyken mobil/web navda "Kütüphane" aktif görünmeli.
-const LIBRARY_ROUTES = ["/library", "/reading", "/quiz", "/flashcards-hub", "/grammar", "/archive", "/mistakes", "/hero"];
+const LIBRARY_ROUTES = ["/library", "/quiz", "/flashcards-hub", "/grammar", "/archive", "/mistakes", "/hero"];
 
 function getActiveDestination(pathname) {
   if (pathname.startsWith("/profile")) return "profile";
   if (pathname.startsWith("/achievements")) return "achievements";
   if (LIBRARY_ROUTES.some((p) => pathname.startsWith(p))) return "library";
-  return "today";
+  return "reading";
 }
 
 import ThemeToggle from "@/components/ThemeToggle";
@@ -105,7 +108,7 @@ function AppContent({ children }) {
                 <div className="switcher-overlay" onClick={() => setSwitcherOpen(false)} />
                 <div className="switcher-dropdown">
                   <div className="switcher-label">Platform Değiştir</div>
-                  <Link href="/dashboard" className={`switcher-item ${pathname !== "/linefocus" ? "current" : ""}`} onClick={() => setSwitcherOpen(false)}>
+                  <Link href="/reading" className={`switcher-item ${pathname !== "/linefocus" ? "current" : ""}`} onClick={() => setSwitcherOpen(false)}>
                     <div className="switcher-item-dot" />
                     <div className="switcher-item-info">
                       <div className="switcher-item-name">ydtfocus</div>
