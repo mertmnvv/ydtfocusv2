@@ -19,26 +19,28 @@ olarak da alınabilirler.
       (kullanılmayan eski ekran) silindi; `DEVELOPMENT_LOG.md` ve
       `PROJECT_ANALYSIS_REPORT.md` `docs/`'a taşındı
 
-## 1. Navigasyon — "4 Sekme + Kütüphane Hub" (5a)
+## 1. Navigasyon — "4 Sekme + Kütüphane Hub" (5a) — TAMAMLANDI
 
-- [ ] `src/app/(app)/layout.js`: 9 linklik üst nav + hamburger + mobil
+- [x] `src/app/(app)/layout.js`: 9 linklik üst nav + hamburger + mobil
       profil popup'ı kaldır, 3 metin linki (Bugün/Kütüphane/Rozetler) +
       avatar modeline geç
-- [ ] Yeni `src/app/(app)/library/page.js` — Kütüphane hub (Okuma/Quiz/
-      Kartlar/Gramer birincil, Sözlük/Hatalarım ikincil)
-- [ ] Yeni `src/app/(app)/profile/page.js` — hesap bilgisi, plan/premium
+- [x] Yeni `src/app/(app)/library/page.js` — Kütüphane hub (Okuma/Quiz/
+      Kartlar/Gramer birincil, Sözlük/Hatalarım/Zero to Hero ikincil)
+- [x] Yeni `src/app/(app)/profile/page.js` — hesap bilgisi, plan/premium
       durumu, geri bildirim, çıkış (mobil 4. tab + web avatar menüsü)
-- [ ] Mobil alt bar: 4 sekme, sadece metin etiketi (ikon yok)
-- [ ] `globals.css`: yeni nav/hub/profile sınıfları ekle, kullanılmayan
-      hamburger/mobil-popup kurallarını temizle
+- [x] Mobil alt bar: 4 sekme, sadece metin etiketi (ikon yok)
+- [x] `globals.css`: yeni nav/hub/profile sınıfları eklendi, kullanılmayan
+      hamburger/mobil-popup kuralları temizlendi
 
-## 2. Dashboard — "Tek Odak Akışı" (1b)
+## 2. Dashboard — "Tek Odak Akışı" (1b) — TAMAMLANDI
 
-- [ ] `src/app/(app)/dashboard/page.js`: bento grid + rozet popover +
-      leaderboard bloğunu kaldır
-- [ ] Tek CTA akışı: eyebrow + başlık + alt metin + birincil buton + 3
-      istatistik satırı
-- [ ] Leaderboard'u `achievements`/Rozetler sayfasına taşı
+- [x] `src/app/(app)/dashboard/page.js`: bento grid + rozet popover +
+      profil header'ı kaldırıldı, tek CTA akışına indirgendi
+- [x] Tek CTA akışı: eyebrow + başlık + alt metin + birincil buton + 3
+      istatistik satırı (seri / % kalıcılık / toplam kelime)
+- [x] Leaderboard `achievements`/Rozetler sayfasına taşındı
+- [x] `globals.css`: artık kullanılmayan `.dash-*`, `.profile-header*`,
+      `.profile-large-avatar*`, `.dash-divider` kuralları temizlendi
 
 ## 3. Reading — "Ayarlar Tek Sayfada" (2b)
 
