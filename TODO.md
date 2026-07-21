@@ -42,13 +42,19 @@ olarak da alınabilirler.
 - [x] `globals.css`: artık kullanılmayan `.dash-*`, `.profile-header*`,
       `.profile-large-avatar*`, `.dash-divider` kuralları temizlendi
 
-## 3. Reading — "Ayarlar Tek Sayfada" (2b)
+## 3. Reading — "Ayarlar Tek Sayfada" (2b) — TAMAMLANDI
 
-- [ ] Header'ı sadeleştir (Geri / başlık / Ayarlar)
-- [ ] Tek "Ayarlar" bottom sheet: Kaynak / Seviye / Konu segmented
-      control'leri + "Türkçe Göster" anahtarı
-- [ ] Flip-kart çeviri animasyonunu kaldır, kalıcı ses player bar'ını tek
-      "Sesli Oku" metin butonuna indir
+- [x] Header sadeleştirildi (Geri / başlık / Ayarlar)
+- [x] Tek "Ayarlar" bottom sheet: Kaynak / Seviye / Konu segmented
+      control'leri + "Türkçe Göster" anahtarı (sheet, metin seçilmeden
+      önce otomatik açık geliyor)
+- [x] Flip-kart çeviri animasyonu kaldırıldı (Türkçe Göster toggle'ı),
+      kalıcı ses player bar'ı tek "Sesli Oku" metin butonuna indirildi
+      (hız/seek/vurgu-anahtarı kaldırıldı, otomatik vurgu sabit kaldı)
+- [x] SmartStream modu ve "Kelimelerimle Yaz" özel çipi kaldırıldı (tasarım
+      dokümanında izin verilen/istenen sadeleştirmeler)
+- [x] `globals.css`: artık kullanılmayan stream/topic-chip/flip-kart/
+      reading-grid kuralları temizlendi
 
 ## 4. Quiz — "Nokta İlerleme, Büyük Geri Bildirim" (3a)
 

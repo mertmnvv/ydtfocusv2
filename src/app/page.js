@@ -10,7 +10,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!loading) {
-      router.push("/reading");
+      router.push("/dashboard");
     }
   }, [loading, router]);
 
