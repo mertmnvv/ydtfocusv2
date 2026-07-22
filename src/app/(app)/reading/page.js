@@ -913,15 +913,22 @@ function ReadingContent() {
         </>
       ) : (
         <div className="reading-empty-state">
-          {generating ? "İçerik hazırlanıyor..." : "Ayarlar'dan bir kaynak ve konu seçip başla."}
+          {generating ? (
+            "İçerik hazırlanıyor..."
+          ) : (
+            <>
+              <p>Bir kaynak ve konu seçip okumaya başla.</p>
+              <button className="reading-empty-cta" onClick={() => setSettingsOpen(true)}>Başla</button>
+            </>
+          )}
         </div>
       )}
 
       {/* ───── AYARLAR SHEET ───── */}
-      {(settingsOpen || !text.trim()) && (
+      {settingsOpen && (
         <div
           className="reading-settings-overlay"
-          onClick={() => text.trim() && setSettingsOpen(false)}
+          onClick={() => setSettingsOpen(false)}
         >
           <div className="reading-settings-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="sheet-handle"></div>
@@ -1222,6 +1229,17 @@ function ReadingContent() {
           padding: 80px 20px;
           color: var(--text-muted);
           font-size: 0.95rem;
+        }
+        .reading-empty-cta {
+          margin-top: 18px;
+          background: var(--accent);
+          color: #000;
+          font-weight: 800;
+          font-size: 0.9rem;
+          padding: 14px 32px;
+          border-radius: 14px;
+          border: none;
+          cursor: pointer;
         }
 
         /* Footer */
