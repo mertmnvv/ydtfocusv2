@@ -1009,52 +1009,35 @@ function ReadingContent() {
 
       {showResultCard && (
         <div className="responsive-lookup-overlay" onClick={() => setShowResultCard(false)}>
-          <div className="responsive-lookup-card animate-slideUp" onClick={e => e.stopPropagation()}>
+          <div className="responsive-lookup-card" onClick={e => e.stopPropagation()}>
             <div className="sheet-handle"></div>
             <div className="card-header-minimal">
               <span>Hızlı Sözlük</span>
               <button onClick={() => setShowResultCard(false)} className="btn-close-minimal">Kapat</button>
             </div>
 
-            <div className="popup-search-box" style={{ marginBottom: 24, display: 'flex', gap: 8 }}>
+            <div className="lookup-search-row">
               <input
+                className="lookup-search-input"
                 placeholder="Yeni bir kelime ara..."
                 value={lookupInput}
                 onChange={e => setLookupInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && lookupWord()}
-                style={{
-                  flex: 1,
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '12px',
-                  padding: '10px 14px',
-                  fontSize: '0.85rem',
-                  color: '#fff'
-                }}
               />
-              <button
-                onClick={() => lookupWord()}
-                className="btn-icon-sm"
-                style={{ background: 'var(--accent)', color: '#000', borderRadius: '12px', padding: '0 15px' }}
-              >
+              <button onClick={() => lookupWord()} className="lookup-search-btn">
                 <i className="fa-solid fa-search"></i>
               </button>
             </div>
 
             {fetchingDetails ? (
-              <div className="sheet-loading-small"><div className="spinner-ring"></div></div>
+              <div className="lookup-loading"><div className="spinner-ring"></div></div>
             ) : (
               <>
                 <div className="lookup-fields">
                   <div className="lookup-field">
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div className="lookup-field-head">
                       <label>KELİME</label>
-                      <button
-                        className="btn-icon-sm"
-                        onClick={() => speakWord(wordInput)}
-                        title="Dinle"
-                        style={{ background: 'rgba(255, 255, 255, 0.05)', border: 'none', color: 'var(--accent)', cursor: 'pointer' }}
-                      >
+                      <button className="lookup-speak-btn" onClick={() => speakWord(wordInput)} title="Dinle">
                         <i className="fa-solid fa-volume-high"></i>
                       </button>
                     </div>
@@ -1073,17 +1056,7 @@ function ReadingContent() {
                     <input value={antonymInput} onChange={e => setAntonymInput(e.target.value)} />
                   </div>
                 </div>
-                <button
-                  onClick={saveWord}
-                  className="btn-primary w-100 mt-4"
-                  style={{
-                    padding: '16px',
-                    borderRadius: '16px',
-                    fontSize: '0.9rem',
-                    fontWeight: 900,
-                    boxShadow: '0 10px 20px rgba(226, 183, 20, 0.2)'
-                  }}
-                >
+                <button onClick={saveWord} className="lookup-save-btn">
                   Bankaya Kaydet
                 </button>
               </>
