@@ -67,7 +67,6 @@ function AppContent({ children }) {
   const { user, userProfile, logout, isAdmin, isPremium, premiumModalOpen, setPremiumModalOpen, requireAuth } = useAuth();
   useFcmToken(user);
   const pathname = usePathname();
-  const [switcherOpen, setSwitcherOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -82,110 +81,81 @@ function AppContent({ children }) {
     return <>{children}</>;
   }
 
+  // Tek, minimal üst bar — mobil/masaüstü aynı: logo + Okuma/Rozetler +
+  // avatar. Ayrı mobil alt tab bar'ı kaldırıldı (bkz. docs/DESIGN.md,
+  // "Reading-merkezli IA" — nav artık 3 hedefe indi, ekstra bir alt bar
+  // gerektirmiyor).
   return (
     <div className="app-shell">
-      {/* Desktop Navbar */}
-      <nav className="mini-nav">
-        <div className="nav-container">
-          <div className="platform-switcher-container">
-            <button
-              className={`logo-switcher-btn ${switcherOpen ? "active" : ""}`}
-              onClick={() => setSwitcherOpen(!switcherOpen)}
-            >
-              <div className="logo">
-                ydt<span>focus</span>
-              </div>
-              <span className="switcher-arrow">▾</span>
-            </button>
+      <nav className="app-topbar">
+        <div className="app-topbar-inner">
+          <Link href="/reading" className="app-topbar-logo">
+            ydt<span>focus</span>
+          </Link>
 
-            {switcherOpen && (
-              <>
-                <div className="switcher-overlay" onClick={() => setSwitcherOpen(false)} />
-                <div className="switcher-dropdown">
-                  <div className="switcher-label">Platform Değiştir</div>
-                  <Link href="/reading" className={`switcher-item ${pathname !== "/linefocus" ? "current" : ""}`} onClick={() => setSwitcherOpen(false)}>
-                    <div className="switcher-item-dot" />
-                    <div className="switcher-item-info">
-                      <div className="switcher-item-name">ydtfocus</div>
-                      <div className="switcher-item-desc">Ana Çalışma Paneli</div>
-                    </div>
-                  </Link>
-                  <Link href="/linefocus" className={`switcher-item ${pathname === "/linefocus" ? "current" : ""}`} onClick={() => setSwitcherOpen(false)}>
-                    <div className="switcher-item-dot" />
-                    <div className="switcher-item-info">
-                      <div className="switcher-item-name">linefocus</div>
-                      <div className="switcher-item-desc">Odaklanmış Okuma & Yazma</div>
-                    </div>
-                  </Link>
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className="nav-links">
+          <div className="app-topbar-links">
             {DESTINATIONS.filter(d => d.id !== "profile").map(item => (
               <Link
                 key={item.id}
                 href={item.href}
-                className={`nav-btn ${activeTab === item.id ? "active-nav" : ""}`}
+                className={`app-topbar-link ${activeTab === item.id ? "active" : ""}`}
               >
                 {item.label}
               </Link>
             ))}
           </div>
-          <div className="nav-user">
+
+          <div className="app-topbar-user">
             <ThemeToggle />
-            <div className="profile-menu-wrapper">
+            <div className="app-avatar-wrapper">
               <button
-                className={`profile-mini-trigger ${profileOpen ? "active" : ""}`}
+                className={`app-avatar-btn ${profileOpen ? "active" : ""}`}
                 onClick={() => setProfileOpen(!profileOpen)}
               >
-                <div className="profile-avatar">
+                <div className="app-avatar">
                   {userProfile?.photoURL ? (
                     <img src={userProfile.photoURL} alt="Profil" className="avatar-img" />
                   ) : (
                     userProfile?.displayName?.[0] || user?.email?.[0] || "U"
                   )}
                 </div>
-                <div className="profile-info">
-                  <span className="profile-name">
-                    {userProfile?.displayName || "Misafir"}
-                    {isAdmin ? (
-                      <i className="fa-solid fa-user-shield" style={{ color: "#ff453a", marginLeft: 6, fontSize: "0.7rem" }} title="Yönetici"></i>
-                    ) : isPremium ? (
-                      <i className="fa-solid fa-crown" style={{ color: "var(--accent)", marginLeft: 6, fontSize: "0.7rem" }} title="Premium Üye"></i>
-                    ) : null}
-                  </span>
-                  <span className="profile-sub-text">Menü <i className="fa-solid fa-chevron-down"></i></span>
-                </div>
               </button>
 
               {profileOpen && (
                 <>
-                  <div className="switcher-overlay" onClick={() => setProfileOpen(false)} />
-                  <div className="profile-dropdown">
-                    <Link href="/profile" className="profile-drop-item" onClick={() => setProfileOpen(false)}>
+                  <div className="app-avatar-overlay" onClick={() => setProfileOpen(false)} />
+                  <div className="app-avatar-menu">
+                    <Link href="/profile" className="app-avatar-item" onClick={() => setProfileOpen(false)}>
                       <i className="fa-solid fa-user"></i>
                       <span>Profilim</span>
+                      {isAdmin ? (
+                        <i className="fa-solid fa-user-shield app-avatar-badge" title="Yönetici"></i>
+                      ) : isPremium ? (
+                        <i className="fa-solid fa-crown app-avatar-badge" title="Elite Üye"></i>
+                      ) : null}
                     </Link>
-                    <button className="profile-drop-item" onClick={() => { setShowFeedback(true); setProfileOpen(false); }}>
+                    <Link href="/linefocus" className="app-avatar-item" onClick={() => setProfileOpen(false)}>
+                      <i className="fa-solid fa-arrow-right-arrow-left"></i>
+                      <span>Linefocus&apos;a Geç</span>
+                    </Link>
+                    <button className="app-avatar-item" onClick={() => { setShowFeedback(true); setProfileOpen(false); }}>
                       <i className="fa-solid fa-comments"></i>
                       <span>Geri Bildirim</span>
                     </button>
                     {isAdmin && (
-                      <Link href="/admin" className="profile-drop-item" onClick={() => setProfileOpen(false)}>
+                      <Link href="/admin" className="app-avatar-item" onClick={() => setProfileOpen(false)}>
                         <i className="fa-solid fa-user-shield"></i>
                         <span>Admin</span>
                       </Link>
                     )}
-                    <div className="drop-divider"></div>
+                    <div className="app-avatar-divider"></div>
                     {user ? (
-                      <button onClick={() => { logout(); setProfileOpen(false); }} className="profile-drop-item logout-red">
+                      <button onClick={() => { logout(); setProfileOpen(false); }} className="app-avatar-item logout-red">
                         <i className="fa-solid fa-right-from-bracket"></i>
                         <span>Çıkış Yap</span>
                       </button>
                     ) : (
-                      <button onClick={() => { requireAuth(() => {}); setProfileOpen(false); }} className="profile-drop-item" style={{color: 'var(--accent)'}}>
+                      <button onClick={() => { requireAuth(() => {}); setProfileOpen(false); }} className="app-avatar-item" style={{color: 'var(--accent)'}}>
                         <i className="fa-solid fa-right-to-bracket"></i>
                         <span>Giriş Yap / Kayıt Ol</span>
                       </button>
@@ -198,22 +168,9 @@ function AppContent({ children }) {
         </div>
       </nav>
 
-      <main className="app-main">
+      <main className="app-main hub-app-main">
         {children}
       </main>
-
-      {/* Mobile Bottom Nav — 4 hedef, sadece metin etiketi (bkz. docs/DESIGN.md 5a) */}
-      <nav className="mobile-bottom-nav">
-        {DESTINATIONS.map(item => (
-          <Link
-            key={item.id}
-            href={item.href}
-            className={`bottom-nav-item ${activeTab === item.id ? "active" : ""}`}
-          >
-            <span className="bottom-nav-label">{item.label}</span>
-          </Link>
-        ))}
-      </nav>
 
       {/* Footer */}
       <footer className="app-footer hide-mobile">
