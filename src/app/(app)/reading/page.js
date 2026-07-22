@@ -3,10 +3,35 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { subscribeToUserWords, addUserWord, completeReadingPassage, subscribeToUserStats } from "@/lib/firestore";
 import { AI_MODELS, buildReadingPassagePrompt, buildTextAnalysisPrompt, buildReadingQuizPrompt } from "@/constants/prompts";
+import HubPanel from "@/components/HubPanel";
+import QuizPanel from "@/components/hub-panels/QuizPanel";
+import FlashcardsHubPanel from "@/components/hub-panels/FlashcardsHubPanel";
+import GrammarPanel from "@/components/hub-panels/GrammarPanel";
+import MistakesPanel from "@/components/hub-panels/MistakesPanel";
+import SrsPanel from "@/components/hub-panels/SrsPanel";
+import ArchivePanel from "@/components/hub-panels/ArchivePanel";
+
+const HUB_TOOLS = [
+  { id: "quiz", label: "Quiz" },
+  { id: "flashcards", label: "Kartlar" },
+  { id: "grammar", label: "Gramer" },
+  { id: "mistakes", label: "Hatalarım" },
+  { id: "srs", label: "Tekrar" },
+  { id: "archive", label: "Sözlük" },
+];
+
+const HUB_TITLES = {
+  quiz: "Quiz",
+  flashcards: "Flashcards",
+  grammar: "Gramer Ansiklopedisi",
+  mistakes: "Hatalarım",
+  srs: "Akıllı Tekrar",
+  archive: "Akademik Sözlük",
+};
 
 const TOPICS = [
   { id: "random", label: "Karışık" },
@@ -170,9 +195,36 @@ function ReadingContent() {
 
   const [quizQuestions, setQuizQuestions] = useState([]);
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [quizLoading, setQuizLoading] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+
+  // ───── Reading-Hub: araç panelleri (bkz. docs/DESIGN.md "Reading-merkezli IA") ─────
+  // Quiz/Kartlar/Gramer/Hatalarım/Tekrar/Sözlük artık ayrı route değil,
+  // Reading üzerinden açılan overlay panellerdir. `?panel=` query param'ı
+  // ile senkron: geri tuşu ve deep-link paylaşımı çalışır.
+  const [activePanel, setActivePanel] = useState(null);
+  const [quizInitialMode, setQuizInitialMode] = useState(null);
+
+  useEffect(() => {
+    const p = searchParams.get("panel");
+    setActivePanel(HUB_TOOLS.some((t) => t.id === p) ? p : null);
+  }, [searchParams]);
+
+  function openPanel(id, opts) {
+    if (id === "quiz") setQuizInitialMode(opts?.mode || null);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("panel", id);
+    router.push(`/reading?${params.toString()}`);
+  }
+
+  function closePanel() {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("panel");
+    const qs = params.toString();
+    router.push(qs ? `/reading?${qs}` : "/reading");
+  }
 
   // URL Parametrelerini Dinle (Paylaşılan Metinler & AI Üretimi)
   useEffect(() => {
@@ -652,18 +704,27 @@ function ReadingContent() {
           <span>{stats.streak || 0} gün seri</span>
           <span className="reading-status-dot">·</span>
           {dueCount > 0 ? (
-            <Link href="/srs">{dueCount} kelime tekrarı bekliyor</Link>
+            <button className="reading-status-link" onClick={() => openPanel("srs")}>{dueCount} kelime tekrarı bekliyor</button>
           ) : (
             <span>Bugün her şey taze</span>
           )}
         </div>
       )}
 
-      {/* Header: Geri / başlık / Ayarlar */}
+      {/* Header: başlık / Ayarlar */}
       <div className="reading-header-bar">
-        <Link href="/library" className="reading-header-back">Geri</Link>
         <h1 className="reading-header-title">{passageTitle || "Okuma"}</h1>
         <button className="reading-header-settings" onClick={() => setSettingsOpen(true)}>Ayarlar</button>
+      </div>
+
+      {/* Araç başlatıcı — Quiz/Kartlar/Gramer/Hatalarım/Tekrar/Sözlük artık
+          ayrı sekme değil, buradan açılan hub panelleri */}
+      <div className="reading-hub-launcher">
+        {HUB_TOOLS.map((tool) => (
+          <button key={tool.id} className="reading-hub-tool" onClick={() => openPanel(tool.id)}>
+            {tool.label}
+          </button>
+        ))}
       </div>
 
       {text.trim() ? (
@@ -1016,6 +1077,26 @@ function ReadingContent() {
         </div>
       )}
 
+      {/* ───── HUB PANELLERİ ───── */}
+      <HubPanel open={activePanel === "quiz"} onClose={closePanel} title={HUB_TITLES.quiz}>
+        <QuizPanel initialMode={quizInitialMode} />
+      </HubPanel>
+      <HubPanel open={activePanel === "flashcards"} onClose={closePanel} title={HUB_TITLES.flashcards}>
+        <FlashcardsHubPanel />
+      </HubPanel>
+      <HubPanel open={activePanel === "grammar"} onClose={closePanel} title={HUB_TITLES.grammar}>
+        <GrammarPanel />
+      </HubPanel>
+      <HubPanel open={activePanel === "mistakes"} onClose={closePanel} title={HUB_TITLES.mistakes}>
+        <MistakesPanel onStartMistakesQuiz={() => openPanel("quiz", { mode: "mistakes" })} />
+      </HubPanel>
+      <HubPanel open={activePanel === "srs"} onClose={closePanel} title={HUB_TITLES.srs}>
+        <SrsPanel onClose={closePanel} />
+      </HubPanel>
+      <HubPanel open={activePanel === "archive"} onClose={closePanel} title={HUB_TITLES.archive}>
+        <ArchivePanel />
+      </HubPanel>
+
       <style jsx>{`
         .reading-page {
           max-width: 760px;
@@ -1039,7 +1120,39 @@ function ReadingContent() {
           text-decoration: none;
         }
         .reading-status-strip a:hover { text-decoration: underline; }
+        .reading-status-link {
+          background: none;
+          border: none;
+          padding: 0;
+          font: inherit;
+          color: var(--accent);
+          font-weight: 700;
+          cursor: pointer;
+        }
+        .reading-status-link:hover { text-decoration: underline; }
         .reading-status-dot { opacity: 0.5; }
+
+        /* Araç başlatıcı (hub launcher) */
+        .reading-hub-launcher {
+          display: flex;
+          gap: 8px;
+          overflow-x: auto;
+          padding: 4px 4px 14px;
+          margin-bottom: 4px;
+        }
+        .reading-hub-tool {
+          flex-shrink: 0;
+          background: var(--glass);
+          border: 1px solid var(--border);
+          color: var(--text);
+          font-size: 0.8rem;
+          font-weight: 700;
+          padding: 9px 16px;
+          border-radius: 12px;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+        .reading-hub-tool:hover { border-color: var(--accent); color: var(--accent); }
 
         /* Header */
         .reading-header-bar {
@@ -1051,14 +1164,6 @@ function ReadingContent() {
           border-bottom: 1px solid var(--border);
           margin-bottom: 8px;
         }
-        .reading-header-back {
-          font-size: 0.85rem;
-          font-weight: 700;
-          color: var(--text-muted);
-          text-decoration: none;
-          flex-shrink: 0;
-        }
-        .reading-header-back:hover { color: var(--text); }
         .reading-header-title {
           flex: 1;
           text-align: center;

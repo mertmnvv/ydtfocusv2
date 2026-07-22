@@ -1,142 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { getUserWords, getUserMistakes, updateUserMistakes } from "@/lib/firestore";
-import { useNotification } from "@/context/NotificationContext";
-import CustomDialog from "@/components/CustomDialog";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-export default function MistakesPage() {
-  const { user } = useAuth();
-  const { showNotification } = useNotification();
-  const [myWords, setMyWords] = useState([]);
-  const [wrongIds, setWrongIds] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [clearConfirm, setClearConfirm] = useState(false);
+// /mistakes artık ayrı bir ekran değil — Reading-hub mimarisinde Reading
+// üzerinden açılan bir panel (bkz. docs/DESIGN.md, "Sonraki karar:
+// Reading-merkezli IA"). Bu sayfa sadece geriye dönük uyumluluk için:
+// eski bağlantılar/yer imleri hâlâ buraya gelebilir.
+export default function MistakesRedirect() {
+  const router = useRouter();
 
   useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-    Promise.all([getUserWords(user.uid), getUserMistakes(user.uid)])
-      .then(([w, m]) => { setMyWords(w); setWrongIds(m || []); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, [user]);
-
-  async function handleClearAll() {
-    try {
-      await updateUserMistakes(user.uid, []);
-      setWrongIds([]);
-      showNotification("Tüm hatalar sıfırlandı.", "success");
-    } catch (err) {
-      showNotification("Sıfırlama başarısız oldu.", "error");
-    } finally {
-      setClearConfirm(false);
-    }
-  }
-
-  async function removeOne(wordText) {
-    const updated = wrongIds.filter(w => w !== wordText);
-    try {
-      await updateUserMistakes(user.uid, updated);
-      setWrongIds(updated);
-      showNotification("Hata silindi.", "success");
-    } catch (err) {
-      showNotification("Silme başarısız.", "error");
-    }
-  }
-
-  if (loading) {
-    return <div className="page-loading"><div className="spinner-ring"></div></div>;
-  }
-
-  const mistakeWords = wrongIds.map(wText => {
-    // Hem ID bazlı hem de metin bazlı eşleşme ara (Legacy ve yeni ID formatı desteği)
-    const found = myWords.find(w =>
-      w.id === wText ||
-      w.word === wText ||
-      w.word?.toLowerCase() === wText?.toLowerCase()
-    );
-    return found ? { ...found, originalId: wText } : { word: wText, meaning: "—", originalId: wText };
-  }).filter(Boolean);
+    router.replace("/reading?panel=mistakes");
+  }, [router]);
 
   return (
-    <div className="mistakes-page">
-      <div className="mistakes-header">
-        <div>
-          <h1 className="mistakes-title">Hatalarım</h1>
-          <p className="mistakes-subtitle">{wrongIds.length} kelime</p>
-        </div>
-        {wrongIds.length > 0 && (
-          <button className="mistakes-clear-btn" onClick={() => setClearConfirm(true)}>Tümünü Sil</button>
-        )}
+    <div className="auth-loading-screen">
+      <div className="auth-loading-spinner">
+        <div className="spinner-ring"></div>
+        <div className="spinner-brand">ydt<span>focus</span></div>
       </div>
-
-      {mistakeWords.length === 0 ? (
-        <div className="mistakes-empty">
-          <h3>Hata Yok</h3>
-          <p className="hint-text">Quiz&apos;lerde yanlış bildiğiniz kelimeler burada görünecek.</p>
-        </div>
-      ) : (
-        <div className="mistakes-list">
-          {mistakeWords.map((w, i) => (
-            <div key={i} className="mistake-row">
-              <div className="mistake-info">
-                <span className="mistake-word">{w.word}</span>
-                <span className="mistake-meaning">{w.meaning}</span>
-                {w.syn && w.syn !== "-" && <span className="mistake-syn">Eş: {w.syn}</span>}
-              </div>
-              <button className="mistake-remove" onClick={() => removeOne(w.originalId)}>Sil</button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {wrongIds.length >= 4 && (
-        <a href="/quiz" className="mistakes-cta">Hata Testi Başlat</a>
-      )}
-
-      {clearConfirm && (
-        <CustomDialog
-          title="Hataları Sıfırla"
-          message="Tüm hata kaydı listenizi temizlemek istediğinize emin misiniz?"
-          onConfirm={handleClearAll}
-          onCancel={() => setClearConfirm(false)}
-        />
-      )}
-
-      <style jsx>{`
-        .mistakes-page { max-width: 640px; margin: 0 auto; padding: 20px 0 60px; }
-        .mistakes-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; gap: 12px; }
-        .mistakes-title { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.5px; color: var(--text); }
-        .mistakes-subtitle { color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; }
-        .mistakes-clear-btn {
-          background: none; border: 1px solid rgba(255, 69, 58, 0.3); color: var(--error);
-          padding: 10px 16px; border-radius: 10px; font-size: 0.82rem; font-weight: 700; cursor: pointer;
-        }
-        .mistakes-clear-btn:hover { background: rgba(255, 69, 58, 0.1); }
-        .mistakes-empty { text-align: center; padding: 60px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; }
-        .mistakes-empty h3 { font-weight: 800; margin-bottom: 8px; }
-        .mistakes-list { display: flex; flex-direction: column; gap: 8px; }
-        .mistake-row {
-          display: flex; align-items: center; justify-content: space-between; gap: 12px;
-          background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px;
-        }
-        .mistake-info { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1; }
-        .mistake-word { font-weight: 800; color: var(--text); }
-        .mistake-meaning { color: var(--accent); font-size: 0.88rem; font-weight: 600; }
-        .mistake-syn { color: var(--archive); font-size: 0.78rem; }
-        .mistake-remove {
-          background: none; border: 1px solid rgba(255, 69, 58, 0.3); color: var(--error);
-          padding: 6px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer; flex-shrink: 0;
-        }
-        .mistake-remove:hover { background: rgba(255, 69, 58, 0.1); }
-        .mistakes-cta {
-          display: block; text-align: center; margin-top: 24px; padding: 16px;
-          background: var(--accent); color: #000; font-weight: 800; border-radius: 14px; text-decoration: none;
-        }
-      `}</style>
     </div>
   );
 }

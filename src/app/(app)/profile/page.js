@@ -43,6 +43,10 @@ export default function ProfilePage() {
           <span>Rozetlerim</span>
           <span className="profile-page-item-arrow">›</span>
         </a>
+        <a href="/hero" className="profile-page-item">
+          <span>Zero to Hero</span>
+          <span className="profile-page-item-arrow">›</span>
+        </a>
         <button className="profile-page-item" onClick={() => setShowFeedback(true)}>
           <span>Geri Bildirim</span>
           <span className="profile-page-item-arrow">›</span>

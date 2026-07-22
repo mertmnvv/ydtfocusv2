@@ -1,40 +1,25 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-const PRIMARY_MODES = [
-  { href: "/quiz", label: "Quiz", desc: "Karma tur ve hatalar testi" },
-  { href: "/flashcards-hub", label: "Kartlar", desc: "Kelime desteleri oluştur, çalış" },
-  { href: "/grammar", label: "Gramer", desc: "Yapı ve zaman konuları" },
-];
+// /library artık ayrı bir hub ekranı değil — içerdiği araçlar (Quiz/
+// Kartlar/Gramer/Sözlük/Hatalarım) artık Reading üzerinden açılan
+// panellerdir (bkz. docs/DESIGN.md, "Reading-merkezli IA"). Bu sayfa
+// sadece geriye dönük uyumluluk için: eski bağlantılar/yer imleri hâlâ
+// buraya gelebilir. "Zero to Hero" artık Profil sayfasından erişiliyor.
+export default function LibraryRedirect() {
+  const router = useRouter();
 
-const SECONDARY_LINKS = [
-  { href: "/archive", label: "Sözlük", desc: "Kaydettiğin kelimeler" },
-  { href: "/mistakes", label: "Hatalarım", desc: "Yanlış bildiklerin" },
-  { href: "/hero", label: "Zero to Hero", desc: "Adım adım seviye atlama" },
-];
+  useEffect(() => {
+    router.replace("/reading");
+  }, [router]);
 
-export default function LibraryPage() {
   return (
-    <div className="library-page">
-      <div className="library-eyebrow">Okumana eşlik eden diğer araçlar</div>
-      <div className="library-grid">
-        {PRIMARY_MODES.map((m) => (
-          <Link key={m.href} href={m.href} className="library-card">
-            <span className="library-card-label">{m.label}</span>
-            <span className="library-card-desc">{m.desc}</span>
-          </Link>
-        ))}
-      </div>
-
-      <div className="library-eyebrow library-eyebrow-secondary">Kaynaklar</div>
-      <div className="library-secondary-grid">
-        {SECONDARY_LINKS.map((m) => (
-          <Link key={m.href} href={m.href} className="library-secondary-card">
-            <span className="library-card-label">{m.label}</span>
-            <span className="library-card-desc">{m.desc}</span>
-          </Link>
-        ))}
+    <div className="auth-loading-screen">
+      <div className="auth-loading-spinner">
+        <div className="spinner-ring"></div>
+        <div className="spinner-brand">ydt<span>focus</span></div>
       </div>
     </div>
   );

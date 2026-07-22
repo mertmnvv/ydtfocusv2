@@ -13,27 +13,22 @@ import PremiumModal from "@/components/PremiumModal";
 import PremiumPaywall from "@/components/PremiumPaywall";
 import FeedbackModal from "@/components/FeedbackModal";
 
-// 4 hedefli navigasyon modeli (bkz. docs/DESIGN.md — "Sonraki karar:
-// Reading-merkezli IA"). Okuma artık uygulamanın girişi ve birincil
-// sekmesi; Kütüphane geri kalan destekleyici araçları (Quiz/Kartlar/
-// Gramer/Sözlük/Hatalarım/Zero to Hero) barındırır. Web'de Okuma/
-// Kütüphane/Rozetler metin linki + ayrı avatar olarak, mobilde aynı 4
-// hedef alt tab bar'ında (Profil dahil) render edilir.
+// 3 hedefli navigasyon modeli (bkz. docs/DESIGN.md — "Reading-merkezli
+// IA" ve sonraki "gerçek hub" turu). Okuma artık uygulamanın hem girişi
+// hem de gerçek merkezi: Quiz/Kartlar/Gramer/Sözlük/Hatalarım/Tekrar
+// artık ayrı sekme değil, Reading üzerinden `?panel=` ile açılan
+// overlay'lerdir — bu yüzden ayrı bir "Kütüphane" hedefine gerek kalmadı.
+// Web'de Okuma/Rozetler metin linki + ayrı avatar olarak, mobilde aynı
+// 3 hedef alt tab bar'ında (Profil dahil) render edilir.
 const DESTINATIONS = [
   { id: "reading", label: "Okuma", href: "/reading" },
-  { id: "library", label: "Kütüphane", href: "/library" },
   { id: "achievements", label: "Rozetler", href: "/achievements" },
   { id: "profile", label: "Profil", href: "/profile" },
 ];
 
-// Kütüphane hub'ı altına katlanan destekleyici rotalar — bunlardan
-// herhangi birindeyken mobil/web navda "Kütüphane" aktif görünmeli.
-const LIBRARY_ROUTES = ["/library", "/quiz", "/flashcards-hub", "/grammar", "/archive", "/mistakes", "/hero"];
-
 function getActiveDestination(pathname) {
   if (pathname.startsWith("/profile")) return "profile";
   if (pathname.startsWith("/achievements")) return "achievements";
-  if (LIBRARY_ROUTES.some((p) => pathname.startsWith(p))) return "library";
   return "reading";
 }
 
