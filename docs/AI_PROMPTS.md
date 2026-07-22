@@ -33,8 +33,7 @@ olursa Groq `AI_MODELS.FAST`'e düşer (fallback).
 | `buildPersonalizedPassagePrompt` | `reading/page.js` (`generateStoryFromMyWords`) | Kullanıcının kelime bankasını/hatalarını entegre eden pasaj |
 | `buildTextAnalysisPrompt` | `reading/page.js` (`analyzeTextForStudyDeck`) | Wikipedia pasajından kelime + gramer paterni çıkarma |
 | `buildReadingQuizPrompt` | `reading/page.js` (`generateQuiz`) | Pasajdan 3 soruluk quiz üretimi |
-| `buildWordTranslationPrompt` | `api/translate/route.js` | Sözlük API'sinden gelen kelimenin Türkçe karşılığı |
-| `buildWordLookupFallbackPrompt` | `api/translate/route.js` | Sözlük API'si başarısız olursa tam AI fallback (çeviri+eşanlamlı+tanım) |
+| `buildWordLookupPrompt` | `api/translate/route.js` (`fetchWordLookup`) | Hızlı Sözlük: tek Türkçe anlam + 2-3 İngilizce eş anlamlı + zıt anlam + kısa İngilizce tanım (hem sözlük-API başarılı hem fallback yolunda kullanılır) |
 | `buildPassageTranslationPrompt` | `api/wikipedia/route.js` | Wikipedia özetinin Türkçeye çevirisi |
 | `buildExampleSentencePrompt` | `flashcards-hub/page.js` (`handleMagicWand`) | Tek kelime için örnek cümle |
 | `buildFlashcardDeckPrompt` | `api/generate-deck/route.js` | Konu+seviyeden N kelimelik deste üretimi |

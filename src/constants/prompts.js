@@ -149,13 +149,12 @@ export function buildReadingQuizPrompt(text) {
 // Kelime çevirisi / sözlük (api/translate, api/wikipedia)
 // ─────────────────────────────────────────────────────────────
 
-export function buildWordTranslationPrompt(word) {
-  return `Translate the English word "${word}" to Turkish. Return ONLY the Turkish translation, nothing else. Example: "eloquent" → "belagatli, güzel konuşan"`;
-}
-
-export function buildWordLookupFallbackPrompt(word) {
-  return `Translate the word "${word}" to Turkish and provide up to 2 English academic synonyms and a short English definition.
-          Return ONLY valid JSON: {"en": "${word}", "tr": "Türkçe karşılığı", "synonyms": "syn1, syn2", "definition": "short English definition"}`;
+// Hızlı Sözlük (Reading paneli lookup kartı) — tek çağrıda Türkçe anlam
+// (1 adet), İngilizce eş anlamlılar (2-3 adet) ve zıt anlam üretir.
+export function buildWordLookupPrompt(word) {
+  return `You are an English-Turkish academic dictionary. For the English word "${word}", return ONLY valid JSON in this exact shape:
+{"tr": "the single best Turkish meaning", "synonyms": "2 to 3 English synonyms separated by commas", "antonym": "1 to 2 English antonyms separated by commas, or empty string if the word has no clear antonym", "definition": "short English definition"}
+Rules: "tr" must be exactly one concise Turkish meaning, not a list of alternatives. "synonyms" must contain between 2 and 3 items.`;
 }
 
 export function buildPassageTranslationPrompt(text) {

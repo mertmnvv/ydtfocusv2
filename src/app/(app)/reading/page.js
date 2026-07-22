@@ -190,6 +190,7 @@ function ReadingContent() {
   const [wordInput, setWordInput] = useState("");
   const [meaningInput, setMeaningInput] = useState("");
   const [synInput, setSynInput] = useState("");
+  const [antonymInput, setAntonymInput] = useState("");
   const [fetchingDetails, setFetchingDetails] = useState(false);
   const [showResultCard, setShowResultCard] = useState(false);
 
@@ -568,6 +569,7 @@ function ReadingContent() {
     setWordInput(clean);
     setMeaningInput("Aranıyor...");
     setSynInput("-");
+    setAntonymInput("-");
 
     try {
       const resp = await fetch("/api/translate", {
@@ -579,6 +581,7 @@ function ReadingContent() {
       setWordInput(data.en || clean);
       setMeaningInput(data.tr || "Bulunamadı");
       setSynInput(data.synonyms || "-");
+      setAntonymInput(data.antonym || "-");
     } catch {
       setMeaningInput("Hata.");
     }
@@ -596,7 +599,7 @@ function ReadingContent() {
         return showNotification("Bu kelime zaten bankanızda!", "warning");
       }
       try {
-        await addUserWord(user.uid, { word: wordInput, meaning: meaningInput, syn: synInput || "-" });
+        await addUserWord(user.uid, { word: wordInput, meaning: meaningInput, syn: synInput || "-", antonym: antonymInput || "-" });
         setMyWords(prev => [...prev, { word: wordInput }]);
         showNotification("Kelime bankasına eklendi!", "success");
       } catch { showNotification("Hata oluştu.", "error"); }
@@ -788,6 +791,7 @@ function ReadingContent() {
                               setWordInput(v.word);
                               setMeaningInput(v.tr);
                               setSynInput("-");
+                              setAntonymInput("-");
                               setShowResultCard(true);
                             }}>
                               <i className="fa-solid fa-bookmark"></i>
@@ -1063,6 +1067,10 @@ function ReadingContent() {
                   <div className="lookup-field">
                     <label>EŞ ANLAM</label>
                     <input value={synInput} onChange={e => setSynInput(e.target.value)} />
+                  </div>
+                  <div className="lookup-field">
+                    <label>ZIT ANLAM</label>
+                    <input value={antonymInput} onChange={e => setAntonymInput(e.target.value)} />
                   </div>
                 </div>
                 <button
