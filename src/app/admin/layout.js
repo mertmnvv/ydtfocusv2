@@ -40,19 +40,19 @@ export default function AdminLayout({ children }) {
 
   return (
     <div className="app-shell admin-shell">
-      <nav className="mini-nav">
-        <div className="nav-container">
-          <Link href="/reading" className="logo">ydt<span>focus</span></Link>
-          <div className="nav-links">
-            <Link href="/reading" className="nav-btn">Uygulamaya Dön</Link>
+      <nav className="app-topbar">
+        <div className="app-topbar-inner">
+          <Link href="/reading" className="app-topbar-logo">ydt<span>focus</span></Link>
+          <div className="app-topbar-links">
+            <Link href="/reading" className="app-topbar-link">Uygulamaya Dön</Link>
           </div>
-          <div className="nav-user">
-            <span className="admin-nav-tag">Yönetici Paneli</span>
+          <div className="app-topbar-user">
+            <span className="admin-nav-tag">Yönetici</span>
           </div>
         </div>
       </nav>
 
-      <main className="app-main admin-main">
+      <main className="app-main hub-app-main admin-main">
         <div className="admin-page-header">
           <h1 className="admin-page-title">Yönetici Paneli</h1>
           <p className="admin-page-subtitle">İçerik ve kullanıcı yönetimi</p>
@@ -72,23 +72,6 @@ export default function AdminLayout({ children }) {
 
         {children}
       </main>
-
-      <nav className="mobile-bottom-nav">
-        {[
-          { id: "admin", label: "Genel Bakış", href: "/admin" },
-          { id: "words", label: "Kelimeler", href: "/admin/words" },
-          { id: "users", label: "Kullanıcılar", href: "/admin/users" },
-          { id: "reading", label: "Uygulama", href: "/reading" },
-        ].map(item => (
-          <Link
-            key={item.id}
-            href={item.href}
-            className={`bottom-nav-item ${pathname === item.href ? "active" : ""}`}
-          >
-            <span className="bottom-nav-label">{item.label}</span>
-          </Link>
-        ))}
-      </nav>
 
       <style jsx>{`
         .admin-nav-tag { color: var(--warning); font-weight: 700; font-size: 0.85rem; }

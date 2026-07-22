@@ -416,28 +416,6 @@ a {
   flex-direction: column;
 }
 
-.mini-nav {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 1000;
-  background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
-  padding: 0 20px;
-}
-
-.nav-container {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  max-width: 1400px;
-  margin: 0 auto;
-  height: 60px;
-}
-
 .logo {
   font-size: 1.3rem;
   font-weight: 900;
@@ -468,65 +446,6 @@ a {
   }
 }
 
-.nav-links {
-  display: flex;
-  gap: 4px;
-  overflow-x: auto;
-  flex: 1;
-  scrollbar-width: none;
-}
-
-.nav-links::-webkit-scrollbar {
-  display: none;
-}
-
-.nav-btn {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-family: var(--font);
-  font-size: 0.82rem;
-  font-weight: 600;
-  padding: 8px 14px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.25s;
-  white-space: nowrap;
-  text-decoration: none;
-}
-
-.nav-btn:hover {
-  color: var(--text);
-  background: var(--glass);
-}
-
-.nav-btn.active-nav {
-  color: var(--accent);
-  background: rgba(226, 183, 20, 0.1);
-}
-
-.nav-btn-admin {
-  color: var(--warning) !important;
-}
-
-.nav-btn-logout {
-  color: var(--error) !important;
-  font-size: 0.8rem;
-}
-
-.nav-user {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
-}
-
-.nav-user-name {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
 .app-main {
   flex: 1;
   max-width: 900px;
@@ -542,11 +461,6 @@ a {
 
 @media (max-width: 767px) {
 
-  .nav-links,
-  .nav-user {
-    display: none;
-  }
-
   /* Optimizasyon: Mobil kenar boşluklarını daralt */
   .app-main {
     padding: 70px 12px 12px 12px;
@@ -556,16 +470,6 @@ a {
   .glass-card {
     padding: 16px;
     border-radius: 16px;
-  }
-
-  .nav-container {
-    height: 56px;
-    padding: 0 16px;
-    justify-content: space-between;
-  }
-
-  .mini-nav {
-    padding: 0;
   }
 
   /* Mobilde yatay kaymayı kesin olarak engelle */
@@ -4849,70 +4753,6 @@ a {
 }
 
 /* ============================================= */
-/* ADMIN MOBILE PILL NAV (sadece /admin/* kullanır) */
-/* ============================================= */
-
-.mobile-bottom-nav {
-  display: none;
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 24px); /* Kenarlara daha yakın */
-  max-width: 500px;
-  height: 64px;
-  background: rgba(20, 20, 22, 0.8);
-  backdrop-filter: blur(25px) saturate(200%);
-  -webkit-backdrop-filter: blur(25px) saturate(200%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  z-index: 10000;
-  padding: 0 4px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 24px;
-  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5);
-}
-
-.bottom-nav-item {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  color: #86868b;
-  text-decoration: none;
-  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-  position: relative;
-  height: 48px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  border-radius: 16px;
-}
-
-.bottom-nav-label {
-  font-size: 0.78rem;
-  font-weight: 700;
-}
-
-.bottom-nav-item.active {
-  color: var(--accent);
-  background: rgba(255, 214, 10, 0.08);
-}
-
-.bottom-nav-item.active .bottom-nav-label {
-  font-weight: 800;
-}
-
-@media (max-width: 767px) {
-  .mobile-bottom-nav { display: flex; }
-  .hide-mobile { display: none; }
-  .app-main { padding-bottom: 120px; }
-  .mini-nav { display: none; }
-}
-
-
-
-/* ============================================= */
 /* CUSTOM NOTIFICATIONS (POP-UPS)               */
 /* ============================================= */
 
@@ -5145,9 +4985,6 @@ a {
 
 /* Theme Specific Refinements */
 [data-theme='light'] body { background-color: #f2f2f7; }
-[data-theme='light'] .mini-nav { background-color: rgba(255, 255, 255, 0.8); border-bottom-color: rgba(0, 0, 0, 0.05); }
-[data-theme='light'] .mobile-bottom-nav { background-color: rgba(255, 255, 255, 0.8); border: 1px solid rgba(0, 0, 0, 0.05); box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1); }
-[data-theme='light'] .nav-btn:not(.active-nav) { color: #666; }
 [data-theme='light'] .nav-btn:hover { background: rgba(0,0,0,0.03); }
 [data-theme='light'] .logo { color: #1d1d1f; }
 
@@ -5418,19 +5255,23 @@ a {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 28px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 22px 20px;
+  margin-bottom: 20px;
 }
 
 .profile-page-avatar {
-  width: 64px;
-  height: 64px;
-  border-radius: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   font-weight: 800;
   overflow: hidden;
   flex-shrink: 0;
@@ -5479,6 +5320,7 @@ a {
 
 .profile-page-item:hover {
   border-color: var(--accent);
+  background: var(--glass);
 }
 
 .profile-page-item-arrow {
