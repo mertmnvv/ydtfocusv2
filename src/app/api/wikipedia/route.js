@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { AI_MODELS, buildPassageTranslationPrompt } from "@/constants/prompts";
+import { AI_MODELS, buildPassageTranslationPrompt, buildLevelSimplificationPrompt } from "@/constants/prompts";
 
 // Her konuda birden fazla arama sorgusu — her istekte rastgele biri seçilir
 const TOPIC_SEARCH_MAP = {
@@ -156,9 +156,36 @@ async function translateTextWithAI(text) {
   }
 }
 
+// AI ile metni hedef CEFR seviyesine sadeleştirir. Hata durumunda
+// (network/API) sessizce orijinal metni döndürür, route'u çökertmez.
+async function simplifyTextForLevel(text, level) {
+  try {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: AI_MODELS.FAST,
+        messages: [{
+          role: "user",
+          content: buildLevelSimplificationPrompt(text, level)
+        }],
+        temperature: 0.3,
+      }),
+    });
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content?.trim() || text;
+  } catch (err) {
+    console.error("AI Simplification error:", err);
+    return text;
+  }
+}
+
 export async function POST(request) {
   try {
-    const { topic } = await request.json();
+    const { topic, level } = await request.json();
 
     let title, extract, thumbnail, url;
 
@@ -215,7 +242,13 @@ export async function POST(request) {
       }
     }
 
-    // 3. AI ile tam çeviri al
+    // Seviye belirtildiyse metni o CEFR seviyesine sadeleştir
+    const ALLOWED_LEVELS = ["A2", "B1", "B2", "C1"];
+    if (extract && ALLOWED_LEVELS.includes(level)) {
+      extract = await simplifyTextForLevel(extract, level);
+    }
+
+    // 3. AI ile tam çeviri al (sadeleştirilmiş metin varsa onu çevirir)
     const trText = await translateTextWithAI(extract);
 
     return NextResponse.json({

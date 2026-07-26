@@ -7,8 +7,31 @@ service cloud.firestore {
     match /users/{userId} {
       // Herkes profil bilgilerini okuyabilir (leaderboard, profil sayfası)
       allow read: if request.auth != null;
-      // Kullanıcı kendi profilini oluşturabilir/güncelleyebilir
-      allow create, update: if request.auth != null && request.auth.uid == userId;
+      // Kullanıcı kendi profilini oluşturabilir/güncelleyebilir — AMA
+      // role/premiumUntil/premiumType/publicStats alanlarını DOĞRUDAN
+      // yazamaz (bkz. ydtfocus-mobile/TODO.md "Güvenlik notu"). Bu
+      // alanlar sadece: (a) Admin SDK kullanan sunucu kodu (PayTR
+      // callback, /api/play-billing/*, Cloud Functions — hepsi Admin
+      // SDK ile çalıştığından bu kuralları zaten atlıyor) tarafından
+      // yazılabilir. Çark/Hediye/Abonelik akışları artık functions/
+      // altındaki spinWheel/claimWheelPrize/redeemGiftCode callable
+      // fonksiyonlarını kullanıyor, client'ın bu alanlara hiç erişimi yok.
+      // ensureUserProfile (mobil/web) yeni profil oluştururken role'ü
+      // her zaman "free" yazıyor — bu yüzden create'te role'e izin
+      // veriliyor ama SADECE "free" değeriyle.
+      allow create: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.role == "free"
+        && !("premiumUntil" in request.resource.data);
+      allow update: if request.auth != null && request.auth.uid == userId
+        && !request.resource.data.diff(resource.data).affectedKeys()
+              .hasAny(["role", "premiumUntil", "premiumType", "premiumSource", "publicStats"]);
+      // Admin panelinin (admin/users/page.js → updateUserRole) başka
+      // kullanıcıların role'ünü değiştirebilmesi için ayrı bir izin —
+      // bu olmadan yukarıdaki `request.auth.uid == userId` şartı zaten
+      // admin'in BAŞKA bir kullanıcı dökümanını güncellemesine hiç izin
+      // vermiyordu (bu satır eklenmeden önce de öyleydi, bu PR'ın
+      // sebep olduğu bir kısıtlama değil — fark edilip düzeltildi).
+      allow update: if request.auth != null && isAdmin();
       // Silme sadece admin
       allow delete: if request.auth != null && isAdmin();
 
@@ -18,7 +41,11 @@ service cloud.firestore {
       }
 
       match /data/{docId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read: if request.auth != null && request.auth.uid == userId;
+        // "wheel" dökümanı artık istemciden yazılamaz — pendingPrize
+        // alanının client tarafından uydurulmasını engellemek için
+        // spinWheel/claimWheelPrize Cloud Functions'a taşındı.
+        allow write: if request.auth != null && request.auth.uid == userId && docId != "wheel";
       }
 
       match /flashcardDecks/{deckId} {
@@ -65,6 +92,19 @@ service cloud.firestore {
     match /globalDictionary/{wordId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && isAdmin();
+    }
+
+    // ===== HEDİYE KODLARI (mobil: Çark Çevir / Arkadaşına Hediye Et) =====
+    // Client'ın hiç doğrudan erişimi yok — oluşturma (claimWheelPrize
+    // Cloud Function / api/play-billing/verify-gift) ve kullanma
+    // (redeemGiftCode Cloud Function) tamamen Admin SDK üzerinden,
+    // sunucu tarafında yapılıyor (Admin SDK bu kuralları zaten atlar).
+    // Önceden client'ın kendi kodunu oluşturup redeemed alanını
+    // güncelleyebildiği bir kural vardı — çark ödülünün/hediyenin
+    // sahteciliğini (ör. days:9999 ile kendi kodunu oluşturup başka
+    // hesapta kullanma) engellemek için bilerek TAMAMEN kapatıldı.
+    match /giftCodes/{code} {
+      allow read, write: if false;
     }
 
     // ===== ADMIN HELPER =====

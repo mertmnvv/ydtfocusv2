@@ -801,3 +801,37 @@ export async function deleteUserDeck(uid, deckId) {
   const deckRef = doc(db, "users", uid, "flashcardDecks", deckId);
   await deleteDoc(deckRef);
 }
+
+// ===== ÇARK ÇEVİR (SPIN WHEEL) — MOBİL ÖDÜL AYARLARI =====
+// functions/index.js -> spinWheel Cloud Function'ının okuduğu tek
+// doğruluk kaynağı: config/spinWheel dökümanı. Döküman yoksa/eksikse
+// Cloud Function kendi hardcoded varsayılanına düşer (bkz. o dosya),
+// yani bu panel boşken bile çark bozulmaz — sadece admin ağırlıkları
+// burada değiştirebilsin diye var. ydtfocus-mobile/src/constants/
+// spin-wheel.ts'teki liste SADECE görsel dilim çizimi için kullanılıyor
+// (gerçek ödül her zaman sunucuda belirleniyor); admin burada ağırlığı
+// değiştirse mobil dilimlerin boyutu manuel senkron edilmeden bir
+// süreliğine görsel olarak orantısız kalabilir ama kazanma olasılığı
+// (asıl önemli olan) her zaman bu dökümana göre doğru işler.
+export async function getSpinWheelConfig() {
+  const ref = doc(db, "config", "spinWheel");
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return null;
+  return snap.data();
+}
+
+export async function saveSpinWheelConfig(prizes) {
+  const ref = doc(db, "config", "spinWheel");
+  await setDoc(ref, { prizes, updatedAt: serverTimestamp() }, { merge: true });
+}
+
+// ===== HEDİYE KODLARI (giftCodes) — salt-okunur izleme =====
+// Kodlar sadece Cloud Functions (spinWheel/claimWheelPrize) tarafından
+// yazılıyor (bkz. firestore.rules — client'ın giftCodes'a erişimi yok);
+// bu panel destek/takip amaçlı salt-okunur bir liste sağlar.
+export async function getGiftCodes(pageSize = 50) {
+  const ref = collection(db, "giftCodes");
+  const q = query(ref, orderBy("createdAt", "desc"), limit(pageSize));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}

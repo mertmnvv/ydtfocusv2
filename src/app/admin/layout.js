@@ -34,6 +34,8 @@ export default function AdminLayout({ children }) {
     { href: "/admin/words", label: "Kelimeler" },
     { href: "/admin/grammar", label: "Gramer" },
     { href: "/admin/users", label: "Kullanıcılar" },
+    { href: "/admin/spin-wheel", label: "Çark Çevir" },
+    { href: "/admin/gift-codes", label: "Hediye Kodları" },
     { href: "/admin/feedback", label: "Geri Bildirimler" },
     { href: "/admin/seed", label: "Veri Yükleme" },
   ];

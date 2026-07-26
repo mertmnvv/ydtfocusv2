@@ -161,6 +161,19 @@ export function buildPassageTranslationPrompt(text) {
   return `Translate the following English academic text to professional Turkish. Provide ONLY the translation, nothing else.\n\nText:\n${text}`;
 }
 
+// Wikipedia'dan gelen ham ansiklopedi metnini hedef CEFR seviyesine
+// sadeleştirir (seviye belirleme sınavı — api/wikipedia).
+const SIMPLIFICATION_LEVEL_CONSTRAINTS = {
+  A2: "Use very simple, short sentences (Subject-Verb-Object) and the most common everyday vocabulary. Avoid idioms, passive voice, and complex clauses entirely.",
+  B1: "Use clear, standard English with intermediate vocabulary. Simple complex sentences (e.g. with 'because', 'when', 'which') are allowed, but keep them short.",
+  B2: "Use upper-intermediate vocabulary, some passive voice, and moderately complex clauses. This should read like a clear news article.",
+  C1: "Use advanced, sophisticated academic vocabulary, abstract concepts, and complex logical connectors, similar to the original encyclopedic register but still coherent.",
+};
+
+export function buildLevelSimplificationPrompt(text, level) {
+  return `Rewrite the following English text so that it matches the ${level} (CEFR) level for an English language learner. Preserve the meaning and the key facts, but adjust the sentence structure and vocabulary to ${level} level. ${SIMPLIFICATION_LEVEL_CONSTRAINTS[level] || ""} Return ONLY the rewritten English text, no explanation, no quotes, no markdown.\n\nText:\n${text}`;
+}
+
 // ─────────────────────────────────────────────────────────────
 // Flashcards (flashcards-hub/page.js, api/generate-deck)
 // ─────────────────────────────────────────────────────────────
