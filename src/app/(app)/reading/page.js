@@ -146,8 +146,10 @@ function ReadingContent() {
   const [passageTitle, setPassageTitle] = useState("");
   const [translatedText, setTranslatedText] = useState("");
   const [showTranslation, setShowTranslation] = useState(false);
+  const [translating, setTranslating] = useState(false);
   const [sourceMode, setSourceMode] = useState("wikipedia"); // "wikipedia" | "ai"
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [hubOpen, setHubOpen] = useState(false);
   const [wikiUrl, setWikiUrl] = useState("");
   const [keyVocab, setKeyVocab] = useState([]);
   const [grammarPatterns, setGrammarPatterns] = useState([]);
@@ -498,7 +500,7 @@ function ReadingContent() {
       const wikiResp = await fetch("/api/wikipedia", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: t }),
+        body: JSON.stringify({ topic: t, level }),
       });
       const data = await wikiResp.json();
       if (data.error) {
@@ -508,7 +510,7 @@ function ReadingContent() {
       } else {
         setPassageTitle(data.title || "");
         setText(data.text || "");
-        setTranslatedText(data.tr || "");
+        setTranslatedText("");
         setWikiUrl(data.url || "");
 
         // Wikipedia Metni için AI Analizi (Kelime ve Gramer)
@@ -520,6 +522,36 @@ function ReadingContent() {
       setGenerating(false);
     }
     setIsFinished(false);
+  }
+
+  // Pasaj İngilizce olarak birincil gösterilir; Türkçe çeviri artık
+  // önceden hesaplanmıyor, kullanıcı toggle'ı ilk açtığında istek atılır.
+  async function handleToggleTranslation() {
+    if (showTranslation) {
+      setShowTranslation(false);
+      return;
+    }
+    if (translatedText) {
+      setShowTranslation(true);
+      return;
+    }
+    if (!text.trim()) return;
+
+    setTranslating(true);
+    try {
+      const resp = await fetch("/api/translate-passage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const data = await resp.json();
+      setTranslatedText(data.tr || "");
+      setShowTranslation(true);
+    } catch (error) {
+      console.error(error);
+      showNotification("Çeviri alınamadı.", "error");
+    }
+    setTranslating(false);
   }
 
   async function analyzeTextForStudyDeck(passage) {
@@ -722,12 +754,21 @@ function ReadingContent() {
 
       {/* Araç başlatıcı — Quiz/Kartlar/Gramer/Hatalarım/Tekrar/Sözlük artık
           ayrı sekme değil, buradan açılan hub panelleri */}
-      <div className="reading-hub-launcher">
-        {HUB_TOOLS.map((tool) => (
-          <button key={tool.id} className="reading-hub-tool" onClick={() => openPanel(tool.id)}>
-            {tool.label}
-          </button>
-        ))}
+      <button
+        className={`reading-hub-toggle ${hubOpen ? "is-open" : ""}`}
+        onClick={() => setHubOpen((v) => !v)}
+      >
+        <span>Araçlar</span>
+        <i className={`fa-solid fa-chevron-down reading-hub-toggle-chevron ${hubOpen ? "is-open" : ""}`}></i>
+      </button>
+      <div className={`reading-hub-launcher-wrap ${hubOpen ? "is-open" : ""}`}>
+        <div className="reading-hub-launcher">
+          {HUB_TOOLS.map((tool) => (
+            <button key={tool.id} className="reading-hub-tool" onClick={() => openPanel(tool.id)}>
+              {tool.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {text.trim() ? (
@@ -989,8 +1030,8 @@ function ReadingContent() {
               <>
                 <div className="settings-divider"></div>
 
-                <button className="settings-toggle-row" onClick={() => setShowTranslation(!showTranslation)}>
-                  <span>Türkçe Göster</span>
+                <button className="settings-toggle-row" onClick={handleToggleTranslation} disabled={translating}>
+                  <span>{translating ? "Çevriliyor..." : "Türkçe Göster"}</span>
                   <span className={`mini-toggle ${showTranslation ? "on" : ""}`}><span className="mini-toggle-dot"></span></span>
                 </button>
 
@@ -1121,6 +1162,34 @@ function ReadingContent() {
         .reading-status-dot { opacity: 0.5; }
 
         /* Araç başlatıcı (hub launcher) */
+        .reading-hub-toggle {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: var(--glass);
+          border: 1px solid var(--border);
+          color: var(--text);
+          font-size: 0.8rem;
+          font-weight: 700;
+          padding: 9px 16px;
+          border-radius: 12px;
+          cursor: pointer;
+          margin: 4px 4px 8px;
+        }
+        .reading-hub-toggle:hover,
+        .reading-hub-toggle.is-open { border-color: var(--accent); color: var(--accent); }
+        .reading-hub-toggle-chevron {
+          font-size: 0.7rem;
+          transition: transform 0.2s ease;
+        }
+        .reading-hub-toggle-chevron.is-open { transform: rotate(180deg); }
+        .reading-hub-launcher-wrap {
+          display: grid;
+          grid-template-rows: 0fr;
+          transition: grid-template-rows 0.25s ease;
+        }
+        .reading-hub-launcher-wrap.is-open { grid-template-rows: 1fr; }
+        .reading-hub-launcher-wrap > .reading-hub-launcher { min-height: 0; overflow: hidden; }
         .reading-hub-launcher {
           display: flex;
           gap: 8px;

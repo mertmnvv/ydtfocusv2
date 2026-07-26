@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { AI_MODELS, buildPassageTranslationPrompt, buildLevelSimplificationPrompt } from "@/constants/prompts";
+import { AI_MODELS, buildLevelSimplificationPrompt } from "@/constants/prompts";
 
 // Her konuda birden fazla arama sorgusu — her istekte rastgele biri seçilir
 const TOPIC_SEARCH_MAP = {
@@ -130,30 +130,15 @@ function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// AI ile birebir çeviri (Uzunluk ve anlam uyumu için)
-async function translateTextWithAI(text) {
-  try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: AI_MODELS.FAST,
-        messages: [{
-          role: "user",
-          content: buildPassageTranslationPrompt(text)
-        }],
-        temperature: 0.1,
-      }),
-    });
-    const data = await response.json();
-    return data.choices?.[0]?.message?.content?.trim() || "";
-  } catch (err) {
-    console.error("AI Translation error:", err);
-    return "";
-  }
+// News in Levels tarzı: A2/B1 için Simple English Wikipedia (zaten
+// sade/kısa İngilizce metin), B2/C1 için normal İngilizce Wikipedia
+// kullanılır. Pasaj tamamen İngilizce kalır — Türkçe çeviri artık burada
+// hesaplanmıyor, /api/translate-passage'a taşındı (yalnızca kullanıcı
+// "Türkçe Göster"i açtığında istenir).
+const SIMPLE_LEVELS = ["A2", "B1"];
+
+function wikiHost(level) {
+  return SIMPLE_LEVELS.includes(level) ? "simple.wikipedia.org" : "en.wikipedia.org";
 }
 
 // AI ile metni hedef CEFR seviyesine sadeleştirir. Hata durumunda
@@ -187,52 +172,72 @@ export async function POST(request) {
   try {
     const { topic, level } = await request.json();
 
-    let title, extract, thumbnail, url;
+    let host = wikiHost(level);
+    let title, extract, thumbnail, url, source;
 
-    if (topic === "random") {
-      const resp = await fetch(
-        "https://en.wikipedia.org/api/rest_v1/page/random/summary",
-        { headers: HEADERS }
-      );
-      if (!resp.ok) throw new Error("Wikipedia random API failed");
-      const data = await resp.json();
-      title = data.title;
-      extract = data.extract;
-      thumbnail = data.thumbnail?.source || "";
-      url = data.content_urls?.desktop?.page || "";
-    } else {
-      // 1. Rastgele bir arama sorgusu seç
+    async function fetchFrom(targetHost) {
+      if (topic === "random") {
+        const resp = await fetch(
+          `https://${targetHost}/api/rest_v1/page/random/summary`,
+          { headers: HEADERS }
+        );
+        if (!resp.ok) throw new Error("Wikipedia random API failed");
+        const data = await resp.json();
+        return {
+          title: data.title,
+          extract: data.extract,
+          thumbnail: data.thumbnail?.source || "",
+          url: data.content_urls?.desktop?.page || "",
+        };
+      }
+
       const queries = TOPIC_SEARCH_MAP[topic] || [topic];
       const searchQuery = pickRandom(queries);
-      const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&srlimit=30&srnamespace=0&format=json&origin=*`;
+      const searchUrl = `https://${targetHost}/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&srlimit=30&srnamespace=0&format=json&origin=*`;
 
       const searchResp = await fetch(searchUrl, { headers: HEADERS });
       const searchData = await searchResp.json();
       const results = searchData.query?.search || [];
-
-      if (results.length === 0) {
-        return NextResponse.json({ error: "Makale bulunamadı" }, { status: 404 });
-      }
+      if (results.length === 0) return null;
 
       const picked = results[Math.floor(Math.random() * Math.min(results.length, 20))];
-      title = picked.title;
+      const pickedTitle = picked.title;
 
-      // 2. Extract + thumbnail
-      const extractUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=extracts|pageimages&exintro=true&explaintext=true&piprop=thumbnail&pithumbsize=400&format=json&origin=*`;
+      const extractUrl = `https://${targetHost}/w/api.php?action=query&titles=${encodeURIComponent(pickedTitle)}&prop=extracts|pageimages&exintro=true&explaintext=true&piprop=thumbnail&pithumbsize=400&format=json&origin=*`;
 
       const extractResp = await fetch(extractUrl, { headers: HEADERS });
       const extractData = await extractResp.json();
       const pages = extractData.query?.pages || {};
       const page = Object.values(pages)[0];
 
-      extract = page?.extract || "";
-      thumbnail = page?.thumbnail?.source || "";
-      url = `https://en.wikipedia.org/wiki/${encodeURIComponent(title)}`;
+      return {
+        title: pickedTitle,
+        extract: page?.extract || "",
+        thumbnail: page?.thumbnail?.source || "",
+        url: `https://${targetHost}/wiki/${encodeURIComponent(pickedTitle)}`,
+      };
     }
+
+    let result = await fetchFrom(host);
+
+    // Simple English Wikipedia'da bu konu/madde yoksa (küçük bir wiki,
+    // her başlık için karşılığı olmayabilir) normal İngilizce Wikipedia'ya
+    // düş — News in Levels tarzı sadelik olmasa da makale her zaman bulunur.
+    if ((!result || !result.extract) && host === "simple.wikipedia.org") {
+      host = "en.wikipedia.org";
+      result = await fetchFrom(host);
+    }
+
+    if (!result) {
+      return NextResponse.json({ error: "Makale bulunamadı" }, { status: 404 });
+    }
+
+    ({ title, extract, thumbnail, url } = result);
+    source = host === "simple.wikipedia.org" ? "simple-wikipedia" : "wikipedia";
 
     // Çok kısa ise daha fazla içerik al
     if (extract && extract.split(/\s+/).length < 60) {
-      const fullUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=extracts&explaintext=true&exchars=3000&format=json&origin=*`;
+      const fullUrl = `https://${host}/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=extracts&explaintext=true&exchars=3000&format=json&origin=*`;
       const fullResp = await fetch(fullUrl, { headers: HEADERS });
       const fullData = await fullResp.json();
       const pages = fullData.query?.pages || {};
@@ -242,22 +247,21 @@ export async function POST(request) {
       }
     }
 
-    // Seviye belirtildiyse metni o CEFR seviyesine sadeleştir
+    // Simple Wikipedia zaten hedef seviyeye yakın sade İngilizce olduğundan
+    // ek AI sadeleştirmesi yalnızca normal Wikipedia'dan gelen (B2/C1 veya
+    // simple wiki'de bulunamayıp fallback edilen) metinlere uygulanır.
     const ALLOWED_LEVELS = ["A2", "B1", "B2", "C1"];
-    if (extract && ALLOWED_LEVELS.includes(level)) {
+    if (extract && source === "wikipedia" && ALLOWED_LEVELS.includes(level)) {
       extract = await simplifyTextForLevel(extract, level);
     }
-
-    // 3. AI ile tam çeviri al (sadeleştirilmiş metin varsa onu çevirir)
-    const trText = await translateTextWithAI(extract);
 
     return NextResponse.json({
       title,
       text: extract,
-      tr: trText,
-      trTitle: title, // title'ı aynı bırakıyoruz veya çevirebiliriz ama metin çevirisi yeterli
+      tr: null,
       thumbnail,
       url,
+      source,
     });
 
   } catch (error) {
