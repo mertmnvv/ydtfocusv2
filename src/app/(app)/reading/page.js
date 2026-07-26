@@ -26,7 +26,7 @@ const HUB_TOOLS = [
 
 const HUB_TITLES = {
   quiz: "Quiz",
-  flashcards: "Flashcards",
+  flashcards: "Kartlar",
   grammar: "Gramer Ansiklopedisi",
   mistakes: "Hatalarım",
   srs: "Akıllı Tekrar",

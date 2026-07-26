@@ -219,7 +219,7 @@ export default function FlashcardsHubPanel() {
     return (
       <div className="glass-card" style={{ textAlign: "center", padding: "60px 20px", maxWidth: 500, margin: "0 auto" }}>
         <i className="fa-solid fa-lock" style={{ fontSize: '3rem', color: 'var(--accent)', marginBottom: 20 }}></i>
-        <h3 style={{ fontWeight: 800, marginBottom: 12, fontSize: '1.5rem' }}>Flashcard Destelerine Erişmek İçin Kayıt Olmalısın</h3>
+        <h3 style={{ fontWeight: 800, marginBottom: 12, fontSize: '1.5rem' }}>Kart Destelerine Erişmek İçin Kayıt Olmalısın</h3>
         <p className="hint-text" style={{ marginBottom: 24 }}>Kendi kelime destelerinizi oluşturmak ve AI ile pratik yapmak için giriş yapmalısınız.</p>
         <button onClick={() => window.location.href='/login'} className="btn-primary" style={{ padding: '14px 32px' }}>Giriş Yap / Kayıt Ol</button>
       </div>
@@ -231,7 +231,7 @@ export default function FlashcardsHubPanel() {
       {/* Header */}
       <div className="fh-header">
         <div>
-          <h1 className="fh-title">Flashcards</h1>
+          <h1 className="fh-title">Kartlar</h1>
           <p className="fh-desc">Kendi destelerini oluştur, swipe ile çalış.</p>
         </div>
         <button className="fh-btn primary" onClick={() => { setCreateTab("ai"); setCreateOpen(true); }}>
