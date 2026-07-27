@@ -107,63 +107,66 @@ function AppContent({ children }) {
 
           <div className="app-topbar-user">
             <ThemeToggle />
-            <div className="app-avatar-wrapper">
-              <button
-                className={`app-avatar-btn ${profileOpen ? "active" : ""}`}
-                onClick={() => setProfileOpen(!profileOpen)}
-              >
-                <div className="app-avatar">
-                  {userProfile?.photoURL ? (
-                    <img src={userProfile.photoURL} alt="Profil" className="avatar-img" />
-                  ) : (
-                    userProfile?.displayName?.[0] || user?.email?.[0] || "U"
-                  )}
-                </div>
-              </button>
-
-              {profileOpen && (
-                <>
-                  <div className="app-avatar-overlay" onClick={() => setProfileOpen(false)} />
-                  <div className="app-avatar-menu">
-                    <Link href="/profile" className="app-avatar-item" onClick={() => setProfileOpen(false)}>
-                      <i className="fa-solid fa-user"></i>
-                      <span>Profilim</span>
-                      {isAdmin ? (
-                        <i className="fa-solid fa-user-shield app-avatar-badge" title="Yönetici"></i>
-                      ) : isPremium ? (
-                        <i className="fa-solid fa-crown app-avatar-badge" title="Elite Üye"></i>
-                      ) : null}
-                    </Link>
-                    <Link href="/linefocus" className="app-avatar-item" onClick={() => setProfileOpen(false)}>
-                      <i className="fa-solid fa-arrow-right-arrow-left"></i>
-                      <span>Linefocus&apos;a Geç</span>
-                    </Link>
-                    <button className="app-avatar-item" onClick={() => { setShowFeedback(true); setProfileOpen(false); }}>
-                      <i className="fa-solid fa-comments"></i>
-                      <span>Geri Bildirim</span>
-                    </button>
-                    {isAdmin && (
-                      <Link href="/admin" className="app-avatar-item" onClick={() => setProfileOpen(false)}>
-                        <i className="fa-solid fa-user-shield"></i>
-                        <span>Admin</span>
-                      </Link>
+            {user ? (
+              <div className="app-avatar-wrapper">
+                <button
+                  className={`app-avatar-btn ${profileOpen ? "active" : ""}`}
+                  onClick={() => setProfileOpen(!profileOpen)}
+                >
+                  <div className={`app-avatar ${isPremium ? "avatar-premium" : ""}`}>
+                    {userProfile?.photoURL ? (
+                      <img src={userProfile.photoURL} alt="Profil" className="avatar-img" />
+                    ) : (
+                      userProfile?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "?"
                     )}
-                    <div className="app-avatar-divider"></div>
-                    {user ? (
+                  </div>
+                </button>
+
+                {profileOpen && (
+                  <>
+                    <div className="app-avatar-overlay" onClick={() => setProfileOpen(false)} />
+                    <div className="app-avatar-menu">
+                      <Link href="/profile" className="app-avatar-item" onClick={() => setProfileOpen(false)}>
+                        <i className="fa-solid fa-user"></i>
+                        <span>Profilim</span>
+                        {isAdmin ? (
+                          <i className="fa-solid fa-user-shield app-avatar-badge" title="Yönetici"></i>
+                        ) : isPremium ? (
+                          <i className="fa-solid fa-crown app-avatar-badge" title="Elite Üye"></i>
+                        ) : null}
+                      </Link>
+                      <Link href="/linefocus" className="app-avatar-item" onClick={() => setProfileOpen(false)}>
+                        <i className="fa-solid fa-arrow-right-arrow-left"></i>
+                        <span>Linefocus&apos;a Geç</span>
+                      </Link>
+                      <button className="app-avatar-item" onClick={() => { setShowFeedback(true); setProfileOpen(false); }}>
+                        <i className="fa-solid fa-comments"></i>
+                        <span>Geri Bildirim</span>
+                      </button>
+                      {isAdmin && (
+                        <Link href="/admin" className="app-avatar-item" onClick={() => setProfileOpen(false)}>
+                          <i className="fa-solid fa-user-shield"></i>
+                          <span>Admin</span>
+                        </Link>
+                      )}
+                      <div className="app-avatar-divider"></div>
                       <button onClick={() => { logout(); setProfileOpen(false); }} className="app-avatar-item logout-red">
                         <i className="fa-solid fa-right-from-bracket"></i>
                         <span>Çıkış Yap</span>
                       </button>
-                    ) : (
-                      <button onClick={() => { requireAuth(() => {}); setProfileOpen(false); }} className="app-avatar-item" style={{color: 'var(--accent)'}}>
-                        <i className="fa-solid fa-right-to-bracket"></i>
-                        <span>Giriş Yap / Kayıt Ol</span>
-                      </button>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <button
+                className="app-login-btn"
+                onClick={() => requireAuth(() => {})}
+              >
+                <i className="fa-solid fa-right-to-bracket"></i>
+                Giriş Yap
+              </button>
+            )}
           </div>
         </div>
       </nav>

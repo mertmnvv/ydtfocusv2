@@ -1,12 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import FeedbackModal from "@/components/FeedbackModal";
+import { subscribeToUserStats, subscribeToUserWords } from "@/lib/firestore";
 
 export default function ProfilePage() {
   const { user, userProfile, logout, isAdmin, isPremium, requireAuth, setPremiumModalOpen } = useAuth();
   const [showFeedback, setShowFeedback] = useState(false);
+  const [stats, setStats] = useState({});
+  const [wordCount, setWordCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    const unsubStats = subscribeToUserStats(user.uid, (s) => setStats(s || {}));
+    const unsubWords = subscribeToUserWords(user.uid, (words) => setWordCount(words.length));
+    return () => { unsubStats(); unsubWords(); };
+  }, [user]);
 
   if (!user) {
     return (
@@ -21,6 +31,9 @@ export default function ProfilePage() {
   }
 
   const planLabel = isAdmin ? "Yönetici" : isPremium ? "Elite Üye" : "Standart Üye";
+  const badgeCount = userProfile?.badges?.length || 0;
+  const streak = stats?.streak || 0;
+  const dailyMinutes = stats?.dailyMinutes || 0;
 
   return (
     <div className="profile-page">
@@ -29,12 +42,32 @@ export default function ProfilePage() {
           {userProfile?.photoURL ? (
             <img src={userProfile.photoURL} alt="Profil" className="avatar-img" />
           ) : (
-            userProfile?.displayName?.[0] || user?.email?.[0] || "U"
+            userProfile?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "?"
           )}
         </div>
         <div className="profile-page-info">
-          <div className="profile-page-name">{userProfile?.displayName || "Misafir"}</div>
+          <div className="profile-page-name">{userProfile?.displayName || user?.email?.split("@")[0] || "Kullanıcı"}</div>
           <div className="profile-page-plan">{planLabel}</div>
+        </div>
+      </div>
+
+      {/* İstatistik Kartları */}
+      <div className="profile-stats-row">
+        <div className="profile-stat-card">
+          <div className="profile-stat-value profile-stat-fire">{streak}</div>
+          <div className="profile-stat-label">Günlük Seri</div>
+        </div>
+        <div className="profile-stat-card">
+          <div className="profile-stat-value">{badgeCount}</div>
+          <div className="profile-stat-label">Rozet</div>
+        </div>
+        <div className="profile-stat-card">
+          <div className="profile-stat-value">{wordCount}</div>
+          <div className="profile-stat-label">Kelime</div>
+        </div>
+        <div className="profile-stat-card">
+          <div className="profile-stat-value">{dailyMinutes}</div>
+          <div className="profile-stat-label">Dk Bugün</div>
         </div>
       </div>
 
