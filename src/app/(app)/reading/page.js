@@ -1130,7 +1130,7 @@ function ReadingContent() {
         .reading-page {
           max-width: 760px;
           margin: 0 auto;
-          padding-bottom: 60px;
+          padding-bottom: 100px;
         }
 
         .reading-status-strip {
