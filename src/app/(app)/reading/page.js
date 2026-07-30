@@ -691,7 +691,7 @@ function ReadingContent() {
 
           {/* STUDY DECK (VOCAB & GRAMMAR) */}
           {(keyVocab.length > 0 || grammarPatterns.length > 0) && (
-            <div className="study-deck-wrapper animate-fadeIn" style={{ marginTop: 40, marginBottom: 40 }}>
+            <div className="study-deck-wrapper animate-fadeIn">
               <div className="study-deck-header">
                 <div className="study-deck-title">
                   <i className={`fa-solid ${isStudyFlipped ? 'fa-book-open' : 'fa-list-check'}`}></i>
@@ -710,7 +710,7 @@ function ReadingContent() {
                     <div className="vocab-grid">
                       {keyVocab.map((v, i) => (
                         <div key={i} className={`vocab-item-card animate-slideIn ${studyHighlight === v.word ? 'active-highlight' : ''}`}
-                             style={{ animationDelay: `${i * 0.05}s`, cursor: 'pointer' }}
+                             style={{ animationDelay: `${i * 0.05}s` }}
                              onClick={() => {
                                const targetWord = v.word;
                                setStudyHighlight(prev => prev === targetWord ? null : targetWord);
@@ -784,7 +784,7 @@ function ReadingContent() {
                             </div>
                             <div className="grammar-card-back grammar-item-card academic-tr-bg">
                               <div className="grammar-card-header">
-                                <h3 className="g-title" style={{ color: 'var(--accent)' }}>{g.title} (Açıklama)</h3>
+                                <h3 className="g-title g-title-accent">{g.title} (Açıklama)</h3>
                                 <span className="g-flip-hint">Geri Dön <i className="fa-solid fa-rotate"></i></span>
                               </div>
                               <div className="g-tr-content">
@@ -814,13 +814,11 @@ function ReadingContent() {
           </div>
 
           {isFinished && (
-            <div className="glass-card animate-fadeIn" style={{ border: '1px solid var(--accent)', background: 'rgba(48, 209, 88, 0.1)', marginTop: 20 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0' }}>
-                <i className="fa-solid fa-circle-check" style={{ color: 'var(--accent)', fontSize: '1.4rem' }}></i>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 900 }}>Tebrikler!</h4>
-                  <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Soruların tamamını doğru yanıtlayarak analizi başarıyla tamamladın.</p>
-                </div>
+            <div className="reading-done-card animate-fadeIn">
+              <i className="fa-solid fa-circle-check"></i>
+              <div>
+                <h4>Tebrikler!</h4>
+                <p>Soruların tamamını doğru yanıtlayarak analizi başarıyla tamamladın.</p>
               </div>
             </div>
           )}
@@ -936,35 +934,23 @@ function ReadingContent() {
       )}
 
       {showResultCard && (
-        <div className="responsive-lookup-overlay" onClick={() => setShowResultCard(false)}>
-          <div className="responsive-lookup-card animate-slideUp" onClick={e => e.stopPropagation()}>
+        <div className="lookup-overlay" onClick={() => setShowResultCard(false)}>
+          <div className="lookup-sheet" onClick={e => e.stopPropagation()}>
             <div className="sheet-handle"></div>
-            <div className="card-header-minimal">
+            <div className="lookup-header">
               <span>Hızlı Sözlük</span>
-              <button onClick={() => setShowResultCard(false)} className="btn-close-minimal">Kapat</button>
+              <button onClick={() => setShowResultCard(false)} className="lookup-close">Kapat</button>
             </div>
 
-            <div className="popup-search-box" style={{ marginBottom: 24, display: 'flex', gap: 8 }}>
+            <div className="lookup-search-row">
               <input
+                className="lookup-search-input"
                 placeholder="Yeni bir kelime ara..."
                 value={lookupInput}
                 onChange={e => setLookupInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && lookupWord()}
-                style={{
-                  flex: 1,
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '12px',
-                  padding: '10px 14px',
-                  fontSize: '0.85rem',
-                  color: '#fff'
-                }}
               />
-              <button
-                onClick={() => lookupWord()}
-                className="btn-icon-sm"
-                style={{ background: 'var(--accent)', color: '#000', borderRadius: '12px', padding: '0 15px' }}
-              >
+              <button onClick={() => lookupWord()} className="lookup-search-btn">
                 <i className="fa-solid fa-search"></i>
               </button>
             </div>
@@ -975,14 +961,9 @@ function ReadingContent() {
               <>
                 <div className="lookup-fields">
                   <div className="lookup-field">
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div className="lookup-field-head">
                       <label>KELİME</label>
-                      <button
-                        className="btn-icon-sm"
-                        onClick={() => speakWord(wordInput)}
-                        title="Dinle"
-                        style={{ background: 'rgba(255, 255, 255, 0.05)', border: 'none', color: 'var(--accent)', cursor: 'pointer' }}
-                      >
+                      <button className="lookup-speak-btn" onClick={() => speakWord(wordInput)} title="Dinle">
                         <i className="fa-solid fa-volume-high"></i>
                       </button>
                     </div>
@@ -997,17 +978,7 @@ function ReadingContent() {
                     <input value={synInput} onChange={e => setSynInput(e.target.value)} />
                   </div>
                 </div>
-                <button
-                  onClick={saveWord}
-                  className="btn-primary w-100 mt-4"
-                  style={{
-                    padding: '16px',
-                    borderRadius: '16px',
-                    fontSize: '0.9rem',
-                    fontWeight: 900,
-                    boxShadow: '0 10px 20px rgba(226, 183, 20, 0.2)'
-                  }}
-                >
+                <button onClick={saveWord} className="lookup-save-btn">
                   Bankaya Kaydet
                 </button>
               </>
@@ -1251,18 +1222,140 @@ function ReadingContent() {
         }
         .settings-audio-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+        /* Tamamlandı kartı */
+        .reading-done-card {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-top: 20px;
+          padding: 18px 20px;
+          background: var(--bg-card);
+          border: 1px solid var(--accent);
+          border-radius: 16px;
+        }
+        .reading-done-card i { color: var(--accent); font-size: 1.4rem; flex-shrink: 0; }
+        .reading-done-card h4 { margin: 0; font-size: 1rem; font-weight: 900; color: var(--text); }
+        .reading-done-card p { margin: 4px 0 0; font-size: 0.85rem; color: var(--text-muted); }
+
+        /* Hızlı Sözlük */
+        .lookup-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.5);
+          backdrop-filter: blur(6px);
+          z-index: 10001;
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+        }
+        .lookup-sheet {
+          width: 100%;
+          max-width: 480px;
+          background: var(--bg-card);
+          border: 1px solid var(--border);
+          border-radius: 24px 24px 0 0;
+          padding: 20px 24px 28px;
+          box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.35);
+        }
+        @media (min-width: 640px) {
+          .lookup-overlay { align-items: center; }
+          .lookup-sheet { border-radius: 24px; }
+        }
+        .lookup-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+        }
+        .lookup-header span {
+          font-size: 0.7rem;
+          font-weight: 800;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          color: var(--text-muted);
+        }
+        .lookup-close {
+          background: none;
+          border: none;
+          color: var(--text-muted);
+          font-size: 0.85rem;
+          font-weight: 700;
+          cursor: pointer;
+        }
+        .lookup-close:hover { color: var(--text); }
+        .lookup-search-row { display: flex; gap: 8px; margin-bottom: 20px; }
+        .lookup-search-input {
+          flex: 1;
+          background: var(--glass);
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          padding: 10px 14px;
+          font-size: 0.85rem;
+          color: var(--text);
+        }
+        .lookup-search-btn {
+          background: var(--accent);
+          color: #000;
+          border: none;
+          border-radius: 12px;
+          padding: 0 15px;
+          cursor: pointer;
+        }
+        .sheet-loading-small { display: flex; justify-content: center; padding: 30px 0; }
+        .lookup-fields { display: flex; flex-direction: column; gap: 16px; }
+        .lookup-field label {
+          display: block;
+          font-size: 0.65rem;
+          font-weight: 800;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          color: var(--text-muted);
+          margin-bottom: 6px;
+        }
+        .lookup-field input {
+          width: 100%;
+          background: var(--glass);
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          padding: 12px 14px;
+          font-size: 0.95rem;
+          color: var(--text);
+        }
+        .lookup-field input:focus { border-color: var(--accent); outline: none; }
+        .lookup-field-head { display: flex; align-items: center; justify-content: space-between; }
+        .lookup-speak-btn {
+          background: none;
+          border: none;
+          color: var(--accent);
+          cursor: pointer;
+          padding: 2px;
+        }
+        .lookup-save-btn {
+          width: 100%;
+          background: var(--accent);
+          color: #000;
+          font-weight: 800;
+          font-size: 0.9rem;
+          padding: 14px;
+          border-radius: 14px;
+          border: none;
+          cursor: pointer;
+          margin-top: 20px;
+        }
+
         /* Study Deck */
         .study-deck-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .study-deck-title { display: flex; align-items: center; gap: 10px; font-weight: 900; color: #fff; font-size: 1.1rem; }
+        .study-deck-title { display: flex; align-items: center; gap: 10px; font-weight: 900; color: var(--text); font-size: 1.1rem; }
         .study-deck-title i { color: var(--accent); }
         .study-flip-toggle {
-          background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-          color: #fff; padding: 8px 16px; border-radius: 12px; font-size: 0.75rem; font-weight: 700;
-          display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;
+          background: var(--glass); border: 1px solid var(--border);
+          color: var(--text); padding: 8px 16px; border-radius: 12px; font-size: 0.75rem; font-weight: 700;
+          display: flex; align-items: center; gap: 8px; cursor: pointer;
         }
-        .study-flip-toggle:hover { background: rgba(255,255,255,0.1); border-color: var(--accent); }
+        .study-flip-toggle:hover { border-color: var(--accent); }
         .study-flip-toggle i { font-size: 0.8rem; }
 
+        .study-deck-wrapper { margin-top: 40px; margin-bottom: 40px; }
         .study-deck-scene { perspective: 1500px; display: grid; position: relative; margin-bottom: 40px; }
         .study-deck-inner {
           display: grid;
@@ -1283,19 +1376,19 @@ function ReadingContent() {
         /* Vocabulary Cards */
         .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
         .vocab-item-card {
-          background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 20px; padding: 20px; transition: all 0.3s ease;
+          background: var(--bg-card); border: 1px solid var(--border);
+          border-radius: 20px; padding: 20px; cursor: pointer;
         }
-        .vocab-item-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); }
+        .vocab-item-card:hover { border-color: var(--accent); }
         .vocab-card-header { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 12px; }
         .v-icon-btn {
-          background: none; border: none; color: #666; cursor: pointer; font-size: 0.9rem; transition: color 0.2s;
+          background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.9rem;
         }
         .v-icon-btn:hover { color: var(--accent); }
         .v-word-row { margin-bottom: 8px; }
-        .v-type { font-size: 0.65rem; color: #888; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; }
-        .v-word { font-size: 1.2rem; font-weight: 900; color: #fff; margin: 2px 0; }
-        .v-meaning { font-size: 0.9rem; color: #aaa; margin: 0; line-height: 1.4; }
+        .v-type { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; }
+        .v-word { font-size: 1.2rem; font-weight: 900; color: var(--text); margin: 2px 0; }
+        .v-meaning { font-size: 0.9rem; color: var(--text-muted); margin: 0; line-height: 1.4; }
 
         /* Grammar Cards */
         .grammar-card-scene {
@@ -1323,27 +1416,28 @@ function ReadingContent() {
         .grammar-card-back {
           transform: rotateY(180deg);
           z-index: 1;
-          background: rgba(226, 183, 20, 0.08) !important;
+          background: var(--bg-card) !important;
         }
 
         .grammar-list { display: flex; flex-direction: column; gap: 10px; }
         .grammar-item-card {
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.08);
+          background: var(--bg-card);
+          border: 1px solid var(--border);
           border-radius: 16px;
           padding: 16px 20px;
           position: relative;
         }
-        .academic-tr-bg { background: rgba(226, 183, 20, 0.05) !important; border-color: rgba(226, 183, 20, 0.2) !important; }
+        .academic-tr-bg { border-color: var(--accent) !important; }
         .g-flip-hint { font-size: 0.65rem; color: var(--accent); font-weight: 700; text-transform: uppercase; }
-        .g-tr-content { font-size: 0.95rem; color: #fff; line-height: 1.6; padding: 10px 0; }
+        .g-tr-content { font-size: 0.95rem; color: var(--text); line-height: 1.6; padding: 10px 0; }
         .grammar-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .g-title { font-size: 1.1rem; font-weight: 900; color: #fff; margin: 0; }
-        .g-desc { font-size: 0.9rem; color: #aaa; line-height: 1.6; margin-bottom: 20px; }
+        .g-title { font-size: 1.1rem; font-weight: 900; color: var(--text); margin: 0; }
+        .g-title-accent { color: var(--accent); }
+        .g-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; }
         .g-examples { display: flex; flex-direction: column; gap: 12px; }
         .g-example-item { padding-left: 12px; border-left: 3px solid var(--accent); }
-        .ex-en { font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
-        .ex-tr { font-size: 0.85rem; color: #888; font-style: italic; }
+        .ex-en { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+        .ex-tr { font-size: 0.85rem; color: var(--text-muted); font-style: italic; }
 
         .g-found-tag {
           display: inline-flex; align-items: center; gap: 6px; font-size: 0.7rem; font-weight: 800;
@@ -1354,10 +1448,9 @@ function ReadingContent() {
         /* Highlight Styles */
         :global(.study-highlight-active) {
           background: rgba(226,183,20,0.3) !important;
-          color: #fff !important;
+          color: var(--text) !important;
           border-radius: 4px;
-          box-shadow: 0 0 15px rgba(226,183,20,0.4);
-          transition: all 0.3s ease;
+          transition: background 0.3s ease;
           padding: 2px 0;
         }
         .vocab-item-card.active-highlight, .grammar-item-card.active-highlight {
